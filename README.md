@@ -20,7 +20,7 @@ This small but finely tuned set of `Newtonsoft.Json` Converters provide for Simp
 See `.Tests` for rendering formats.
 
 - `OptionConverter` - represents F#'s `Option<'t>` as a value or `null`
-- `UnionConverter` - represents F# discriminated unions as a single Json object with named fields directly within the object (`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but also cons) [@amjdd](https://github.com/amjjd)
+- `UnionConverter` - represents F# discriminated unions as a single Json object with named fields directly within the object (`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but also cons) :pray: [@amjjd](https://github.com/amjjd)
 
 ## Abstract base Converters
 

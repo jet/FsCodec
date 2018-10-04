@@ -1,6 +1,5 @@
 ﻿module Newtonsoft.Json.Converters.FSharp.Tests.UnionConverterTests
 
-
 open FsCheck
 open Newtonsoft.Json
 open Newtonsoft.Json.Converters.FSharp
@@ -49,7 +48,7 @@ type TestDU =
 let settings = Settings.CreateDefault(camelCase = false)
 
 [<Fact>]
-let ``UnionConverter produces expected output`` () =
+let ``produces expected output`` () =
     let serialize (x : obj) = JsonConvert.SerializeObject(box x, settings)
     let a = CaseA {test = "hi"}
     test <@ """{"case":"CaseA","test":"hi"}""" = serialize a @>
@@ -89,7 +88,7 @@ let requiredSettingsToHandleOptionalFields =
     s
 
 [<Fact>]
-let ``UnionConverter deserializes properly`` () =
+let ``deserializes properly`` () =
     let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
     test <@ CaseA {test = null} = deserialize """{"case":"CaseA"}""" @>
     test <@ CaseA {test = "hi"} = deserialize """{"case":"CaseA","test":"hi"}""" @>
@@ -124,7 +123,7 @@ let ``UnionConverter deserializes properly`` () =
     test <@ CaseP (CartId.Parse "0000000000000000948d503fcfc20f17") = deserialize """{"case":"CaseP","Item":"0000000000000000948d503fcfc20f17"}""" @>
 
 [<Fact>]
-let ``UnionConverter handles missing fields`` () =
+let ``handles missing fields`` () =
     let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
     test <@ CaseJ (Nullable<int>()) = deserialize """{"case":"CaseJ"}""" @>
     test <@ CaseK (1, (Nullable<int>())) = deserialize """{"case":"CaseK","a":1}""" @>
@@ -196,7 +195,7 @@ let ``UnionConverter roundtrip property test`` (x: TestDU) =
     deserialized =! x
 
 [<Fact>]
-let ``UnionConverter's exception catch doesn't make the model invalid`` () =
+let ``Implementation ensures no internal errors escape (which would render a WebApi ModelState.Invalid)`` () =
     let s = JsonSerializer.CreateDefault()
     let mutable gotError = false
     s.Error.Add(fun _ -> gotError <- true)
@@ -209,54 +208,57 @@ let ``UnionConverter's exception catch doesn't make the model invalid`` () =
     test <@ (CaseD "hi") = d @>
     test <@ false = gotError @>
 
-[<Fact>]
-let ``UnionConverter by default throws on unknown cases`` () =
-    let aJson = """{"case":"CaseUnknown"}"""
-    let act () = JsonConvert.DeserializeObject<TestDU>(aJson, settings)
+module ``Unmatched case handling`` =
 
-    fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
-    |> raisesWith <@ act() @>
+    [<Fact>]
+    let ``UnionConverter by default throws on unknown cases`` () =
+        let aJson = """{"case":"CaseUnknown"}"""
+        let act () = JsonConvert.DeserializeObject<TestDU>(aJson, settings)
 
-[<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
-type DuWithCatchAll =
-| Known
-| Catchall
+        fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
+        |> raisesWith <@ act() @>
 
-[<Fact>]
-let ``UnionConverter supports a nominated catchall`` () =
-    let aJson = """{"case":"CaseUnknown"}"""
-    let a = JsonConvert.DeserializeObject<DuWithCatchAll>(aJson, settings)
+    [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
+    type DuWithCatchAll =
+    | Known
+    | Catchall
 
-    test <@ Catchall = a @>
+    [<Fact>]
+    let ``UnionConverter supports a nominated catchall`` () =
+        let aJson = """{"case":"CaseUnknown"}"""
+        let a = JsonConvert.DeserializeObject<DuWithCatchAll>(aJson, settings)
 
-[<JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
-type DuWithMissingCatchAll =
-| Known
+        test <@ Catchall = a @>
 
-[<Fact>]
-let ``UnionConverter explains if nominated catchAll not found`` () =
-    let aJson = """{"case":"CaseUnknown"}"""
-    let act () = JsonConvert.DeserializeObject<DuWithMissingCatchAll>(aJson, settings)
+    [<JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
+    type DuWithMissingCatchAll =
+    | Known
 
-    fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
-    |> raisesWith <@ act() @>
+    [<Fact>]
+    let ``UnionConverter explains if nominated catchAll not found`` () =
+        let aJson = """{"case":"CaseUnknown"}"""
+        let act () = JsonConvert.DeserializeObject<DuWithMissingCatchAll>(aJson, settings)
 
-[<JsonConverter(typeof<Converters.UnionConverter>, "case", "Catchall")>]
-type DuWithCatchAllWithFields =
-| Known
-| Catchall of Newtonsoft.Json.Linq.JObject
+        fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
+        |> raisesWith <@ act() @>
 
-[<Fact>]
-let ``UnionConverter can feed unknown values into a JObject for logging or post processing`` () =
-    let deserialize json = JsonConvert.DeserializeObject<DuWithCatchAllWithFields>(json, settings)
-    let jo =
-        trap <@ match deserialize """{"case":"CaseUnknown","a":"s","b":1,"c":true}""" with
-                | Catchall jo -> jo
-                | x -> failwithf "unexpected %A" x @>
+    [<NoComparison>] // Forced by usage of JObject
+    [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
+    type DuWithCatchAllWithFields =
+    | Known
+    | Catchall of Newtonsoft.Json.Linq.JObject
 
-    test <@ string jo.["a"]="s"
-            && jo.["b"].Type=Newtonsoft.Json.Linq.JTokenType.Integer
-            && jo.["c"].Type=Newtonsoft.Json.Linq.JTokenType.Boolean
-            && string jo.["case"]="CaseUnknown" @>
-    let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}"
-    test <@ expected = string jo @>
+    [<Fact>]
+    let ``UnionConverter can feed unknown values into a JObject for logging or post processing`` () =
+        let deserialize json = JsonConvert.DeserializeObject<DuWithCatchAllWithFields>(json, settings)
+        let jo =
+            trap <@ match deserialize """{"case":"CaseUnknown","a":"s","b":1,"c":true}""" with
+                    | Catchall jo -> jo
+                    | x -> failwithf "unexpected %A" x @>
+
+        test <@ string jo.["a"]="s"
+                && jo.["b"].Type=Newtonsoft.Json.Linq.JTokenType.Integer
+                && jo.["c"].Type=Newtonsoft.Json.Linq.JTokenType.Boolean
+                && string jo.["case"]="CaseUnknown" @>
+        let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}"
+        test <@ expected = string jo @>

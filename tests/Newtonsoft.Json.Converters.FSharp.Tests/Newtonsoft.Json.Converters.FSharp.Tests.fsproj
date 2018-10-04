@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <Compile Include="PicklerTests.fs" />
-    <Compile Include="SerializationTests.fs" />
+    <Compile Include="UnionConverterTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
