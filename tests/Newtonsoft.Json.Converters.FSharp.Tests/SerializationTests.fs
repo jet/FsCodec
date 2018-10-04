@@ -1,7 +1,5 @@
 ﻿module Foldunk.Serialization.Tests
 
-open Domain
-open Foldunk.Serialization
 open FsCheck
 open Newtonsoft.Json
 open Swensen.Unquote.Assertions
@@ -28,6 +26,7 @@ type TrickyRecordPayload =
         Item: string
     }
 
+[<NoComparison>] // NB this is not a general restriction; it's forced by use of Nullable<T> in some of the cases in this specific one
 [<JsonConverter(typeof<Converters.UnionConverter>)>]
 type TestDU =
     | CaseA of TestRecordPayload
@@ -247,7 +246,7 @@ let ``UnionConverter explains if nominated catchAll not found`` () =
     fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
     |> raisesWith <@ act() @>
 
-[<JsonConverter(typeof<Converters.UnionConverter>, "case", "Catchall")>]
+[<NoComparison; JsonConverter(typeof<Converters.UnionConverter>, "case", "Catchall")>]
 type DuWithCatchAllWithFields =
 | Known
 | Catchall of Newtonsoft.Json.Linq.JObject
