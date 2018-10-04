@@ -8,7 +8,7 @@ open System
 type OptionConverter() =
     inherit JsonConverter()
 
-    override __.CanConvert(typ) = typ.IsGenericType && typ.GetGenericTypeDefinition() = typedefof<option<_>>
+    override __.CanConvert(t) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<option<_>>
 
     override __.WriteJson(writer, value, serializer) =
         let value =
@@ -18,13 +18,13 @@ type OptionConverter() =
                 fields.[0]
         serializer.Serialize(writer, value)
 
-    override __.ReadJson(reader, typ, _existingValue, serializer) =
+    override __.ReadJson(reader, t, _existingValue, serializer) =
         let innerType =
-            let innerType = typ.GetGenericArguments().[0]
-            if innerType.IsValueType then typedefof<Nullable<_>>.MakeGenericType([|innerType|])
+            let innerType = t.GetGenericArguments().[0]
+            if innerType.IsValueType then typedefof<Nullable<_>>.MakeGenericType(innerType)
             else innerType
 
-        let cases = Union.getUnionCases typ
+        let cases = Union.getUnionCases t
         if reader.TokenType = JsonToken.Null then FSharpValue.MakeUnion(cases.[0], Array.empty)
         else
             let value = serializer.Deserialize(reader, innerType)

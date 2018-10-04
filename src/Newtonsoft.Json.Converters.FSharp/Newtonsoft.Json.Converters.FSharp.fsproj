@@ -18,7 +18,7 @@
   <ItemGroup>
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
-    <Compile Include="Serialization.fs" />
+    <Compile Include="OptionConverter.fs" />
   </ItemGroup>
 
   <ItemGroup>
