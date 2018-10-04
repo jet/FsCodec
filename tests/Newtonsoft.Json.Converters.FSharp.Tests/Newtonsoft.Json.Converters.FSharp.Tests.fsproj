@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Infrastructure.fs" />
+    <Compile Include="PicklerTests.fs" />
     <Compile Include="SerializationTests.fs" />
   </ItemGroup>
 
