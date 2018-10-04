@@ -1,7 +1,6 @@
-﻿[<AutoOpen>]
-module Infrastructure
+﻿namespace Newtonsoft.Json.Converters.FSharp.Tests
 
-open Foldunk.Serialization
+open Newtonsoft.Json.Converters.FSharp
 open Newtonsoft.Json
 open System
 open System.Runtime.Serialization

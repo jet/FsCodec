@@ -1,18 +1,13 @@
-﻿module Foldunk.Serialization.Tests
+﻿module Newtonsoft.Json.Converters.FSharp.Tests.UnionConverterTests
+
 
 open FsCheck
 open Newtonsoft.Json
+open Newtonsoft.Json.Converters.FSharp
 open Swensen.Unquote.Assertions
 open System
 open System.IO
-open System.Text.RegularExpressions
 open global.Xunit
-
-let normalizeJsonString (json : string) =
-    let str1 = Regex.Replace(json, @"{\s*}", "{}")
-    let str2 = Regex.Replace(str1, @"\[\s*\]", "[]")
-    let str3 = Regex.Replace(str2, @"\.0+", "")
-    str3
 
 // TODO support [<Struct>]
 type TestRecordPayload =
@@ -27,7 +22,7 @@ type TrickyRecordPayload =
     }
 
 [<NoComparison>] // NB this is not a general restriction; it's forced by use of Nullable<T> in some of the cases in this specific one
-[<JsonConverter(typeof<Converters.UnionConverter>)>]
+[<JsonConverter(typeof<UnionConverter>)>]
 type TestDU =
     | CaseA of TestRecordPayload
     | CaseB
@@ -90,7 +85,7 @@ let ``UnionConverter produces expected output`` () =
 let requiredSettingsToHandleOptionalFields =
     // NB this is me documenting current behavior - ideally optionality wou
     let s = Settings.CreateDefault(camelCase = false)
-    s.Converters.Add(Converters.OptionConverter())
+    s.Converters.Add(OptionConverter())
     s
 
 [<Fact>]
@@ -222,7 +217,7 @@ let ``UnionConverter by default throws on unknown cases`` () =
     fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
     |> raisesWith <@ act() @>
 
-[<JsonConverter(typeof<Converters.UnionConverter>, "case", "Catchall")>]
+[<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
 type DuWithCatchAll =
 | Known
 | Catchall
@@ -234,7 +229,7 @@ let ``UnionConverter supports a nominated catchall`` () =
 
     test <@ Catchall = a @>
 
-[<JsonConverter(typeof<Converters.UnionConverter>, "case", "CatchAllThatCantBeFound")>]
+[<JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
 type DuWithMissingCatchAll =
 | Known
 
@@ -246,7 +241,7 @@ let ``UnionConverter explains if nominated catchAll not found`` () =
     fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
     |> raisesWith <@ act() @>
 
-[<NoComparison; JsonConverter(typeof<Converters.UnionConverter>, "case", "Catchall")>]
+[<JsonConverter(typeof<Converters.UnionConverter>, "case", "Catchall")>]
 type DuWithCatchAllWithFields =
 | Known
 | Catchall of Newtonsoft.Json.Linq.JObject
