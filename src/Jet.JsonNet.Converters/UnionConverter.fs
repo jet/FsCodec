@@ -61,7 +61,7 @@ module private Union =
 type UnionConverter private (discriminator : string, ?catchAllCase) =
     inherit JsonConverter()
 
-    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase=Option.ofObj catchAllCase)
+    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
     new() = UnionConverter("case")
 
     override __.CanConvert (t: Type) = Union.isUnion t
