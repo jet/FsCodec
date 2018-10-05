@@ -1,0 +1,12 @@
+<Project ToolsVersion="15.0">
+
+  <PropertyGroup>
+    <Authors>Ruben Bartelink</Authors>
+    <PackageProjectUrl>https://github.com/jet/Newtonsoft.Json.Converters.FSharp/</PackageProjectUrl>
+    <PackageTags>json;fsharp</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/jet/Newtonsoft.Json.Converters.FSharp.git</RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/jet/Newtonsoft.Json.Converters.FSharp/blob/master/LICENSE</PackageLicenseUrl>
+  </PropertyGroup>
+
+</Project>
