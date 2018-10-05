@@ -18,6 +18,7 @@
   <ItemGroup>
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
+    <Compile Include="TypeSafeEnumConverter.fs" />
     <Compile Include="OptionConverter.fs" />
   </ItemGroup>
 
