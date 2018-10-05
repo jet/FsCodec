@@ -13,6 +13,8 @@
     <PackageLicenseUrl>https://github.com/jet/Jet.JsonNet.Converters/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright © 2016-8</Copyright>
     <WarningLevel>5</WarningLevel>
+    <IsTestProject>false</IsTestProject>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="3.1.2.5" Condition=" '$(TargetFramework)' == 'net461' " />
+    <PackageReference Include="FSharp.Core" Version="4.3.4" Condition=" '$(TargetFramework)' == 'netstandard2.0' " />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
