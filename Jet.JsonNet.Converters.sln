@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Newtonsoft.Json.Converters.FSharp", "src\Newtonsoft.Json.Converters.FSharp\Newtonsoft.Json.Converters.FSharp.fsproj", "{ACB412D4-AB3D-4594-BD97-84EA97E2BE7B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Jet.JsonNet.Converters", "src\Jet.JsonNet.Converters\Jet.JsonNet.Converters.fsproj", "{ACB412D4-AB3D-4594-BD97-84EA97E2BE7B}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Newtonsoft.Json.Converters.FSharp.Tests", "tests\Newtonsoft.Json.Converters.FSharp.Tests\Newtonsoft.Json.Converters.FSharp.Tests.fsproj", "{F05E2B06-DC4C-4D27-8DA8-370F96364739}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Jet.JsonNet.Converters.Tests", "tests\Jet.JsonNet.Converters.Tests\Jet.JsonNet.Converters.Tests.fsproj", "{F05E2B06-DC4C-4D27-8DA8-370F96364739}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".project", ".project", "{1D0127A7-2F3E-4CEF-90C6-621DA1192875}"
 	ProjectSection(SolutionItems) = preProject

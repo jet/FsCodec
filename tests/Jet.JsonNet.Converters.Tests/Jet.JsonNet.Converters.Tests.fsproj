@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Newtonsoft.Json.Converters.FSharp\Newtonsoft.Json.Converters.FSharp.fsproj" />
+    <ProjectReference Include="..\..\src\Jet.JsonNet.Converters\Jet.JsonNet.Converters.fsproj" />
   </ItemGroup>
 
 </Project>
