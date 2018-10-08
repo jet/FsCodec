@@ -43,6 +43,10 @@ type TestDU =
     | CaseR of a: CartId
     | CaseS of a: SkuId
     | CaseT of a: SkuId option * b: CartId
+    | CaseU of SkuId[]
+    | CaseV of skus: SkuId[]
+    | CaseW of CartId * SkuId[]
+    | CaseX of a: CartId * skus: SkuId[]
 
 // no camel case, because I want to test "Item" as a record property
 let settings = Settings.CreateDefault(camelCase = false)
@@ -80,6 +84,9 @@ let ``produces expected output`` () =
 
     let p = CaseP (CartId.Parse "0000000000000000948d503fcfc20f17")
     test <@ """{"case":"CaseP","Item":"0000000000000000948d503fcfc20f17"}""" = serialize p @>
+
+    let u = CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |]
+    test<@ """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}""" = serialize u @>
 
 let requiredSettingsToHandleOptionalFields =
     // NB this is me documenting current behavior - ideally optionality wou
@@ -121,6 +128,9 @@ let ``deserializes properly`` () =
     test <@ CaseO (Some 1, Some 2) = deserialzeCustom """{"case":"CaseO", "a": 1, "b": 2 }""" @>
 
     test <@ CaseP (CartId.Parse "0000000000000000948d503fcfc20f17") = deserialize """{"case":"CaseP","Item":"0000000000000000948d503fcfc20f17"}""" @>
+
+    test<@ CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |] =
+    deserialize """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}"""@>
 
 [<Fact>]
 let ``handles missing fields`` () =
@@ -179,6 +189,10 @@ let render = function
     | CaseS id -> sprintf """{"case":"CaseS","a":"%s"}""" id.Value
     | CaseT (None, x) -> sprintf """{"case":"CaseT","b":"%s"}""" x.Value
     | CaseT (Some x, y) -> sprintf """{"case":"CaseT","a":"%s","b":"%s"}""" x.Value y.Value
+    | CaseU skus -> sprintf """{"case":"CaseU","Item":[%s]}""" (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
+    | CaseV skus -> sprintf """{"case":"CaseV","skus":[%s]}""" (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
+    | CaseW (id, skus) -> sprintf """{"case":"CaseW","Item1":"%s","Item2":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
+    | CaseX (id, skus) -> sprintf """{"case":"CaseX","a":"%s","skus":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
 
 type FsCheckGenerators =
     static member CartId = Arb.generate |> Gen.map CartId |> Arb.fromGen
