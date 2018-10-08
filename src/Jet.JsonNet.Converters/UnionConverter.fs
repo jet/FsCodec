@@ -34,6 +34,7 @@ module private Union =
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
         || t.IsValueType
+        || t.IsArray
         || (t.IsGenericType
            && (typedefof<Option<_>> = t.GetGenericTypeDefinition()
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
