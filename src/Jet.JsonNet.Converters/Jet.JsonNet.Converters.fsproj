@@ -5,6 +5,13 @@
     <VersionPrefix>0.0.1</VersionPrefix>
     <Authors>@jet @amjjd @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
+    <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
+    <PackageProjectUrl>https://github.com/jet/Jet.JsonNet.Converters</PackageProjectUrl>
+    <RepositoryUrl>http://github.com/jet/Jet.JsonNet.Converters</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>fsharp unionconverter JsonPickler json converters</PackageTags>
+    <PackageLicenseUrl>https://github.com/jet/Jet.JsonNet.Converters/blob/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Copyright © 2016-8</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
