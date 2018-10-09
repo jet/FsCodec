@@ -1,12 +1,16 @@
 <Project ToolsVersion="15.0">
 
   <PropertyGroup>
-    <Authors>Ruben Bartelink</Authors>
-    <PackageProjectUrl>https://github.com/jet/Newtonsoft.Json.Converters.FSharp/</PackageProjectUrl>
-    <PackageTags>json;fsharp</PackageTags>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <Authors>@jet @amjjd @eiriktsarpalis and contributors</Authors>
+    <Company>Jet.com</Company>
+    <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
+    <PackageProjectUrl>https://github.com/jet/Jet.JsonNet.Converters</PackageProjectUrl>
+    <PackageTags>fsharp unionconverter JsonPickler json converters</PackageTags>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/jet/Newtonsoft.Json.Converters.FSharp.git</RepositoryUrl>
-    <PackageLicenseUrl>https://github.com/jet/Newtonsoft.Json.Converters.FSharp/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>http://github.com/jet/Jet.JsonNet.Converters</RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/jet/Jet.JsonNet.Converters/blob/master/LICENSE</PackageLicenseUrl>
+    <Copyright>Copyright © 2016-8</Copyright>
   </PropertyGroup>
 
 </Project>
