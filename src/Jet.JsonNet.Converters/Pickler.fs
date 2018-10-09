@@ -6,7 +6,7 @@ open System
 open System.Runtime.InteropServices
 
 [<AutoOpen>]
-module Prelude =
+module private Prelude =
     /// Provides a thread-safe memoization wrapper for supplied function
     let memoize : ('T -> 'S) -> 'T -> 'S =
         fun f ->
