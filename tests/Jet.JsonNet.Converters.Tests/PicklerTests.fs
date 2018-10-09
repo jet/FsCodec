@@ -2,8 +2,10 @@
 
 open Newtonsoft.Json.Converters.FSharp
 open Newtonsoft.Json
+open Swensen.Unquote
 open System
 open System.Runtime.Serialization
+open Xunit
 
 /// Endows any type that inherits this class with standard .NET comparison semantics using a supplied token identifier
 [<AbstractClass>]
@@ -57,3 +59,18 @@ and private CartIdJsonConverter() =
     override __.Pickle value = value.Value
     /// Input must be a Guid.Parseable value
     override __.UnPickle input = CartId.Parse input
+
+/// <summary>
+///     Renders all Guids without dashes.
+/// </summary>
+/// <remarks>
+///     Can work correctly as a global converter, as some codebases do for historical reasons
+///     Could arguably be usable as base class for various converters, including the above.
+///     However, the above pattern and variants thereof are recommended for new types.
+///     In general, the philosophy is that, beyond the Pickler base types, an identiy type should consist of explicit
+///       code as much as possible, and global converters really have to earn their keep - magic starts with -100 points.
+/// </remarks>
+type GuidConverter() =
+    inherit JsonIsomorphism<Guid, string>()
+    override __.Pickle g = g.ToString "N"
+    override __.UnPickle g = Guid.Parse g
