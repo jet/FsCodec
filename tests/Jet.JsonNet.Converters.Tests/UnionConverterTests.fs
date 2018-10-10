@@ -20,6 +20,11 @@ type TrickyRecordPayload =
         Item: string
     }
 
+[<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+type Mode =
+    | Fast
+    | Slow
+
 [<NoComparison>] // NB this is not a general restriction; it's forced by use of Nullable<T> in some of the cases in this specific one
 [<JsonConverter(typeof<UnionConverter>)>]
 type TestDU =
@@ -47,6 +52,7 @@ type TestDU =
     | CaseV of skus: SkuId[]
     | CaseW of CartId * SkuId[]
     | CaseX of a: CartId * skus: SkuId[]
+    | CaseY of a: Mode * b: Mode
 
 // no camel case, because I want to test "Item" as a record property
 let settings = Settings.CreateDefault(camelCase = false)
@@ -132,16 +138,38 @@ let ``deserializes properly`` () =
     test<@ CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |] =
     deserialize """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}"""@>
 
-[<Fact>]
-let ``handles missing fields`` () =
-    let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
-    test <@ CaseJ (Nullable<int>()) = deserialize """{"case":"CaseJ"}""" @>
-    test <@ CaseK (1, (Nullable<int>())) = deserialize """{"case":"CaseK","a":1}""" @>
-    test <@ CaseL ((Nullable<int>()), (Nullable<int>())) = deserialize """{"case":"CaseL"}""" @>
+module MissingFieldsHandling =
 
-    test <@ CaseM None = deserialize """{"case":"CaseM"}""" @>
-    test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
-    test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
+    [<Fact>]
+    let ``handles missing fields bound to Nullable or optional types`` () =
+        let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
+        test <@ CaseJ (Nullable<int>()) = deserialize """{"case":"CaseJ"}""" @>
+        test <@ CaseK (1, (Nullable<int>())) = deserialize """{"case":"CaseK","a":1}""" @>
+        test <@ CaseL ((Nullable<int>()), (Nullable<int>())) = deserialize """{"case":"CaseL"}""" @>
+
+        test <@ CaseM None = deserialize """{"case":"CaseM"}""" @>
+        test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
+        test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
+
+    let rejectMissingSettings =
+        [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error, NullValueHandling=NullValueHandling.Ignore)
+            // Provides same settings as above wrt how UnionEncoder will handle this
+            Settings.CreateDefault(ignoreNulls=true, errorOnMissing=true)]
+
+    [<Fact>]
+    let ``lets converters reject missing valus by feeding them a null`` () =
+        raisesWith <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseY","a":"Fast"}""") @>
+            (fun e -> <@ "Unexpected token when reading TypeSafeEnum: Null" = e.Message @>)
+        raises<ArgumentNullException> <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseX"}""") @>
+
+    type TestRecordWithArray = { sku : string; [<JsonRequired>]skus: string[] }
+
+    [<Fact>]
+    let ``currently can't guard against null Arrays, but that's not a default so we live with it`` () =
+        raisesWith<JsonSerializationException> <@ JsonConvert.DeserializeObject<TestRecordWithArray>("""{"sku": null }""") @>
+            (fun e -> <@ e.Message.StartsWith "Required property 'skus' not found in JSON. Path ''" @>)
+        let missingTheArray = sprintf """{"case":"CaseX","a":"%O"}""" Guid.Empty
+        test <@ CaseX (CartId Guid.Empty,null) = JsonConvert.DeserializeObject<TestDU>(missingTheArray) @>
 
 let (|Q|) (s : string) = Newtonsoft.Json.JsonConvert.SerializeObject s
 
@@ -193,6 +221,7 @@ let render = function
     | CaseV skus -> sprintf """{"case":"CaseV","skus":[%s]}""" (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseW (id, skus) -> sprintf """{"case":"CaseW","Item1":"%s","Item2":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseX (id, skus) -> sprintf """{"case":"CaseX","a":"%s","skus":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
+    | CaseY (a, b) -> sprintf """{"case":"CaseY","a":"%s","b":"%s"}""" (string a) (string b)
 
 type FsCheckGenerators =
     static member CartId = Arb.generate |> Gen.map CartId |> Arb.fromGen

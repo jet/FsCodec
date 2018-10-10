@@ -1,7 +1,7 @@
 <Project ToolsVersion="15.0">
 
   <PropertyGroup>
-    <VersionPrefix>0.0.1</VersionPrefix>
+    <VersionPrefix>0.0.2</VersionPrefix>
     <Authors>@jet @amjjd @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
     <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
