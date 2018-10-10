@@ -40,6 +40,7 @@ type TypeSafeEnumConverter() =
         writer.WriteValue str
 
     override __.ReadJson(reader, t: Type, _: obj, _: JsonSerializer) =
-        if reader.TokenType <> JsonToken.String then raise (JsonSerializationException "Unexpected token when reading TypeSafeEnum")
+        if reader.TokenType <> JsonToken.String then
+            sprintf "Unexpected token when reading TypeSafeEnum: %O" reader.TokenType |> JsonSerializationException |> raise
         let str = reader.Value :?> string
         TypeSafeEnum.parseT t str

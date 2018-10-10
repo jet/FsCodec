@@ -53,6 +53,8 @@ module private Union =
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
                 match inputJObject.[fi.Name] with
+                | null when typeHasJsonConverterAttribute fi.PropertyType ->
+                        JToken.Parse("null").ToObject(fi.PropertyType, jsonSerializer)
                 | null -> null
                 | itemValue -> itemValue.ToObject(fi.PropertyType, jsonSerializer) |]
 
