@@ -74,11 +74,17 @@ type Settings private () =
     /// </summary>
     /// <param name="camelCase">Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`. Defaults to true.</param>
     /// <param name="indent">Use multi-line, indented formatting when serializing json; defaults to false.</param>
+    /// <param name="ignoreNulls">Ignore null values in input data; defaults to true. NB OOTB, Json.Net defaults to false.</param>
+    /// <param name="errorOnMissing">Error on missing values (as opposed to letting them just be default-initialized); defaults to false.</param>
     static member CreateDefault
         (   [<Optional;DefaultParameterValue(null)>]?indent : bool,
-            [<Optional;DefaultParameterValue(null)>]?camelCase : bool) =
+            [<Optional;DefaultParameterValue(null)>]?camelCase : bool,
+            [<Optional;DefaultParameterValue(null)>]?ignoreNulls : bool,
+            [<Optional;DefaultParameterValue(null)>]?errorOnMissing : bool) =
         let indent = defaultArg indent false
         let camelCase = defaultArg camelCase true
+        let ignoreNulls = defaultArg ignoreNulls true
+        let errorOnMissing = defaultArg errorOnMissing false
         let resolver : IContractResolver =
              if camelCase then CamelCasePropertyNamesContractResolver() :> _
              else DefaultContractResolver() :> _
@@ -87,4 +93,5 @@ type Settings private () =
             DateTimeZoneHandling = DateTimeZoneHandling.Utc,
             DateFormatHandling = DateFormatHandling.IsoDateFormat,
             Formatting = (if indent then Formatting.Indented else Formatting.None),
-            NullValueHandling = NullValueHandling.Ignore)
+            MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
+            NullValueHandling = (if ignoreNulls then NullValueHandling.Ignore else NullValueHandling.Include))
