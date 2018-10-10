@@ -3,8 +3,8 @@
   <PropertyGroup>
 
     <Name>Jet.JsonNet.Converters</Name>
-
     <Cfg>--configuration Release</Cfg>
+
     <RepoRootDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</RepoRootDir>
     <Bin>-o $(RepoRootDir)bin</Bin>
 
