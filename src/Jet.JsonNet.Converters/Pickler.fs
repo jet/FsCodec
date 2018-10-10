@@ -70,28 +70,66 @@ type JsonIsomorphism<'T, 'U>(?targetPickler : JsonPickler<'U>) =
 
 type Settings private () =
     /// <summary>
-    ///     Creates a default serializer settings used by Json serialization
+    ///     Creates a default serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
     /// </summary>
-    /// <param name="camelCase">Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`. Defaults to true.</param>
+    /// <param name="camelCase">Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`. Defaults to false.</param>
     /// <param name="indent">Use multi-line, indented formatting when serializing json; defaults to false.</param>
     /// <param name="ignoreNulls">Ignore null values in input data; defaults to true. NB OOTB, Json.Net defaults to false.</param>
     /// <param name="errorOnMissing">Error on missing values (as opposed to letting them just be default-initialized); defaults to false.</param>
-    static member CreateDefault
-        (   [<Optional;DefaultParameterValue(null)>]?indent : bool,
+    // TODO in v2, Create should be renamed to CreateDefault as it now aligns with Newtonsoft.Json defaults (as opposed the current method with that name)
+    static member Create
+        (   [<Optional;ParamArray>]converters : JsonConverter[],
+            [<Optional;DefaultParameterValue(null)>]?indent : bool,
             [<Optional;DefaultParameterValue(null)>]?camelCase : bool,
             [<Optional;DefaultParameterValue(null)>]?ignoreNulls : bool,
             [<Optional;DefaultParameterValue(null)>]?errorOnMissing : bool) =
         let indent = defaultArg indent false
-        let camelCase = defaultArg camelCase true
-        let ignoreNulls = defaultArg ignoreNulls true
+        let camelCase = defaultArg camelCase false
+        let ignoreNulls = defaultArg ignoreNulls false
         let errorOnMissing = defaultArg errorOnMissing false
         let resolver : IContractResolver =
              if camelCase then CamelCasePropertyNamesContractResolver() :> _
              else DefaultContractResolver() :> _
         JsonSerializerSettings(
             ContractResolver = resolver,
-            DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-            DateFormatHandling = DateFormatHandling.IsoDateFormat,
+            Converters = converters,
+            DateTimeZoneHandling = DateTimeZoneHandling.Utc, // Override default of RoundtripKind
+            DateFormatHandling = DateFormatHandling.IsoDateFormat, // Pin Json.Net claimed default
             Formatting = (if indent then Formatting.Indented else Formatting.None),
             MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
             NullValueHandling = (if ignoreNulls then NullValueHandling.Ignore else NullValueHandling.Include))
+
+    [<Obsolete("Provides backcompat with ill-considered defaults; for new code, CreateCorrect is recommended. For existing code, use Create(ignoreNulls=true, camelCase=true)")>]
+    // TODO in v2, Create should be renamed to CreateDefault as it aligns with Newtonsoft.Json defaults, as provided by that method
+    static member CreateDefault
+        (   [<Optional;DefaultParameterValue(null)>]?indent : bool,
+            [<Optional;DefaultParameterValue(null)>]?camelCase : bool,
+            [<Optional;DefaultParameterValue(null)>]?ignoreNulls : bool,
+            [<Optional;DefaultParameterValue(null)>]?errorOnMissing : bool) =
+        let camelCase = defaultArg camelCase true
+        let ignoreNulls = defaultArg ignoreNulls true
+        Settings.Create(?indent=indent, camelCase=camelCase, ignoreNulls=ignoreNulls, ?errorOnMissing=errorOnMissing)
+
+    /// <summary>
+    ///     Optionated helper that creates a set of serializer settings that fails fast, providing less surprises when working in F#.
+    ///     Recommended only for greenfield areas of a system that have not leaned on NullValueHandling.Ignore
+    /// </summary>
+    /// <param name="camelCase">
+    ///     Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`.
+    ///     Defaults to false for this profile on basis that you'll use record and tuple field names that are camelCase (and hence not `CLSCompliant`).</param>
+    /// <param name="indent">Use multi-line, indented formatting when serializing json; defaults to false.</param>
+    /// <param name="ignoreNulls">Ignore null values in input data; defaults to true. NB OOTB, Json.Net defaults to false.</param>
+    /// <param name="errorOnMissing">Error on missing values (as opposed to letting them just be default-initialized); defaults to false.</param>
+    static member CreateCorrect
+        (   [<Optional;ParamArray>]converters : JsonConverter[],
+            [<Optional;DefaultParameterValue(null)>]?indent : bool,
+            [<Optional;DefaultParameterValue(null)>]?camelCase : bool,
+            [<Optional;DefaultParameterValue(null)>]?ignoreNulls : bool,
+            [<Optional;DefaultParameterValue(null)>]?errorOnMissing : bool) =
+        Settings.Create(
+            converters=converters,
+            // the key impact of this is that Nullables/options start to render as absent (same for strings etc)
+            ignoreNulls=defaultArg ignoreNulls true,
+            ?errorOnMissing=errorOnMissing,
+            ?indent=indent,
+            ?camelCase=camelCase)

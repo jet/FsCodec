@@ -56,7 +56,8 @@ type TestDU =
     | CaseZ of a: Mode * b: Mode option
 
 // no camel case, because I want to test "Item" as a record property
-let settings = Settings.CreateDefault(camelCase = false)
+// Centred on ignoreNulls for backcompat; roundtripping test covers the case where they get rendered too
+let settings = Settings.Create(camelCase = false, ignoreNulls = true)
 
 [<Fact>]
 let ``produces expected output`` () =
@@ -95,12 +96,6 @@ let ``produces expected output`` () =
     let u = CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |]
     test<@ """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}""" = serialize u @>
 
-let requiredSettingsToHandleOptionalFields =
-    // NB this is me documenting current behavior - ideally optionality wou
-    let s = Settings.CreateDefault(camelCase = false)
-    s.Converters.Add(OptionConverter())
-    s
-
 [<Fact>]
 let ``deserializes properly`` () =
     let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
@@ -130,6 +125,7 @@ let ``deserializes properly`` () =
     test <@ CaseK (1, Nullable 2) = deserialize """{"case":"CaseK", "a":1, "b":2 }""" @>
     test <@ CaseL (Nullable 1, Nullable 2) = deserialize """{"case":"CaseL", "a": 1, "b": 2 }""" @>
 
+    let requiredSettingsToHandleOptionalFields = Settings.Create(OptionConverter())
     let deserialzeCustom s = JsonConvert.DeserializeObject<TestDU>(s, requiredSettingsToHandleOptionalFields)
     test <@ CaseM (Some 1) = deserialzeCustom """{"case":"CaseM","a":1}""" @>
     test <@ CaseN (1, Some 2) = deserialzeCustom """{"case":"CaseN", "a":1, "b":2 }""" @>
@@ -143,9 +139,9 @@ let ``deserializes properly`` () =
 module MissingFieldsHandling =
 
     let rejectMissingSettings =
-        [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error, NullValueHandling=NullValueHandling.Ignore)
-            // Provides same settings as above wrt how UnionEncoder will handle this
-            Settings.CreateDefault(ignoreNulls=true, errorOnMissing=true)]
+        [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error)
+            Settings.Create(errorOnMissing=true)
+            Settings.CreateCorrect(errorOnMissing=true)]
 
     [<Fact>]
     let ``lets converters reject missing valus by feeding them a null`` () =
@@ -187,58 +183,77 @@ module MissingFieldsHandling =
         test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
         test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
 
-let (|Q|) (s : string) = Newtonsoft.Json.JsonConvert.SerializeObject s
+let (|Q|) (s: string) = Newtonsoft.Json.JsonConvert.SerializeObject s
 
-let render = function
-    | CaseA { test = null } -> """{"case":"CaseA"}"""
+// Renderings when NullValueHandling=Include, which is the default for Json.net, and used by the recommended Settings.CreateCorrect profile
+let render ignoreNulls = function
+    | CaseA { test = null } when ignoreNulls -> """{"case":"CaseA"}"""
     | CaseA { test = Q x} -> sprintf """{"case":"CaseA","test":%s}""" x
     | CaseB -> """{"case":"CaseB"}"""
-    | CaseC null -> """{"case":"CaseC"}"""
+    | CaseC null when ignoreNulls -> """{"case":"CaseC"}"""
     | CaseC (Q s) -> sprintf """{"case":"CaseC","Item":%s}""" s
-    | CaseD null -> """{"case":"CaseD"}"""
+    | CaseD null when ignoreNulls -> """{"case":"CaseD"}"""
     | CaseD (Q s) -> sprintf """{"case":"CaseD","a":%s}""" s
-    | CaseE (null,y) -> sprintf """{"case":"CaseE","Item2":%d}""" y
+    | CaseE (null,y) when ignoreNulls -> sprintf """{"case":"CaseE","Item2":%d}""" y
+    | CaseE (null,y) -> sprintf """{"case":"CaseE","Item1":null,"Item2":%d}""" y
     | CaseE (Q x,y) -> sprintf """{"case":"CaseE","Item1":%s,"Item2":%d}""" x y
-    | CaseF (null,y) -> sprintf """{"case":"CaseF","b":%d}""" y
+    | CaseF (null,y) when ignoreNulls -> sprintf """{"case":"CaseF","b":%d}""" y
+    | CaseF (null,y) -> sprintf """{"case":"CaseF","a":null,"b":%d}""" y
     | CaseF (Q x,y) -> sprintf """{"case":"CaseF","a":%s,"b":%d}""" x y
-    | CaseG {Item = null} -> """{"case":"CaseG"}"""
+    | CaseG {Item = null} when ignoreNulls  -> """{"case":"CaseG"}"""
     | CaseG {Item = Q s} -> sprintf """{"case":"CaseG","Item":%s}""" s
-    | CaseH {test = null} -> """{"case":"CaseH"}"""
+    | CaseH {test = null} when ignoreNulls -> """{"case":"CaseH"}"""
     | CaseH {test = Q s} -> sprintf """{"case":"CaseH","test":%s}""" s
-    | CaseI ({test = null}, null) -> """{"case":"CaseI","a":{}}"""
-    | CaseI ({test = null}, Q s) -> sprintf """{"case":"CaseI","a":{},"b":%s}""" s
-    | CaseI ({test = Q s}, null) -> sprintf """{"case":"CaseI","a":{"test":%s}}""" s
+    | CaseI ({test = null}, null) when ignoreNulls -> """{"case":"CaseI","a":{}}"""
+    | CaseI ({test = null}, null) -> """{"case":"CaseI","a":{"test":null},"b":null}"""
+    | CaseI ({test = null}, Q s) when ignoreNulls -> sprintf """{"case":"CaseI","a":{},"b":%s}""" s
+    | CaseI ({test = null}, Q s) -> sprintf """{"case":"CaseI","a":{"test":null},"b":%s}""" s
+    | CaseI ({test = Q s}, null) when ignoreNulls -> sprintf """{"case":"CaseI","a":{"test":%s}}""" s
+    | CaseI ({test = Q s}, null) -> sprintf """{"case":"CaseI","a":{"test":%s},"b":null}""" s
     | CaseI ({test = Q s}, Q b) -> sprintf """{"case":"CaseI","a":{"test":%s},"b":%s}""" s b
 
-    | CaseJ x when not x.HasValue -> """{"case":"CaseJ"}"""
+    | CaseJ x when not x.HasValue && ignoreNulls -> """{"case":"CaseJ"}"""
+    | CaseJ x when not x.HasValue -> """{"case":"CaseJ","a":null}"""
     | CaseJ x -> sprintf """{"case":"CaseJ","a":%d}""" x.Value
-    | CaseK (a,x) when not x.HasValue -> sprintf """{"case":"CaseK","a":%d}""" a
+    | CaseK (a,x) when not x.HasValue && ignoreNulls -> sprintf """{"case":"CaseK","a":%d}""" a
+    | CaseK (a,x) when not x.HasValue -> sprintf """{"case":"CaseK","a":%d,"b":null}""" a
     | CaseK (a,x) -> sprintf """{"case":"CaseK","a":%d,"b":%d}""" a x.Value
-    | CaseL (a,b) when not a.HasValue && not b.HasValue -> """{"case":"CaseL"}"""
-    | CaseL (a,b) when not a.HasValue -> sprintf """{"case":"CaseL","b":%d}""" b.Value
-    | CaseL (a,b) when not b.HasValue -> sprintf """{"case":"CaseL","a":%d}""" a.Value
+    | CaseL (a,b) when not a.HasValue && not b.HasValue && ignoreNulls -> """{"case":"CaseL"}"""
+    | CaseL (a,b) when not a.HasValue && not b.HasValue -> """{"case":"CaseL","a":null,"b":null}"""
+    | CaseL (a,b) when not a.HasValue && ignoreNulls -> sprintf """{"case":"CaseL","b":%d}""" b.Value
+    | CaseL (a,b) when not a.HasValue -> sprintf """{"case":"CaseL","a":null,"b":%d}""" b.Value
+    | CaseL (a,b) when not b.HasValue && ignoreNulls -> sprintf """{"case":"CaseL","a":%d}""" a.Value
+    | CaseL (a,b) when not b.HasValue -> sprintf """{"case":"CaseL","a":%d,"b":null}""" a.Value
     | CaseL (a,b) -> sprintf """{"case":"CaseL","a":%d,"b":%d}""" a.Value b.Value
 
-    | CaseM None -> """{"case":"CaseM"}"""
+    | CaseM None when ignoreNulls -> """{"case":"CaseM"}"""
+    | CaseM None -> """{"case":"CaseM","a":null}"""
     | CaseM (Some x) -> sprintf """{"case":"CaseM","a":%d}""" x
-    | CaseN (a,None) -> sprintf """{"case":"CaseN","a":%d}""" a
+    | CaseN (a,None) when ignoreNulls -> sprintf """{"case":"CaseN","a":%d}""" a
+    | CaseN (a,None) -> sprintf """{"case":"CaseN","a":%d,"b":null}""" a
     | CaseN (a,x) -> sprintf """{"case":"CaseN","a":%d,"b":%d}""" a x.Value
-    | CaseO (None,None) -> """{"case":"CaseO"}"""
-    | CaseO (None,b) -> sprintf """{"case":"CaseO","b":%d}""" b.Value
-    | CaseO (a,None) -> sprintf """{"case":"CaseO","a":%d}""" a.Value
+    | CaseO (None,None) when ignoreNulls -> """{"case":"CaseO"}"""
+    | CaseO (None,None) -> """{"case":"CaseO","a":null,"b":null}"""
+    | CaseO (None,b) when ignoreNulls -> sprintf """{"case":"CaseO","b":%d}""" b.Value
+    | CaseO (None,b) -> sprintf """{"case":"CaseO","a":null,"b":%d}""" b.Value
+    | CaseO (a,None) when ignoreNulls -> sprintf """{"case":"CaseO","a":%d}""" a.Value
+    | CaseO (a,None) -> sprintf """{"case":"CaseO","a":%d,"b":null}""" a.Value
     | CaseO (Some a,Some b) -> sprintf """{"case":"CaseO","a":%d,"b":%d}""" a b
     | CaseP id -> sprintf """{"case":"CaseP","Item":"%s"}""" id.Value
     | CaseQ id -> sprintf """{"case":"CaseQ","Item":"%s"}""" id.Value
     | CaseR id -> sprintf """{"case":"CaseR","a":"%s"}""" id.Value
     | CaseS id -> sprintf """{"case":"CaseS","a":"%s"}""" id.Value
-    | CaseT (None, x) -> sprintf """{"case":"CaseT","b":"%s"}""" x.Value
+    | CaseT (None, x) when ignoreNulls -> sprintf """{"case":"CaseT","b":"%s"}""" x.Value
+    | CaseT (None, x) -> sprintf """{"case":"CaseT","a":null,"b":"%s"}""" x.Value
     | CaseT (Some x, y) -> sprintf """{"case":"CaseT","a":"%s","b":"%s"}""" x.Value y.Value
     | CaseU skus -> sprintf """{"case":"CaseU","Item":[%s]}""" (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseV skus -> sprintf """{"case":"CaseV","skus":[%s]}""" (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseW (id, skus) -> sprintf """{"case":"CaseW","Item1":"%s","Item2":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseX (id, skus) -> sprintf """{"case":"CaseX","a":"%s","skus":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseY (a, b) -> sprintf """{"case":"CaseY","a":"%s","b":"%s"}""" (string a) (string b)
-    | CaseZ (a, None) -> sprintf """{"case":"CaseZ","a":"%s"}""" (string a)
+    | CaseZ (a, None) when ignoreNulls -> sprintf """{"case":"CaseZ","a":"%s"}""" (string a)
+    | CaseZ (a, None) -> sprintf """{"case":"CaseZ","a":"%s","b":null}""" (string a)
+    | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
     | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
 
 type FsCheckGenerators =
@@ -248,12 +263,25 @@ type FsCheckGenerators =
 type DomainPropertyAttribute() =
     inherit FsCheck.Xunit.PropertyAttribute(QuietOnSuccess = true, Arbitrary=[| typeof<FsCheckGenerators> |])
 
+let roundtripProperty ignoreNulls (profile : JsonSerializerSettings) value =
+    let serialized = JsonConvert.SerializeObject(value, profile)
+    render ignoreNulls value =! serialized
+    let deserialized = JsonConvert.DeserializeObject<_>(serialized, profile)
+    deserialized =! value
+
+let includeNullsProfile = Settings.Create(OptionConverter(), ignoreNulls=false(*json.net default, could be omitted*))
 [<DomainPropertyAttribute(MaxTest=1000)>]
-let ``UnionConverter roundtrip property test`` (x: TestDU) =
-    let serialized = JsonConvert.SerializeObject(x, requiredSettingsToHandleOptionalFields)
-    render x =! serialized
-    let deserialized = JsonConvert.DeserializeObject<_>(serialized, requiredSettingsToHandleOptionalFields)
-    deserialized =! x
+let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
+    let ignoreNulls, profile = false, includeNullsProfile
+    profile.NullValueHandling =! NullValueHandling.Include
+    roundtripProperty ignoreNulls profile x
+
+let correctProfile = Settings.CreateCorrect(OptionConverter())
+[<DomainPropertyAttribute(MaxTest=1000)>]
+let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
+    let ignoreNulls, profile = true, correctProfile
+    profile.NullValueHandling =! NullValueHandling.Ignore
+    roundtripProperty ignoreNulls profile x
 
 [<Fact>]
 let ``Implementation ensures no internal errors escape (which would render a WebApi ModelState.Invalid)`` () =

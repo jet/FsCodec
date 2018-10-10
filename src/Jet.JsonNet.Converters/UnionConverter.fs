@@ -91,21 +91,20 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         match fieldInfos with
         | [| fi |] ->
             match fieldValues.[0] with
-            | null -> ()
+            | null when jsonSerializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
-                let token = JToken.FromObject(fv, jsonSerializer)
+                let token = if fv = null then JToken.Parse "null" else JToken.FromObject(fv, jsonSerializer)
                 match token.Type with
                 | JTokenType.Object ->
                     // flatten the object properties into the same one as the discriminator
                     for prop in token.Children() do
-                        if prop <> null then
-                            prop.WriteTo writer
+                        prop.WriteTo writer
                 | _ ->
                     writer.WritePropertyName(fi.Name)
                     token.WriteTo writer
         | _ ->
             for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
-                if fieldValue <> null then
+                if fieldValue <> null || jsonSerializer.NullValueHandling = NullValueHandling.Include then
                     writer.WritePropertyName(fieldInfo.Name)
                     jsonSerializer.Serialize(writer, fieldValue)
 

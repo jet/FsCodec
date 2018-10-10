@@ -88,13 +88,10 @@ module JsonIsomorphismTests =
         test <@ """{"a":"testing","b":"00000000000000000000000000000000"}""" = result @>
 
     let [<Fact>] ``Global GuidConverter`` () =
-        let settings = Settings.CreateDefault()
         let value = Guid.Empty
 
-        let resDashes = JsonConvert.SerializeObject(value, settings)
-
-        settings.Converters.Add(new GuidConverter())
-        let resNoDashes = JsonConvert.SerializeObject(value, settings)
+        let resDashes = JsonConvert.SerializeObject(value, Settings.Create())
+        let resNoDashes = JsonConvert.SerializeObject(value, Settings.Create(GuidConverter()))
 
         test <@ "\"00000000-0000-0000-0000-000000000000\"" = resDashes
                 && "\"00000000000000000000000000000000\"" = resNoDashes @>
