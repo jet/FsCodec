@@ -1,28 +1,24 @@
-<Project ToolsVersion="15.0">
+<Project ToolsVersion="15.0" DefaultTargets="Build;Test">
 
   <PropertyGroup>
 
     <Name>Jet.JsonNet.Converters</Name>
-
+    <Cfg>--configuration Release</Cfg>
     <RepoRootDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</RepoRootDir>
+    <Bin>-o $(RepoRootDir)bin</Bin>
 
-    <BuildNumber Condition="'$(BN)' != ''">$([System.String]::Format('{0:0000000}',$([MSBuild]::Add($(BN), 0))))</BuildNumber>
-    <Suffix Condition=" '$(BuildNumber)' != '' AND '$(PR)' != ''">--version-suffix CI$(BuildNumber)-pr$(PR)</Suffix>
-    <Suffix Condition=" '$(BuildNumber)' != '' AND '$(PR)' == ''">--version-suffix CI$(BuildNumber)</Suffix>    
+    <BuildNumber Condition="'$(BuildNumber)' != ''">$([System.String]::Format('{0:0000000}',$([MSBuild]::Add($(BuildNumber), 0))))</BuildNumber>
+    <Suffix Condition=" '$(BuildNumber)' != '' AND '$(PullRequestId)' != ''">--version-suffix CI$(BuildNumber)-pr$(PullRequestId)</Suffix>
+    <Suffix Condition=" '$(BuildNumber)' != '' AND '$(PullRequestId)' == ''">--version-suffix CI$(BuildNumber)</Suffix>
 
   </PropertyGroup>
 
   <Target Name="Build">
-    <Exec Command="dotnet build src/$(Name) --configuration Release $(Suffix)" WorkingDirectory="$(RepoRootDir)" />
-  </Target>
-
-  <Target Name="Pack">
-    <Exec Command="dotnet pack src/$(Name) --configuration Release -o $(RepoRootDir)bin $(Suffix)" WorkingDirectory="$(RepoRootDir)" />
+    <Exec Command="dotnet pack src/$(Name) $(Cfg) $(Bin) $(Suffix)" />
   </Target>
 
   <Target Name="Test">
-    <Exec Command='dotnet test tests/$(Name).Tests --configuration Release' WorkingDirectory="$(RepoRootDir)" />
+    <Exec Command="dotnet test tests/$(Name).Tests $(Cfg)" />
   </Target>
-  <Target Name="VSTest" DependsOnTargets="Test" />
 
 </Project>

@@ -10,7 +10,7 @@ This small but finely tuned set of `Newtonsoft.Json` Converters provide for Simp
 ## Non-goals
 
 - Less [converters] is more - [has a converter _really_ proved itself broadly applicable](https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming)) ?
-- this is not the final complete set of converters; Json.net is purposefully extensible and limited only by your imagination, for better or worse
+- this is not the final complete set of converters; Json.net is purposefully extensible and limited only by your imagination, for better or worse.
 - If `Newtonsoft.Json` can or should be made to do something, it should - this library is for extensions that absolutely positively can't go into Json.net itself.
 
 # Features
