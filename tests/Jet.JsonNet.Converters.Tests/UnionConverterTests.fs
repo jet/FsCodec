@@ -53,6 +53,7 @@ type TestDU =
     | CaseW of CartId * SkuId[]
     | CaseX of a: CartId * skus: SkuId[]
     | CaseY of a: Mode * b: Mode
+    | CaseZ of a: Mode * b: Mode option
 
 // no camel case, because I want to test "Item" as a record property
 let settings = Settings.CreateDefault(camelCase = false)
@@ -114,6 +115,7 @@ let ``deserializes properly`` () =
     test <@ CaseD "hi" = deserialize """{"case":"CaseD","a":"hi"}""" @>
 
     test <@ CaseE ("hi", 0) = deserialize """{"case":"CaseE","Item1":"hi","Item2":0}""" @>
+    // NB this only passes by virtue of MissingMemberHandling=Ignore and NullValueHandling=Ignore in default settings
     test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item3":"hi","Item4":0}""" @>
 
     test <@ CaseF ("hi", 0) = deserialize """{"case":"CaseF","a":"hi","b":0}""" @>
@@ -140,17 +142,6 @@ let ``deserializes properly`` () =
 
 module MissingFieldsHandling =
 
-    [<Fact>]
-    let ``handles missing fields bound to Nullable or optional types`` () =
-        let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
-        test <@ CaseJ (Nullable<int>()) = deserialize """{"case":"CaseJ"}""" @>
-        test <@ CaseK (1, (Nullable<int>())) = deserialize """{"case":"CaseK","a":1}""" @>
-        test <@ CaseL ((Nullable<int>()), (Nullable<int>())) = deserialize """{"case":"CaseL"}""" @>
-
-        test <@ CaseM None = deserialize """{"case":"CaseM"}""" @>
-        test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
-        test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
-
     let rejectMissingSettings =
         [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error, NullValueHandling=NullValueHandling.Ignore)
             // Provides same settings as above wrt how UnionEncoder will handle this
@@ -162,6 +153,20 @@ module MissingFieldsHandling =
             (fun e -> <@ "Unexpected token when reading TypeSafeEnum: Null" = e.Message @>)
         raises<ArgumentNullException> <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseX"}""") @>
 
+    [<Fact>]
+    let ``types with converters that would reject missing values can be guarded by wrapping in an option`` () =
+        test <@ CaseZ (Fast,None) = JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseZ","a":"Fast"}""") @>
+
+    [<Fact>]
+    let ``rejects missing fields bound to non-optional value types when requested`` () =
+        for s in rejectMissingSettings do
+            let deserializeWithMissingMembersAsError json = JsonConvert.DeserializeObject<TestDU>(json, s)
+            raisesWith <@ deserializeWithMissingMembersAsError """{"case":"CaseE","Item3":"hi","Item4":0}"""  @>
+                (fun (e : JsonSerializationException) ->
+                    <@  e.Message.StartsWith "Error converting value {null} to type 'System.Int32'. Path ''"
+                        && e.InnerException.GetType() = typeof<InvalidCastException>
+                        && e.InnerException.Message.Contains "Null object cannot be converted to a value type." @>)
+
     type TestRecordWithArray = { sku : string; [<JsonRequired>]skus: string[] }
 
     [<Fact>]
@@ -170,6 +175,17 @@ module MissingFieldsHandling =
             (fun e -> <@ e.Message.StartsWith "Required property 'skus' not found in JSON. Path ''" @>)
         let missingTheArray = sprintf """{"case":"CaseX","a":"%O"}""" Guid.Empty
         test <@ CaseX (CartId Guid.Empty,null) = JsonConvert.DeserializeObject<TestDU>(missingTheArray) @>
+
+    [<Fact>]
+    let ``handles missing fields bound to Nullable or optional types`` () =
+        let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
+        test <@ CaseJ (Nullable<int>()) = deserialize """{"case":"CaseJ"}""" @>
+        test <@ CaseK (1, (Nullable<int>())) = deserialize """{"case":"CaseK","a":1}""" @>
+        test <@ CaseL ((Nullable<int>()), (Nullable<int>())) = deserialize """{"case":"CaseL"}""" @>
+
+        test <@ CaseM None = deserialize """{"case":"CaseM"}""" @>
+        test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
+        test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
 
 let (|Q|) (s : string) = Newtonsoft.Json.JsonConvert.SerializeObject s
 
@@ -222,6 +238,8 @@ let render = function
     | CaseW (id, skus) -> sprintf """{"case":"CaseW","Item1":"%s","Item2":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseX (id, skus) -> sprintf """{"case":"CaseX","a":"%s","skus":[%s]}""" id.Value (skus |> Seq.map (fun s -> sprintf "\"%s\"" s.Value) |> String.concat ",")
     | CaseY (a, b) -> sprintf """{"case":"CaseY","a":"%s","b":"%s"}""" (string a) (string b)
+    | CaseZ (a, None) -> sprintf """{"case":"CaseZ","a":"%s"}""" (string a)
+    | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
 
 type FsCheckGenerators =
     static member CartId = Arb.generate |> Gen.map CartId |> Arb.fromGen
