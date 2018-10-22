@@ -7,10 +7,13 @@
     <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
     <PackageProjectUrl>https://github.com/jet/Jet.JsonNet.Converters</PackageProjectUrl>
     <PackageTags>fsharp unionconverter JsonPickler json converters</PackageTags>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>http://github.com/jet/Jet.JsonNet.Converters</RepositoryUrl>
     <PackageLicenseUrl>https://github.com/jet/Jet.JsonNet.Converters/blob/master/LICENSE</PackageLicenseUrl>
     <Copyright>Copyright © 2016-8</Copyright>
+
+    <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
 </Project>
