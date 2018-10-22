@@ -53,7 +53,15 @@ module private Union =
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
                 match inputJObject.[fi.Name] with
-                | null when typeHasJsonConverterAttribute fi.PropertyType ->
+                | null when
+                    // Afford converters an opportunity to handle the missing field in the best way I can figure out to signal that
+                    // The specific need being covered (see tests) is to ensure tha, even with MissingMemberHandling=Ignore,
+                    // the TypeSafeEnumConverter should reject missing values
+                    // not having this case would go direct to `null` without passing go
+                    typeHasJsonConverterAttribute fi.PropertyType
+                    || jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error ->
+                        // NB caller can opt out of erroring by setting NullValueHandling = NullValueHandling.Ignore)
+                        // which renders the following equivalent to the next case
                         JToken.Parse("null").ToObject(fi.PropertyType, jsonSerializer)
                 | null -> null
                 | itemValue -> itemValue.ToObject(fi.PropertyType, jsonSerializer) |]
