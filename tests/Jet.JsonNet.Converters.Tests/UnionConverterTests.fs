@@ -349,5 +349,5 @@ module ``Unmatched case handling`` =
                 && jo.["b"].Type=Newtonsoft.Json.Linq.JTokenType.Integer
                 && jo.["c"].Type=Newtonsoft.Json.Linq.JTokenType.Boolean
                 && string jo.["case"]="CaseUnknown" @>
-        let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}"
+        let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}".Replace("\r\n",Environment.NewLine)
         test <@ expected = string jo @>

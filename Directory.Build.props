@@ -1,7 +1,6 @@
 <Project ToolsVersion="15.0">
 
   <PropertyGroup>
-    <VersionPrefix>0.0.4</VersionPrefix>
     <Authors>@jet @amjjd @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
     <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
@@ -11,9 +10,19 @@
     <Copyright>Copyright © 2016-8</Copyright>
 
     <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->
+
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>    
+  </PropertyGroup>
+
+  <!-- Hacks to disable things for mono builds -->
+  <PropertyGroup>
+    <MonoOrEmpty Condition=" '$(OS)' != 'Windows_NT' ">mono </MonoOrEmpty>
+
+    <!-- disable sourcelink on mono, to workaround https://github.com/dotnet/sourcelink/issues/155 -->
+    <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
 </Project>

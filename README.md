@@ -43,3 +43,10 @@ Naturally, the library naturally also has a hard dependency on the `FSharp.Core`
 In general, the intention is to keep this set of converters minimal and interoperable, e.g., many candidates are deliberately being excluded from this set; _its definitely a non-goal for this to become a compendium of every possible converter_. **So, especially in this repo, the bar for adding converters will be exceedingly high and hence any contribution should definitely be preceded by a discussion.**
 
 Please raise GitHub issues for any questions so others can benefit from the discussion.
+
+# Building
+
+```
+# verify the integrity of the repo wrt being able to build/pack/test
+./build.ps1
+```
