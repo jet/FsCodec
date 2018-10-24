@@ -1,19 +1,32 @@
 <Project ToolsVersion="15.0">
 
   <PropertyGroup>
-    <VersionPrefix>0.0.4</VersionPrefix>
     <Authors>@jet @amjjd @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
     <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
     <PackageProjectUrl>https://github.com/jet/Jet.JsonNet.Converters</PackageProjectUrl>
     <PackageTags>fsharp unionconverter JsonPickler json converters</PackageTags>
     <PackageLicenseUrl>https://github.com/jet/Jet.JsonNet.Converters/blob/master/LICENSE</PackageLicenseUrl>
-    <Copyright>Copyright © 2016-8</Copyright>
-
+    <Copyright>Copyright © 2016-8</Copyright>    
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/jet/https://github.com/jet/Jet.JsonNet.Converters.git</RepositoryUrl>
+    
     <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->
+    
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>    
+    
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RepoRootDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</RepoRootDir>
+    <NupkgsDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)/bin/nupkg"))</NupkgsDir>
+    <MonoOrEmpty Condition=" '$(OS)' != 'Windows_NT' ">mono </MonoOrEmpty>
+
+    <!-- disable sourcelink on mono, to workaround https://github.com/dotnet/sourcelink/issues/155 -->
+    <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
 </Project>
