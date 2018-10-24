@@ -1,25 +1,20 @@
-<Project ToolsVersion="15.0" DefaultTargets="Build;Test">
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
 
-  <PropertyGroup>
-
-    <Name>Jet.JsonNet.Converters</Name>
-    <Cfg>--configuration Release</Cfg>
-
-    <RepoRootDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</RepoRootDir>
-    <Bin>-o $(RepoRootDir)bin</Bin>
-
-    <BuildNumber Condition="'$(BuildNumber)' != ''">$([System.String]::Format('{0:0000000}',$([MSBuild]::Add($(BuildNumber), 0))))</BuildNumber>
-    <Suffix Condition=" '$(BuildNumber)' != '' AND '$(PullRequestId)' != ''">--version-suffix CI$(BuildNumber)-pr$(PullRequestId)</Suffix>
-    <Suffix Condition=" '$(BuildNumber)' != '' AND '$(PullRequestId)' == ''">--version-suffix CI$(BuildNumber)</Suffix>
-
-  </PropertyGroup>
+  <Import Project="Directory.Build.props" />
 
   <Target Name="Build">
-    <Exec Command="dotnet pack src/$(Name) $(Cfg) $(Bin) $(Suffix)" />
+    <Exec Command='dotnet build src/Jet.JsonNet.Converters -c Release --version-suffix "$(VersionSuffix)" ' WorkingDirectory="$(RepoRootDir)" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+
+  <Target Name="Pack">
+    <Exec Command='dotnet pack src/Jet.JsonNet.Converters -c Release -o "$(NupkgsDir)" --version-suffix "$(VersionSuffix)" ' WorkingDirectory="$(RepoRootDir)" IgnoreStandardErrorWarningFormat="true" />
   </Target>
 
   <Target Name="Test">
-    <Exec Command="dotnet test tests/$(Name).Tests $(Cfg)" />
+    <Exec Command='dotnet test tests/Jet.JsonNet.Converters.Tests -c Release --logger:trx' WorkingDirectory="$(RepoRootDir)" IgnoreStandardErrorWarningFormat="true" />
   </Target>
+
+  <Target Name="VSTest" DependsOnTargets="Test" />
 
 </Project>
