@@ -8,7 +8,7 @@ jobs:
       $buildId = $env:BUILD_BUILDNUMBER.PadLeft(7, '0');
       $versionSuffixPR = "ci-$buildId-pr$($env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER)";
       $branchName = "$env:BUILD_SOURCEBRANCHNAME".Replace("_","");
-      $versionSuffixBRANCH = "ci-$buildId";
+      $versionSuffixBRANCH = "$branchName-$buildId";
       $isTag = "$env:BUILD_SOURCEBRANCH".StartsWith('refs/tags/');
       $isPR = "$env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER" -ne ""
       $versionSuffix = if ($isTag) { "" } else { if ($isPR) { $versionSuffixPR } else { $versionSuffixBRANCH } };
@@ -28,7 +28,6 @@ jobs:
       pathtoPublish: 'bin'
       artifactName: 'nupkgs'
   - task: NuGetCommand@2
-    condition: and(succeeded(), or(eq(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
     inputs:
       command: push
       nuGetFeedType: external
