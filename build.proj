@@ -1,24 +1,23 @@
-<Project ToolsVersion="15.0" DefaultTargets="Test;Build">
+<Project ToolsVersion="15.0">
 
   <Import Project="Directory.Build.props" />
 
   <PropertyGroup>
-
-    <Name>Jet.JsonNet.Converters</Name>
     <Cfg>--configuration Release</Cfg>
 
     <ThisDirAbsolute>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</ThisDirAbsolute>
     <PackOptions>-o $(ThisDirAbsolute)bin --version-suffix "$(VersionSuffix)"</PackOptions>
     <TestOptions>--logger:trx</TestOptions>
-
   </PropertyGroup>
 
-  <Target Name="Build">
-    <Exec Command="dotnet pack src/$(Name) $(Cfg) $(PackOptions)" />
+  <Target Name="Pack">
+    <Exec Command="dotnet pack src/Jet.JsonNet.Converters $(Cfg) $(PackOptions)" />
   </Target>
 
-  <Target Name="Test">
-    <Exec Command="dotnet test tests/$(Name).Tests $(Cfg) $(TestOptions)" />
+  <Target Name="VSTest">
+    <Exec Command="dotnet test tests/Jet.JsonNet.Converters.Tests $(Cfg) $(TestOptions)" />
   </Target>
+
+  <Target Name="Build" DependsOnTargets="VSTest;Pack" />
 
 </Project>

@@ -7,7 +7,6 @@
     <IsTestProject>false</IsTestProject>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <VersionPrefix>0.2.0</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>
