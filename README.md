@@ -32,11 +32,11 @@ See `.Tests` for usage examples.
 
 # Dependencies
 
-The core library extends [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) and is intended to work based on `netstandard20`.
+The core library extends [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) and is intended to work based on `netstandard2.0`.
 
 The tests add a reliance on [`FSCheck.xUnit`](https://github.com/fscheck/FsCheck), [`xUnit.net`](https://github.com/xunit/xunit), and [`Unquote`](https://github.com/SwensenSoftware/unquote).
 
-Naturally, the library naturally also has a hard dependency on the `FSharp.Core` standard library (Json.net's `Newtonsoft.Json.Converters.DiscriminatedUnionConverter` has a softer dependency via reflection; going that extra mile here is unwarranted for now given the implementation is in F#).
+Naturally, the library also has a hard dependency on the `FSharp.Core` standard library (Json.net's `Newtonsoft.Json.Converters.DiscriminatedUnionConverter` has a softer dependency via reflection; going that extra mile here is unwarranted for now, given the implementation is in F#).
 
 # CONTRIBUTION notes
 
