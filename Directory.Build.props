@@ -3,7 +3,7 @@
     <Authors>@jet @amjjd @bartelink @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
     <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
-    <PackageProjectUrl>https://github.com/jet/Jet.JsonNet.Converters</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/jet/FsCodec</PackageProjectUrl>
     <PackageTags>fsharp unionconverter JsonPickler json converters</PackageTags>
     <PackageLicense>Apache-2.0</PackageLicense>
     <Copyright>Copyright © 2016-9</Copyright>

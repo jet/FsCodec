@@ -1,4 +1,4 @@
-# Jet.JsonNet.Converters
+# Gardelloyd
 
 This small but finely tuned set of `Newtonsoft.Json` Converters provide for Simple yet versionable serialization strategies without boilerplate code, ugly renderings or nasty surprises.
 

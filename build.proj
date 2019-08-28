@@ -12,11 +12,11 @@
   </PropertyGroup>
 
   <Target Name="Pack">
-    <Exec Command="dotnet pack src/Jet.JsonNet.Converters $(Cfg) $(PackOptions)" />
+    <Exec Command="dotnet pack src/Gardelloyd $(Cfg) $(PackOptions)" />
   </Target>
 
   <Target Name="VSTest">
-    <Exec Command="dotnet test tests/Jet.JsonNet.Converters.Tests $(Cfg) $(TestOptions)" />
+    <Exec Command="dotnet test tests/Gardelloyd.NewtonsoftJson.Tests $(Cfg) $(TestOptions)" />
   </Target>
 
   <Target Name="Build" DependsOnTargets="VSTest;Pack" />

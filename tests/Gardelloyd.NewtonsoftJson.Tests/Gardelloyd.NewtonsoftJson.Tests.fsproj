@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Jet.JsonNet.Converters\Jet.JsonNet.Converters.fsproj" />
+    <ProjectReference Include="..\..\src\Gardelloyd.NewtonsoftJson\Gardelloyd.NewtonsoftJson.fsproj" />
   </ItemGroup>
 
 </Project>
