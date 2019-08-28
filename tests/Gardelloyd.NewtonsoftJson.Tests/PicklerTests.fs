@@ -1,6 +1,6 @@
-﻿namespace Newtonsoft.Json.Converters.FSharp.Tests
+﻿namespace Gardelloyd.NewtonsoftJson.Tests
 
-open Newtonsoft.Json.Converters.FSharp
+open Gardelloyd.NewtonsoftJson
 open Newtonsoft.Json
 open Swensen.Unquote
 open System

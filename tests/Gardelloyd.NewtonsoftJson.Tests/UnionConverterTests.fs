@@ -1,8 +1,8 @@
-﻿module Newtonsoft.Json.Converters.FSharp.Tests.UnionConverterTests
+﻿module Gardelloyd.NewtonsoftJson.Tests.UnionConverterTests
 
 open FsCheck
+open Gardelloyd.NewtonsoftJson
 open Newtonsoft.Json
-open Newtonsoft.Json.Converters.FSharp
 open Swensen.Unquote.Assertions
 open System
 open System.IO
