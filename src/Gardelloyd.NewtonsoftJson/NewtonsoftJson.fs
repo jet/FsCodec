@@ -81,6 +81,9 @@ type Codec private () =
                 dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } }
 
 and Settings private () =
+
+    static let defaultConverters : JsonConverter[] = [| OptionConverter() |]
+
     /// <summary>
     ///     Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
     /// </summary>
@@ -110,23 +113,26 @@ and Settings private () =
             MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
             NullValueHandling = (if ignoreNulls then NullValueHandling.Ignore else NullValueHandling.Include))
 
-    /// <summary>Optionated helper that creates a set of serializer settings that fail fast, providing less surprises when working in F#.</summary>
-    /// <param name="camelCase">
-    ///     Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`.
-    ///     Defaults to false on basis that you'll use record and tuple field names that are camelCase (and hence not `CLSCompliant`).</param>
-    /// <param name="indent">Use multi-line, indented formatting when serializing json; defaults to false.</param>
-    /// <param name="ignoreNulls">Ignore null values in input data; defaults to `true`. NB OOTB, Json.Net defaults to false.</param>
-    /// <param name="errorOnMissing">Error on missing values (as opposed to letting them just be default-initialized); defaults to false.</param>
+    /// Optionated helper that creates serializer settings that provide good defaults for F#
+    /// - no camel case conversion - assumption is you'll use records with camelCased names
+    /// - Always prepends an OptionConverter() to any converters supplied
+    /// - everything else is as per CreateDefault:- i.e. emit nulls instead of omitting fields etc
     static member Create
-        (   [<Optional;ParamArray>]converters : JsonConverter[],
+        (   /// List of converters to apply. An implicit OptionConverter() will be prepended and/or be used as a default
+            [<Optional;ParamArray>]converters : JsonConverter[],
+            /// Use multi-line, indented formatting when serializing json; defaults to false.
             [<Optional;DefaultParameterValue(null)>]?indent : bool,
+            /// Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`.
+            ///  Defaults to false on basis that you'll use record and tuple field names that are camelCase (and hence not `CLSCompliant`).
             [<Optional;DefaultParameterValue(null)>]?camelCase : bool,
+            /// Ignore null values in input data; defaults to `false`.
             [<Optional;DefaultParameterValue(null)>]?ignoreNulls : bool,
+            /// Error on missing values (as opposed to letting them just be default-initialized); defaults to false
             [<Optional;DefaultParameterValue(null)>]?errorOnMissing : bool) =
         Settings.CreateDefault(
-            converters=converters,
+            converters=(match converters with null | [||] -> defaultConverters | xs -> Array.append defaultConverters xs),
             // the key impact of this is that Nullables/options start to render as absent (same for strings etc)
-            ignoreNulls=defaultArg ignoreNulls true,
+            ignoreNulls=defaultArg ignoreNulls false,
             ?errorOnMissing=errorOnMissing,
             ?indent=indent,
             ?camelCase=camelCase)

@@ -9,11 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="NewtonsoftJson.fs" />
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
     <Compile Include="TypeSafeEnumConverter.fs" />
-    <Compile Include="OptionConverter.fs" /></ItemGroup>
+    <Compile Include="OptionConverter.fs" />
+    <Compile Include="NewtonsoftJson.fs" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Gardelloyd\Gardelloyd.fsproj" />
   </ItemGroup>

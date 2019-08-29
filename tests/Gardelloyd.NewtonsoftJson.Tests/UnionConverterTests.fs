@@ -125,7 +125,7 @@ let ``deserializes properly`` () =
     test <@ CaseK (1, Nullable 2) = deserialize """{"case":"CaseK", "a":1, "b":2 }""" @>
     test <@ CaseL (Nullable 1, Nullable 2) = deserialize """{"case":"CaseL", "a": 1, "b": 2 }""" @>
 
-    let requiredSettingsToHandleOptionalFields = Settings.Create(OptionConverter())
+    let requiredSettingsToHandleOptionalFields = Settings.Create()
     let deserialzeCustom s = JsonConvert.DeserializeObject<TestDU>(s, requiredSettingsToHandleOptionalFields)
     test <@ CaseM (Some 1) = deserialzeCustom """{"case":"CaseM","a":1}""" @>
     test <@ CaseN (1, Some 2) = deserialzeCustom """{"case":"CaseN", "a":1, "b":2 }""" @>
@@ -269,18 +269,18 @@ let roundtripProperty ignoreNulls (profile : JsonSerializerSettings) value =
     let deserialized = JsonConvert.DeserializeObject<_>(serialized, profile)
     deserialized =! value
 
-let includeNullsProfile = Settings.CreateDefault(OptionConverter(), ignoreNulls=false(*json.net default, could be omitted*))
+let includeNullsProfile = Settings.CreateDefault(OptionConverter())
 [<DomainPropertyAttribute(MaxTest=1000)>]
 let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, includeNullsProfile
     profile.NullValueHandling =! NullValueHandling.Include
     roundtripProperty ignoreNulls profile x
 
-let correctProfile = Settings.Create(OptionConverter())
+let defaultProfile = Settings.Create()
 [<DomainPropertyAttribute(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
-    let ignoreNulls, profile = true, correctProfile
-    profile.NullValueHandling =! NullValueHandling.Ignore
+    let ignoreNulls, profile = false, defaultProfile
+    profile.NullValueHandling =! NullValueHandling.Include
     roundtripProperty ignoreNulls profile x
 
 [<Fact>]
