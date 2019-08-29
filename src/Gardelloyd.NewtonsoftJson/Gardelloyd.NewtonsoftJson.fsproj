@@ -13,7 +13,8 @@
     <Compile Include="UnionConverter.fs" />
     <Compile Include="TypeSafeEnumConverter.fs" />
     <Compile Include="OptionConverter.fs" />
-    <Compile Include="NewtonsoftJson.fs" /></ItemGroup>
+    <Compile Include="Settings.fs" />
+    <Compile Include="Codec.fs" /></ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Gardelloyd\Gardelloyd.fsproj" />
   </ItemGroup>
