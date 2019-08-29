@@ -1,9 +1,7 @@
 ﻿namespace Gardelloyd.NewtonsoftJson
 
 open Newtonsoft.Json
-open Newtonsoft.Json.Serialization
 open System
-open System.Runtime.InteropServices
 
 [<AutoOpen>]
 module private Prelude =
