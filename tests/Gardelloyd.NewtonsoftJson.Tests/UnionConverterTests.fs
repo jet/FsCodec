@@ -140,8 +140,8 @@ module MissingFieldsHandling =
 
     let rejectMissingSettings =
         [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error)
-            Settings.Create(errorOnMissing=true)
-            Settings.CreateCorrect(errorOnMissing=true)]
+            Settings.CreateDefault(errorOnMissing=true)
+            Settings.Create(errorOnMissing=true)]
 
     [<Fact>]
     let ``lets converters reject missing valus by feeding them a null`` () =
@@ -269,14 +269,14 @@ let roundtripProperty ignoreNulls (profile : JsonSerializerSettings) value =
     let deserialized = JsonConvert.DeserializeObject<_>(serialized, profile)
     deserialized =! value
 
-let includeNullsProfile = Settings.Create(OptionConverter(), ignoreNulls=false(*json.net default, could be omitted*))
+let includeNullsProfile = Settings.CreateDefault(OptionConverter(), ignoreNulls=false(*json.net default, could be omitted*))
 [<DomainPropertyAttribute(MaxTest=1000)>]
 let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, includeNullsProfile
     profile.NullValueHandling =! NullValueHandling.Include
     roundtripProperty ignoreNulls profile x
 
-let correctProfile = Settings.CreateCorrect(OptionConverter())
+let correctProfile = Settings.Create(OptionConverter())
 [<DomainPropertyAttribute(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = true, correctProfile
