@@ -2,9 +2,9 @@
   <PropertyGroup>
     <Authors>@jet @amjjd @bartelink @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
-    <Description>Simple version-tolerant Newtonsoft.Json Converters for F# types</Description>
+    <Description>F# Union Event Codec with versioning tolerant converters</Description>
     <PackageProjectUrl>https://github.com/jet/FsCodec</PackageProjectUrl>
-    <PackageTags>fsharp unionconverter JsonPickler json converters</PackageTags>
+    <PackageTags>fsharp unionconverter unionencoder JsonPickler JsonIsomorphism json converters typeshape</PackageTags>
     <PackageLicense>Apache-2.0</PackageLicense>
     <Copyright>Copyright © 2016-9</Copyright>
 
