@@ -24,7 +24,7 @@ type IUnionEncoder<'Union, 'Format> =
 
 /// Provides Codecs that render to a UTF-8 array suitable for storage in EventStore or CosmosDb based on explicit functions you supply
 /// i.e., with using conventions / Type Shapes / Reflection or specific Json processing libraries - see Gardelloyd.*.Codec for batteries-included Coding/Decoding
-type Custom =
+type Codec =
 
     /// <summary>
     ///    Generate a codec suitable for use with <c>Equinox.EventStore</c>, <c>Equinox.Cosmos</c> or <c>Propulsion</c> libraries
@@ -55,7 +55,7 @@ type Custom =
         : IUnionEncoder<'Union,byte[]> =
         let encode' value = let c, d = encode value in c, d, null
         let tryDecode' (et,d,_md) = tryDecode (et, d)
-        Custom.Create(encode', tryDecode')
+        Codec.Create(encode', tryDecode')
 
 namespace Gardelloyd.Core
 
