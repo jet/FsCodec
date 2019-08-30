@@ -14,8 +14,8 @@ type Serdes private () =
         (   /// Value to serialize.
             value : 'T,
             /// Use indentation when serializing json. Defaults to false.
-            [<Optional;DefaultParameterValue(null)>]?indent : bool) : string =
-        let settings = if defaultArg indent false then defaultSettings.Value else indentSettings.Value
+            [<Optional; DefaultParameterValue null>]?indent : bool) : string =
+        let settings = (if defaultArg indent false then indentSettings else defaultSettings).Value
         JsonConvert.SerializeObject(value, settings)
 
     /// Serializes given value to a json string with custom settings
@@ -29,13 +29,8 @@ type Serdes private () =
     /// Deserializes value of given type from json string.
     static member Deserialize<'T>
         (   /// Json string to deserialize.
-            json : string) : 'T =
-        JsonConvert.DeserializeObject<'T>(json, defaultSettings.Value)
-
-    /// Deserializes value of given type from json string.
-    static member Deserialize<'T>
-        (   /// Json string to deserialize.
             json : string,
-            /// Settings to use (use other overload to use Settings.Create() profile)
-            settings : JsonSerializerSettings) : 'T =
+            /// Settings to use (defaults to Settings.Create() profile)
+            [<Optional; DefaultParameterValue null>]?settings : JsonSerializerSettings) : 'T =
+        let settings = match settings with None -> defaultSettings.Value | Some x -> x
         JsonConvert.DeserializeObject<'T>(json, settings)
