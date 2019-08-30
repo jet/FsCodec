@@ -62,6 +62,10 @@ type Codec private () =
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
         (   /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
             ?settings,
+            /// Generate a metadata object to serialize from a given 'value
+            [<Optional;DefaultParameterValue(null)>]?mapMeta : 'Union -> obj,
+            /// Provides a function that can be used to determine the creation time for a given event 'value
+            [<Optional;DefaultParameterValue(null)>]?genTimestamp : 'Union -> DateTimeOffset,
             /// Fail encoder generation if union contains nullary cases. Defaults to <c>true</c>.<
             [<Optional;DefaultParameterValue(null)>]?allowNullaryCases)
         : Gardelloyd.IUnionEncoder<'Union,byte[]> =
@@ -72,9 +76,16 @@ type Codec private () =
                 bytesEncoder,
                 requireRecordFields=true, // See JsonConverterTests - roundtripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
                 ?allowNullaryCases=allowNullaryCases)
+        let (metaf, timestampf) =
+            match mapMeta,genTimestamp with
+            | Some mf, Some gts -> (fun value -> bytesEncoder.Encode (mf value)), (fun value -> Some (gts value))
+            | Some mf, None -> (fun value -> bytesEncoder.Encode (mf value)), (fun _ -> None)
+            | None, Some gts -> (fun _ -> null), (fun value -> Some (gts value))
+            | None, None -> (fun _ -> null), (fun _ -> None)
         { new Gardelloyd.IUnionEncoder<'Union,byte[]> with
             member __.Encode value =
                 let enc = dataCodec.Encode value
-                Gardelloyd.Core.EventData.Create(enc.CaseName, enc.Payload) :> _
+                let (meta, timestamp) = metaf value, timestampf value
+                Gardelloyd.Core.EventData.Create(enc.CaseName, enc.Payload, meta, ?timestamp=timestamp) :> _
             member __.TryDecode encoded =
                 dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } }
