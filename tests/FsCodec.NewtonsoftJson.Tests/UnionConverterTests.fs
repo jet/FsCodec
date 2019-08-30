@@ -1,7 +1,7 @@
-﻿module Gardelloyd.NewtonsoftJson.Tests.UnionConverterTests
+﻿module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
 
 open FsCheck
-open Gardelloyd.NewtonsoftJson
+open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open Swensen.Unquote.Assertions
 open System

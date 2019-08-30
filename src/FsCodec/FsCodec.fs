@@ -1,4 +1,4 @@
-namespace Gardelloyd
+namespace FsCodec
 
 /// Common form for either a Domain Event or an Unfolded Event
 type IEvent<'Format> =
@@ -22,7 +22,7 @@ type IUnionEncoder<'Union, 'Format> =
     /// Decodes a formatted representation into a union instance. Does not throw exception on format mismatches
     abstract TryDecode   : encoded:IEvent<'Format> -> 'Union option
 
-namespace Gardelloyd.Core
+namespace FsCodec.Core
 
 open System
 
@@ -30,7 +30,7 @@ open System
 // Included here to enable extraction of this ancillary information (by downcasting IEvent in one's IUnionEncoder.TryDecode implementation)
 // in the corner cases where this coupling is absolutely definitely better than all other approaches
 type IIndexedEvent<'Format> =
-    inherit Gardelloyd.IEvent<'Format>
+    inherit FsCodec.IEvent<'Format>
     /// The index into the event sequence of this event
     abstract member Index : int64
     /// Indicates this is not a Domain Event, but actually an Unfolded Event based on the state inferred from the events up to `Index`
@@ -39,7 +39,7 @@ type IIndexedEvent<'Format> =
 /// An Event about to be written, see IEvent for further information
 type EventData<'Format> =
     { eventType : string; data : 'Format; meta : 'Format; timestamp: DateTimeOffset }
-    interface Gardelloyd.IEvent<'Format> with
+    interface FsCodec.IEvent<'Format> with
         member __.EventType = __.eventType
         member __.Data = __.data
         member __.Meta = __.meta

@@ -12,13 +12,12 @@
   </PropertyGroup>
 
   <Target Name="Pack">
-    <Exec Command="dotnet pack src/Gardelloyd $(Cfg) $(PackOptions)" />
-    <Exec Command="dotnet pack src/Gardelloyd.NewtonsoftJson $(Cfg) $(PackOptions)" />
+    <Exec Command="dotnet pack src/FsCodec $(Cfg) $(PackOptions)" />
+    <Exec Command="dotnet pack src/FsCodec.NewtonsoftJson $(Cfg) $(PackOptions)" />
   </Target>
 
   <Target Name="VSTest">
-    <Exec Command="dotnet test tests/Gardelloyd.Tests $(Cfg) $(TestOptions)" />
-    <Exec Command="dotnet test tests/Gardelloyd.NewtonsoftJson.Tests $(Cfg) $(TestOptions)" />
+    <Exec Command="dotnet test tests/FsCodec.NewtonsoftJson.Tests $(Cfg) $(TestOptions)" />
   </Target>
 
   <Target Name="Build" DependsOnTargets="VSTest;Pack" />

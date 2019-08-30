@@ -1,7 +1,7 @@
-module Gardelloyd.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests
+module FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests
 
 open FsCheck.Xunit
-open Gardelloyd.NewtonsoftJson
+open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open System
 open Swensen.Unquote
@@ -73,7 +73,7 @@ type VerbatimUtf8Tests() =
                 e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
-        let loaded = Gardelloyd.Core.EventData.Create(des.e.[0].c,des.e.[0].d)
+        let loaded = FsCodec.Core.EventData.Create(des.e.[0].c,des.e.[0].d)
         let decoded = uEncoder.TryDecode loaded |> Option.get
         x =! decoded
 
