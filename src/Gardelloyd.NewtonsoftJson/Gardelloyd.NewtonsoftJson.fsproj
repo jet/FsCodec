@@ -14,7 +14,9 @@
     <Compile Include="TypeSafeEnumConverter.fs" />
     <Compile Include="OptionConverter.fs" />
     <Compile Include="Settings.fs" />
-    <Compile Include="Codec.fs" /></ItemGroup>
+    <Compile Include="Codec.fs" />
+    <Compile Include="Serdes.fs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Gardelloyd\Gardelloyd.fsproj" />
   </ItemGroup>
