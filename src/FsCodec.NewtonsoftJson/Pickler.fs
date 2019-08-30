@@ -1,4 +1,4 @@
-﻿namespace Gardelloyd.NewtonsoftJson
+﻿namespace FsCodec.NewtonsoftJson
 
 open Newtonsoft.Json
 open System

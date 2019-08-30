@@ -1,4 +1,4 @@
-namespace Gardelloyd.NewtonsoftJson
+namespace FsCodec.NewtonsoftJson
 
 open Newtonsoft.Json
 open System
@@ -48,7 +48,7 @@ module Core =
                 serializer.Deserialize<'T>(jsonReader)
 
 // Provides Codecs that render to a UTF-8 array suitable for storage in EventStore or CosmosDb based on explicit functions you supply using `Newtonsoft.Json` and
-/// `TypeShape.UnionContract.UnionContractEncoder` - if you need full control and/or have have your own codecs, see `Gardelloyd.Codec.Create` instead
+/// `TypeShape.UnionContract.UnionContractEncoder` - if you need full control and/or have have your own codecs, see `FsCodec.Codec.Create` instead
 type Codec private () =
 
     static let defaultSettings = lazy Settings.Create()
@@ -68,7 +68,7 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?genTimestamp : 'Union -> DateTimeOffset,
             /// Fail encoder generation if union contains nullary cases. Defaults to <c>true</c>.<
             [<Optional;DefaultParameterValue(null)>]?allowNullaryCases)
-        : Gardelloyd.IUnionEncoder<'Union,byte[]> =
+        : FsCodec.IUnionEncoder<'Union,byte[]> =
         let settings = match settings with Some x -> x | None -> defaultSettings.Value
         let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = new Core.BytesEncoder(settings) :> _
         let dataCodec =
@@ -82,10 +82,10 @@ type Codec private () =
             | Some mf, None -> (fun value -> bytesEncoder.Encode (mf value)), (fun _ -> None)
             | None, Some gts -> (fun _ -> null), (fun value -> Some (gts value))
             | None, None -> (fun _ -> null), (fun _ -> None)
-        { new Gardelloyd.IUnionEncoder<'Union,byte[]> with
+        { new FsCodec.IUnionEncoder<'Union,byte[]> with
             member __.Encode value =
                 let enc = dataCodec.Encode value
                 let (meta, timestamp) = metaf value, timestampf value
-                Gardelloyd.Core.EventData.Create(enc.CaseName, enc.Payload, meta, ?timestamp=timestamp) :> _
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, meta, ?timestamp=timestamp) :> _
             member __.TryDecode encoded =
                 dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } }

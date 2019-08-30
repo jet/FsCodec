@@ -1,7 +1,7 @@
-namespace Gardelloyd
+namespace FsCodec
 
 /// Provides Codecs that render to a UTF-8 array suitable for storage in EventStore or CosmosDb based on explicit functions you supply
-/// i.e., with using conventions / Type Shapes / Reflection or specific Json processing libraries - see Gardelloyd.*.Codec for batteries-included Coding/Decoding
+/// i.e., with using conventions / Type Shapes / Reflection or specific Json processing libraries - see FsCodec.*.Codec for batteries-included Coding/Decoding
 type Codec =
 
     /// Generate a codec suitable for use with <c>Equinox.EventStore</c>, <c>Equinox.Cosmos</c> or <c>Propulsion</c> libraries

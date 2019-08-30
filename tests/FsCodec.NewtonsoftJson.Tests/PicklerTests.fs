@@ -1,6 +1,6 @@
-﻿namespace Gardelloyd.NewtonsoftJson.Tests
+﻿namespace FsCodec.NewtonsoftJson.Tests
 
-open Gardelloyd.NewtonsoftJson
+open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open Swensen.Unquote
 open System

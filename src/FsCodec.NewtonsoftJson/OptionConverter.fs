@@ -1,4 +1,4 @@
-﻿namespace Gardelloyd.NewtonsoftJson
+﻿namespace FsCodec.NewtonsoftJson
 
 open FSharp.Reflection
 open Newtonsoft.Json
