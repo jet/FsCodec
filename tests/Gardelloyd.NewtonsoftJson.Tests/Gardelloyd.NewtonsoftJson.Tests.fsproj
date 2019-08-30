@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="PicklerTests.fs" />
     <Compile Include="UnionConverterTests.fs" />
+    <Compile Include="VerbatimUtf8ConverterTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

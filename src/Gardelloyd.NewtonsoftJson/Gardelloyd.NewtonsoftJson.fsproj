@@ -16,6 +16,7 @@
     <Compile Include="Settings.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
+    <Compile Include="VerbatimUtf8Converter.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Gardelloyd\Gardelloyd.fsproj" />
