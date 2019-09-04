@@ -91,7 +91,7 @@ module Contract =
 - [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) - allows one to cleanly map a type's internal representation to something that Json.net can already cleanly handle :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis)
 - [`JsonPickler`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L15) - removes boilerplate from simple converters, used in implementation of `JsonIsomorphism` :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis) 
 
-## Conversion notes for F# types
+## Supported encodings for F# types
 
 `Newtonsoft.Json`, thanks to its broad usage thoughout .NET systems has well known (with some idiosyncratic quirks) behaviors for most common types one might use for C# DTOs.
 
@@ -99,23 +99,32 @@ Normal primitive F#/.NET such as `bool`, `byte`, `int16`, `int`, `int64`, `float
 
 The default settings for FsCodec applies json.net's default behavior, whis is to render fields that have a `null` or `null`-equivalent value with the value `null`. This behavior can be overridden via `Settings(ignoreNulls = true)`, which will cause such JSON fields to be omitted.
 
+The recommendations here apply particularly to Event Contracts - the data in your store will inevitably outlast your code, so being conservative in the complexity of ones's encoding scheme is paramount. Explicit is better than Implicit.
+
 | Type kind | TL;DR | Example input | Example output | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | `'t[]` | As per C#; need to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` | Can yield `null` |
-| `'t list` | __Don't use__; use `'t[]` | `[ 1; 2; 3]` | `[1,2,3]` | While the happy path works, `null` or  missing field maps to a `null` object rather than `[]` [which is completely wrong from an F# perspective] |
 | `DateTimeOffset` | Roundtrips with our settings | `DateTime.Now` | `"2019-09-04T20:30:37.272403+01:00"` | |
-| `DateTime` | __Don't use__; use `DateTimeOffset` | | | Roundtripping can be messy, wrong or lossy; `DateTimeOffset` covers same use cases |
 | `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | `Nullable 14` | `14` | OOTB json.net roundtrips cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | 
 | records | Just work | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` | FYI records are not supported OOTB yet in `System.Text.Json` |
 | `'t option` | `None` -> `null`, `Some x` -> `x` with the converter `Settings.Create()` adds | `Some 14` | `14` | OOTB json.net does not roundtrip `option` types cleanly; `Settings.Create` and `NewtonsoftJson.Codec.Create` wire in an `OptionConverter` by default | 
 | `string` | As per C#; need to handle `null` | `"Abc"` | `"Abc"` | Can yield `null`; One can use a `string option` to map `null` and `Some null` to `None` |
-| `Guid` or [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `Guid` | __don't use__; wrap as a reference `type` and use a `JsonIsomorphism`, or represent as a tagged `string` | `Guid.NewGuid()` | `"ba7024c7-6795-413f-9f11-d3b7b1a1fe7a"` | If you wrap the value in a type, you can have that roundtrip with a specific format via a Converter implemented as a `JsonIsomorphism`. Alternately, represent in your contract as a [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged-string. |
 | types with unit of measure | Works well (doesnt encode the unit) | `54<g>` | `54` | Unit of measure tags are only known to the compiler; Json.net does not process the tags and treats it as the underlying primitive type | 
-| tuples | __Don't use__; use records | `(1,2)` | `"{"Item1":1,"Item2":2}"` | While converters are out there, using tuples in contracts ofany kind is simply Not A Good Idea |
 | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | `SkuId.parse "54-321"` | `"000-054-321"` | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to strongly type-tag `string` and `DateTimeOffset` values, which Json.net will render as if they were unadorned |
 | Nullary unions (Enum-like DU's without bodies) | Tag `type` with `TypeSafeEnumConverter` | `State.NotFound` | `"NotFound"` | Works well - guarantees a valid mapping, as opposed to using a `System.Enum` and `StringEnumConverter`, which can map invalid values and/or silently map to `0` etc |
 | Discriminated Unions (where one or more cases has a body) | Tag `type` with `UnionConverter` | `Decision.Accepted { result = "54" }` | `{"case": "Accepted","result":"54"}` | Exhaust all other avenues before considering encoding a union in JSON. `"case"` label can be overridden. Format can be consumed in Java, JavaScript and Swift without major difficulty |
-| maps | As per C#; not always the best option for many reasons | | | Json.net has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
+
+## _Unsupported_ types and/or constructs
+
+The mechanisms in the previous section have proven themselves sufficient for diverse systems inside and outside Jet. Here, we summarize some problematic constructs, with suggestions for alternate approaches to apply in preference.  
+
+| Type kind | TL;DR | Example input | Example output | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts ofany kind is simply Not A Good Idea |
+| `'t list` | __Don't use__; use `'t[]` | `[ 1; 2; 3]` | `[1,2,3]` | While the happy path works, `null` or  missing field maps to a `null` object rather than `[]` [which is completely wrong from an F# perspective] |
+| `DateTime` | __Don't use__; use `DateTimeOffset` | | | Roundtripping can be messy, wrong or lossy; `DateTimeOffset` covers same use cases |
+| `Guid` or [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `Guid` | __don't use__; wrap as a reference `type` and use a `JsonIsomorphism`, or represent as a tagged `string` | `Guid.NewGuid()` | `"ba7024c7-6795-413f-9f11-d3b7b1a1fe7a"` | If you wrap the value in a type, you can have that roundtrip with a specific format via a Converter implemented as a `JsonIsomorphism`. Alternately, represent in your contract as a [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged-string. |
+| maps | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.net has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
 
 # CONTRIBUTING
 
