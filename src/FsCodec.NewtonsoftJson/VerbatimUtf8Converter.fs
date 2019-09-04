@@ -1,7 +1,7 @@
 namespace FsCodec.NewtonsoftJson
 
-open Newtonsoft.Json.Linq
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 /// Manages injecting prepared json into the data being submitted to a store such as CosmosDB as-is, on the basis we can trust it to be valid json
 type VerbatimUtf8JsonConverter() =
@@ -21,4 +21,3 @@ type VerbatimUtf8JsonConverter() =
         let array = value :?> byte[]
         if array = null || array.Length = 0 then serializer.Serialize(writer, null)
         else writer.WriteRawValue(enc.GetString(array))
-
