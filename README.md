@@ -1,44 +1,57 @@
 # FsCodec [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/fscodec.svg?logo=nuget)](https://www.nuget.org/packages/fscodec/) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE) ![code size](https://img.shields.io/github/languages/code-size/jet/fscodec.svg) [![docs status](https://img.shields.io/badge/DOCUMENTATION-WIP-important.svg?style=popout)](README.md)
 
-This small but finely tuned set of `Newtonsoft.Json` Converters provide for Simple yet versionable serialization strategies without boilerplate code, ugly renderings or nasty surprises.
+Defines a minimal interface for serialization and deserialization of events for event-sourcing systems on .NET.
+Implements batteries-included strategies for succinct yet versionable Event Contract definitions in F#.
 
-## Goals
+Typically used in [applications](https://github.com/jet/dotnet-templates) leveraging [Equinox](https://github.com/jet/equinox) and/or [Propulsion](https://github.com/jet/propulsion), but also applicable to defining DTOs for other purposes such as Web APIs.
 
-- The converters are employed in diverse systems across Jet, both for [de]coding Events within Event-sourced streams, and for HTTP requests/responses. As such, format changes need to be interoperable.
-- As the name suggests, the focus is on handling F# types.
+## Components
 
-## Non-goals
+The components within this repository are delivered as multi-targeted Nuget packages supporting `net461` (F# 3.1+) and `netstandard2.0` (F# 4.5+) profiles.
+
+- [![Codec NuGet](https://img.shields.io/nuget/v/FsCodec.svg)](https://www.nuget.org/packages/FsCodec/) `FsCodec` Defines interfaces with trivial implementation helpers.
+  - No dependencies.
+  - [`FsCodec.IUnionEncoder`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19): defines a base interface for serializers.
+  - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in a serializer and/or Union Encoder of your choice (typically this is used to supply a pair `encode` and `tryDecode` functions)
+- [![Newtonsoft.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.NewtonsoftJson.svg)](https://www.nuget.org/packages/FsCodec.NewtonsoftJson/) `FsCodec.NewtonsoftJson`: As described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/), enabled tagging of F# Discriminated Union cases in a versionable manner with low-dependencies using [TypeShape](https://github.com/eiriktsarpalis/TypeShape)'s [`UnionContractEncoder`](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores)
+  - Uses the ubiquitous [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) library to serialize the event bodies.
+  - Provides relevant Converters for common non-primitive types prevalent in F#
+  - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape 7.*`, `Microsoft.IO.RecyclableMemoryStream 1.2.2`, `System.Buffers 4.5`
+- [_(planned)_ `FsCodec.SystemTextJson`](https://github.com/jet/FsCodec/issues/14): drop in replacement that allows one to retarget from `Newtonsoft.Json` to imminently ubiquitous .NET `System.Text.Json` serializer solely by changing the referenced namespace.
+
+# Features: `FsCodec`
+
+The purpose of the `FsCodec` package is to provide a minimal interface on which libraries such as Equinox and Propulsion can depend on in order that they can avoid forcing a specific serialization mechanism.
+
+- [`FsCodec.IEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4) represents a single event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type)
+- [`FsCodec.IUnionEncoder`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19) presents `Encode : 'Union -> IEvent` and `TryDecode : 'Event -> 'Union option` methods that can be used in low level application code to generate or decode `IEvent`s items based on a contract defined by `'Union`
+- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5) implements `IUnionEncoder` in terms of supplied `encode : 'Union -> string * byte[]` and `tryDecode : string * byte[] -> 'Union option` functions (other overloads are available for advanced cases)
+- [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L48) is a low level helper to create an `IEvent` directly for purposes such as tests etc.
+
+# Features: `FsCodec.NewtonsoftJson`
+
+[`FsCodec.NewtonsoftJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IUnionEncoder` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` to serialize the bodies.
+
+## Included Converters
+
+`FsCodec.NewtonsoftJson` includes relevant `Converters` in order to facilitate interoperable and versionable renderings:
+  - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`
+  - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
+  - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within(`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but many obvious cons) :pray: [@amjdd](https://github.com/amjjd)
+  - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code)  
+
+## Custom converter implementation helpers
+
+- [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) - allows one to cleanly map a type's internal representation to something that Json.net can already cleanly handle :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis)
+- [`JsonPickler`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L15) - removes boilerplate from simple converters, used in implementation of `JsonIsomorphism` :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis) 
+
+# CONTRIBUTING
+
+General rules:
 
 - Less [converters] is more - [has a converter _really_ proved itself broadly applicable](https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming)) ?
 - this is not the final complete set of converters; Json.net is purposefully extensible and limited only by your imagination, for better or worse.
 - If `Newtonsoft.Json` can or should be made to do something, it should - this library is for extensions that absolutely positively can't go into Json.net itself.
-
-# Features
-
-## Concrete Converter implementations
-
-See `.Tests` for rendering formats.
-
-- `OptionConverter` - represents F#'s `Option<'t>` as a value or `null`
-- `UnionConverter` - represents F# discriminated unions as a single Json object with named fields directly within the object (`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but also cons) :pray: [@amjdd](https://github.com/amjjd)
-- `TypeSafeEnumConverter` - represents discriminated union (without any state), as a string (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
-
-## Abstract base Converters
-
-See `.Tests` for usage examples.
-
-- `JsonPickler` - removes boilerplate from simple converters :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis) 
-- `JsonIsomorphism` - allows one to cleanly map a type's internal representation to something that Json.net can already cleanly handle :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis)
-
-# Dependencies
-
-The core library extends [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) and is intended to work based on `netstandard2.0`.
-
-The tests add a reliance on [`FSCheck.xUnit`](https://github.com/fscheck/FsCheck), [`xUnit.net`](https://github.com/xunit/xunit), and [`Unquote`](https://github.com/SwensenSoftware/unquote).
-
-Naturally, the library also has a hard dependency on the `FSharp.Core` standard library (Json.net's `Newtonsoft.Json.Converters.DiscriminatedUnionConverter` has a softer dependency via reflection; going that extra mile here is unwarranted for now, given the implementation is in F#).
-
-# CONTRIBUTION notes
 
 In general, the intention is to keep this set of converters minimal and interoperable, e.g., many candidates are deliberately being excluded from this set; _its definitely a non-goal for this to become a compendium of every possible converter_. **So, especially in this repo, the bar for adding converters will be exceedingly high and hence any contribution should definitely be preceded by a discussion.**
 
@@ -48,5 +61,5 @@ Please raise GitHub issues for any questions so others can benefit from the disc
 
 ```powershell
 # verify the integrity of the repo wrt being able to build/pack/test
-./dotnet build ./build.proj
+./dotnet build build.proj
 ```
