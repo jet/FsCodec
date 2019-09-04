@@ -32,13 +32,59 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 
 [`FsCodec.NewtonsoftJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IUnionEncoder` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` to serialize the bodies.
 
-## Included Converters
+## `Newtonsoft.Json.Converter`s
 
 `FsCodec.NewtonsoftJson` includes relevant `Converters` in order to facilitate interoperable and versionable renderings:
   - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`
   - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
   - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within(`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but many obvious cons) :pray: [@amjdd](https://github.com/amjjd)
   - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code)  
+
+## `Settings`
+
+[`FsCodec.NewtonsoftJson.Settings`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Settings.fs#L8) provides a clean syntax for building a `Newtonsoft.Json.JsonSerializerSettings` with which to define a serialization contract profile for interoperability purposes. Methods:
+- `CreateDefault`: as per `Newtonsoft.Json` defaults with the following override:
+  - `DateTimeZoneHandling = DateTimeZoneHandling.Utc` (default is `RoundtripKind`)
+  - no custom `IContractResolver` (one is expected to use `camelCase` field names within records, for which this does not matter)
+- `Create`: as `CreateDefault` with the following difference:
+  - adds an `OptionConverter`; included in default `Settings` (see _Converters_, above and _Setttings_ below)
+
+## `Serdes`
+
+[`FsCodec.NewtonsoftJson.Serders`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert\.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings.Create` (above). Methods:
+- `Serialize<T>`: serializes an object per its type using the settings defined in `Settings.Create`
+- `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings.Create`
+
+### Examples of using `Settings` and `Serdes` to define a contract
+
+In a contract assembly used as a way to supply types as part of a client library, one way of encapsulating the conversion rules that need to be applied is as follows:
+
+#### Simple contracts that tag all types or fields necessitating `Converter`s directly and only records and `option`s
+
+The minimal code needed to define helpers to consistently roundtrip where one only uses simple types is to simply state" _Please use `FsCodec.NewtonsoftJson.Serdes` to encode/decode json payloads correctly. However, an alternate approach is to employ the convention of providing a pair of helper methods alongside the type :-
+
+```fsharp
+module Contract =
+    type Item = { value : string option }
+    // implies default settings from Settings.Create(), which includes OptionConverter
+    let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x)
+    // implies default settings from Settings.Create(), which includes OptionConverter
+    let deserialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Deserialize(x)
+```
+
+#### More advanced case necessitating a custom converter
+
+While it's hard to justify the wrapping in the previous case, this illustrates how one can employ the same basic layout yet override a setting (register a necessary custom `Newtonsoft.Json.Converter` type):
+
+```fsharp
+module Contract =
+    type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
+    /// Settings to be used within this contract
+    // note OptionConverter is also included by default
+    let settings = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |])
+    let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x,settings)
+    let deserialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Deserialize(x,settings)
+```
 
 ## Custom converter implementation helpers
 
