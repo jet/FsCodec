@@ -5,7 +5,7 @@ open System.Collections.Generic
 open System
 
 /// Utilities for working with DUs where none of the cases have a value
-module private TypeSafeEnum =
+module TypeSafeEnum =
 
     let isTypeSafeEnum (t: Type) =
         Union.isUnion t
@@ -16,6 +16,7 @@ module private TypeSafeEnum =
         union.cases
         |> Array.tryFindIndex (fun case -> case.Name = str)
         |> Option.map (fun tag -> (union.caseConstructor.[tag] [||]))
+    let tryParse<'T> (str: string) = tryParseT typeof<'T> str |> Option.map (fun e -> e :?> 'T)
 
     let parseT (t: Type) (str: string) =
         match tryParseT t str with
@@ -23,6 +24,7 @@ module private TypeSafeEnum =
         | None   ->
             // Keep exception compat, but augment with a meaningful message.
             raise (KeyNotFoundException(sprintf "Could not find case '%s' for type '%s'" str t.FullName))
+    let parse<'T> (str: string) = parseT typeof<'T> str :?> 'T
 
     let toString (x: obj) =
         let union = Union.getUnion (x.GetType())

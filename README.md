@@ -1,7 +1,7 @@
-# FsCodec [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/fscodec.svg?logo=nuget)](https://www.nuget.org/packages/fscodec/) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE) ![code size](https://img.shields.io/github/languages/code-size/jet/fscodec.svg) [![docs status](https://img.shields.io/badge/DOCUMENTATION-WIP-important.svg?style=popout)](README.md)
+# FsCodec [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/fscodec.svg?logo=nuget)](https://www.nuget.org/packages/fscodec/) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE)
 
 Defines a minimal interface for serialization and deserialization of events for event-sourcing systems on .NET.
-Implements batteries-included strategies for succinct yet versionable Event Contract definitions in F#.
+Includes ready-to-go packages for writing simple yet versionable Event Contract definitions in F# using ubiquitous serializers (presently `Newtonsoft.Json`).
 
 Typically used in [applications](https://github.com/jet/dotnet-templates) leveraging [Equinox](https://github.com/jet/equinox) and/or [Propulsion](https://github.com/jet/propulsion), but also applicable to defining DTOs for other purposes such as Web APIs.
 
@@ -30,7 +30,7 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 
 # Examples: `FsCodec.NewtonsoftJson`
 
-There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fs](tests/FsCodec.NewtonsoftJson.Tests/Examples.fs]). It's highly recommended to experiment with conversions using FSI. (Also, PRs adding examples are much appreciated...)
+There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx). It's highly recommended to experiment with conversions using FSI. (Also, PRs adding examples are much appreciated...)
 
 # Features: `FsCodec.NewtonsoftJson`
 
@@ -126,14 +126,13 @@ The mechanisms in the previous section have proven themselves sufficient for div
 
 | Type kind | TL;DR | Example input | Example output | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts ofany kind is simply Not A Good Idea |
 | `'t list` | __Don't use__; use `'t[]` | `[ 1; 2; 3]` | `[1,2,3]` | While the happy path works, `null` or  missing field maps to a `null` object rather than `[]` [which is completely wrong from an F# perspective] |
 | `DateTime` | __Don't use__; use `DateTimeOffset` | | | Roundtripping can be messy, wrong or lossy; `DateTimeOffset` covers same use cases |
 | `Guid` or [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `Guid` | __don't use__; wrap as a reference `type` and use a `JsonIsomorphism`, or represent as a tagged `string` | `Guid.NewGuid()` | `"ba7024c7-6795-413f-9f11-d3b7b1a1fe7a"` | If you wrap the value in a type, you can have that roundtrip with a specific format via a Converter implemented as a `JsonIsomorphism`. Alternately, represent in your contract as a [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged-string. |
-| maps | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.net has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
+| maps/`Dictionary` etc. | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.net has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
+| tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts ofany kind is simply Not A Good Idea |
 
 ## Custom converters using `JsonIsomorphism`
-
 [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) enables one to express the `Read`ing and `Write`ing of the JSON for a type in terms of another type. As alluded to above, rendering and parsing of `Guid` values can be expressed succinctly in this manner. The following Converter, when applied to a field, will render it without dashes in the rendered form:
 
 ```fsharp
@@ -141,6 +140,67 @@ type GuidConverter() =
     inherit JsonIsomorphism<Guid, string>()
     override __.Pickle g = g.ToString "N"
     override __.UnPickle g = Guid.Parse g
+```
+
+## `TypeSafeEnumConverter` basic usage
+
+```fsharp
+[<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+type Outcome = Joy | Pain | Misery
+
+type Message = { name: string option; outcome: Outcome }
+
+let value = { name = Some null; outcome = Joy}
+ser value
+// {"name":null,"outcome":"Joy"}
+
+des<Message> """{"name":null,"outcome":"Joy"}"""
+// val it : Message = {name = None; outcome = Joy;}
+```
+
+By design, we throw when a value is unknown. Often this is the correct design. If, and only if, your software can do something useful with catch-all case, see the technique in `OutcomeWithOther` (below)
+
+```fsharp
+des<Message> """{"name":null,"outcome":"Discomfort"}"""
+// throws System.Collections.Generic.KeyNotFoundException: Could not find case 'Discomfort' for type 'FSI_0012+Outcome'
+```
+
+##  `TypeSafeEnum` fallback converters using `JsonIsomorphism`
+
+While, in general, one wants to version contracts such that invalid values simply don't arise, in some cases you want to explicitly handle out of range values.
+Here we implement a converter as a JsonIsomorphism to achieve such a mapping
+
+```fsharp
+[<JsonConverter(typeof<OutcomeWithCatchAllConverter>)>]
+type OutcomeWithOther = Joy | Pain | Misery | Other
+and OutcomeWithCatchAllConverter() =
+    inherit JsonIsomorphism<OutcomeWithOther, string>()
+    override __.Pickle v =
+        TypeSafeEnum.toString v
+    override __.UnPickle json =
+        json
+        |> TypeSafeEnum.tryParse<OutcomeWithOther>
+        |> Option.defaultValue Other
+
+type Message2 = { name: string option; outcome: OutcomeWithOther }
+```
+
+Because the `type` is tagged with a Converter attribute, valid values continue to be converted correctly:
+
+```fsharp
+let value2 = { name = Some null; outcome = Joy}
+ser value2
+// {"name":null,"outcome":"Joy"}
+
+des<Message2> """{"name":null,"outcome":"Joy"}"""
+// val it : Message = {name = None; outcome = Joy;}
+```
+
+More importantly, the formerly invalid value now gets mapped to our fallback value (`Other`) as intended.
+
+```fsharp
+des<Message2> """{"name":null,"outcome":"Discomfort"}"""
+// val it : Message = {name = None; outcome = Other;}
 ```
 
 ## CONTRIBUTING
