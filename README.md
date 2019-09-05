@@ -64,6 +64,7 @@ There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](t
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings.Create`
 
+ <a name="contracts"></a>
 ### Examples of using `Settings` and `Serdes` to define a contract
 
 In a contract assembly used as a way to supply types as part of a client library, one way of encapsulating the conversion rules that need to be applied is as follows:
@@ -95,30 +96,31 @@ module Contract =
     let deserialize (json : string) : Item = FsCodec.NewtonsoftJson.Serdes.Deserialize(json,settings)
 ```
 
-## Encoding and converting of F# types
+## Encoding and conversion of F# types
  
-### Supported encodings for F# types
+ <a name="recommendations"></a>
+### Recommended round-trippable constructs
 
 `Newtonsoft.Json`, thanks to its broad usage thoughout .NET systems has well known (with some idiosyncratic quirks) behaviors for most common types one might use for C# DTOs.
 
 Normal primitive F#/.NET such as `bool`, `byte`, `int16`, `int`, `int64`, `float32` (`Single`), `float` (`Double`), `decimal` work as expected.
 
-The default settings for FsCodec applies json.net's default behavior, whis is to render fields that have a `null` or `null`-equivalent value with the value `null`. This behavior can be overridden via `Settings(ignoreNulls = true)`, which will cause such JSON fields to be omitted.
+The default settings for FsCodec applies Json.net's default behavior, whis is to render fields that have a `null` or `null`-equivalent value with the value `null`. This behavior can be overridden via `Settings(ignoreNulls = true)`, which will cause such JSON fields to be omitted.
 
 The recommendations here apply particularly to Event Contracts - the data in your store will inevitably outlast your code, so being conservative in the complexity of ones's encoding scheme is paramount. Explicit is better than Implicit.
 
-| Type kind | TL;DR | Example input | Example output | Notes |
+| Type kind | TL;DR | Notes | Example input | Example output |
 | :--- | :--- | :--- | :--- | :--- |
-| `'t[]` | As per C#; need to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` | Can yield `null` |
-| `DateTimeOffset` | Roundtrips with our settings | `DateTime.Now` | `"2019-09-04T20:30:37.272403+01:00"` | |
-| `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | `Nullable 14` | `14` | OOTB json.net roundtrips cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | 
-| records | Just work | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` | FYI records are not supported OOTB yet in `System.Text.Json` |
-| `'t option` | `None` -> `null`, `Some x` -> `x` with the converter `Settings.Create()` adds | `Some 14` | `14` | OOTB json.net does not roundtrip `option` types cleanly; `Settings.Create` and `NewtonsoftJson.Codec.Create` wire in an `OptionConverter` by default | 
-| `string` | As per C#; need to handle `null` | `"Abc"` | `"Abc"` | Can yield `null`; One can use a `string option` to map `null` and `Some null` to `None` |
-| types with unit of measure | Works well (doesnt encode the unit) | `54<g>` | `54` | Unit of measure tags are only known to the compiler; Json.net does not process the tags and treats it as the underlying primitive type | 
-| [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | `SkuId.parse "54-321"` | `"000-054-321"` | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to strongly type-tag `string` and `DateTimeOffset` values, which Json.net will render as if they were unadorned |
-| Nullary unions (Enum-like DU's without bodies) | Tag `type` with `TypeSafeEnumConverter` | `State.NotFound` | `"NotFound"` | Works well - guarantees a valid mapping, as opposed to using a `System.Enum` and `StringEnumConverter`, which can map invalid values and/or silently map to `0` etc |
-| Discriminated Unions (where one or more cases has a body) | Tag `type` with `UnionConverter` | `Decision.Accepted { result = "54" }` | `{"case": "Accepted","result":"54"}` | Exhaust all other avenues before considering encoding a union in JSON. `"case"` label can be overridden. Format can be consumed in Java, JavaScript and Swift without major difficulty |
+| `'t[]` | As per C# | Don't forget to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` |
+| `DateTimeOffset` | Roundtrips cleanly | The default `Settings.Create` requests `RoundtripKind` | `DateTimeOffset.Now` | `"2019-09-04T20:30:37.272403+01:00"` |
+| `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | OOTB Json.net roundtrips cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | `Nullable 14` | `14` |
+| `'t option` | `None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.net does not roundtrip `option` types cleanly; `Settings.Create` and `NewtonsoftJson.Codec.Create` wire in an `OptionConverter` by default | `Some 14` | `14` | 
+| `string` | As per C#; need to handle `null` | One can use a `string option` to map `null` and `Some null` to `None` | `"Abc"` | `"Abc"` |
+| types with unit of measure | Works well (doesnt encode the unit) | Unit of measure tags are only known to the compiler; Json.net does not process the tags and treats it as the underlying primitive type | `54<g>` | `54` | 
+| [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to type-tag `string` and `DateTimeOffset` values using the units of measure compiler feature, which Json.net will render as if they were unadorned | `SkuId.parse "54-321"` | `"000-054-321"` |
+| records | Just work | FYI records are not supported OOTB yet in `System.Text.Json` | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` |
+| Nullary unions (Enum-like DU's without bodies) | Tag `type` with `TypeSafeEnumConverter` | Works well - guarantees a valid mapping, as opposed to using a `System.Enum` and `StringEnumConverter`, which can map invalid values and/or silently map to `0` etc | `State.NotFound` | `"NotFound"` |
+| Discriminated Unions (where one or more cases has a body) | Tag `type` with `UnionConverter` | This format can be readily consumed in Java, JavaScript and Swift. Nonetheless, exhaust all other avenues before considering encoding a union in JSON. The `"case"` label id can be overridden. | `Decision.Accepted { result = "54" }` | `{"case": "Accepted","result":"54"}` |
 
 ### _Unsupported_ types and/or constructs
 
@@ -132,6 +134,7 @@ The mechanisms in the previous section have proven themselves sufficient for div
 | maps/`Dictionary` etc. | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.net has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
 | tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts ofany kind is simply Not A Good Idea |
 
+ <a name="JsonIsomorphism"></a>
 ## Custom converters using `JsonIsomorphism`
 [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) enables one to express the `Read`ing and `Write`ing of the JSON for a type in terms of another type. As alluded to above, rendering and parsing of `Guid` values can be expressed succinctly in this manner. The following Converter, when applied to a field, will render it without dashes in the rendered form:
 
