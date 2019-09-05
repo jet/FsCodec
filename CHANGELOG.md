@@ -9,9 +9,17 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `tests/FsCodec.NewtonsoftJson.Tests/examples.fsx` counterpart to the README
+
 ### Changed
+
+- Exposed `TypeSafeEnum`
+
 ### Removed
 ### Fixed
+
+- Pushed `TypeShape`'s `PackageReference` down into `FsCodec.NewtonsoftJson`
 
 <a name="1.0.1-rc1"></a>
 ## [1.0.0-rc1] - 2019-08-30
