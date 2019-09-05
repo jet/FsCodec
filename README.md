@@ -28,6 +28,10 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 - [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5) implements `IUnionEncoder` in terms of supplied `encode : 'Union -> string * byte[]` and `tryDecode : string * byte[] -> 'Union option` functions (other overloads are available for advanced cases)
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L48) is a low level helper to create an `IEvent` directly for purposes such as tests etc.
 
+# Examples: `FsCodec.NewtonsoftJson`
+
+There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fs](tests/FsCodec.NewtonsoftJson.Tests/Examples.fs]). It's highly recommended to experiment with conversions using FSI. (Also, PRs adding examples are much appreciated...)
+
 # Features: `FsCodec.NewtonsoftJson`
 
 [`FsCodec.NewtonsoftJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IUnionEncoder` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` to serialize the bodies.
@@ -39,6 +43,11 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
   - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
   - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within(`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but many obvious cons) :pray: [@amjdd](https://github.com/amjjd)
   - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code)  
+
+## Custom converter base classes
+
+- [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) - allows one to cleanly map a type's internal representation to something that Json.net can already cleanly handle :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis)
+- [`JsonPickler`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L15) - removes boilerplate from simple converters, used in implementation of `JsonIsomorphism` :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis) 
 
 ## `Settings`
 
@@ -67,9 +76,9 @@ The minimal code needed to define helpers to consistently roundtrip where one on
 module Contract =
     type Item = { value : string option }
     // implies default settings from Settings.Create(), which includes OptionConverter
-    let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x)
+    let serialize (x : Item) : string = FsCodec.NewtonsoftJson.Serdes.Serialize x
     // implies default settings from Settings.Create(), which includes OptionConverter
-    let deserialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Deserialize(x)
+    let deserialize (json : string) = FsCodec.NewtonsoftJson.Serdes.Deserialize json
 ```
 
 #### More advanced case necessitating a custom converter
@@ -83,15 +92,12 @@ module Contract =
     // note OptionConverter is also included by default
     let settings = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |])
     let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x,settings)
-    let deserialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Deserialize(x,settings)
+    let deserialize (json : string) : Item = FsCodec.NewtonsoftJson.Serdes.Deserialize(json,settings)
 ```
 
-## Custom converter implementation helpers
-
-- [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) - allows one to cleanly map a type's internal representation to something that Json.net can already cleanly handle :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis)
-- [`JsonPickler`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L15) - removes boilerplate from simple converters, used in implementation of `JsonIsomorphism` :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis) 
-
-## Supported encodings for F# types
+## Encoding and converting of F# types
+ 
+### Supported encodings for F# types
 
 `Newtonsoft.Json`, thanks to its broad usage thoughout .NET systems has well known (with some idiosyncratic quirks) behaviors for most common types one might use for C# DTOs.
 
@@ -114,7 +120,7 @@ The recommendations here apply particularly to Event Contracts - the data in you
 | Nullary unions (Enum-like DU's without bodies) | Tag `type` with `TypeSafeEnumConverter` | `State.NotFound` | `"NotFound"` | Works well - guarantees a valid mapping, as opposed to using a `System.Enum` and `StringEnumConverter`, which can map invalid values and/or silently map to `0` etc |
 | Discriminated Unions (where one or more cases has a body) | Tag `type` with `UnionConverter` | `Decision.Accepted { result = "54" }` | `{"case": "Accepted","result":"54"}` | Exhaust all other avenues before considering encoding a union in JSON. `"case"` label can be overridden. Format can be consumed in Java, JavaScript and Swift without major difficulty |
 
-## _Unsupported_ types and/or constructs
+### _Unsupported_ types and/or constructs
 
 The mechanisms in the previous section have proven themselves sufficient for diverse systems inside and outside Jet. Here, we summarize some problematic constructs, with suggestions for alternate approaches to apply in preference.  
 
@@ -126,7 +132,18 @@ The mechanisms in the previous section have proven themselves sufficient for div
 | `Guid` or [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `Guid` | __don't use__; wrap as a reference `type` and use a `JsonIsomorphism`, or represent as a tagged `string` | `Guid.NewGuid()` | `"ba7024c7-6795-413f-9f11-d3b7b1a1fe7a"` | If you wrap the value in a type, you can have that roundtrip with a specific format via a Converter implemented as a `JsonIsomorphism`. Alternately, represent in your contract as a [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged-string. |
 | maps | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.net has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
 
-# CONTRIBUTING
+## Custom converters using `JsonIsomorphism`
+
+[`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) enables one to express the `Read`ing and `Write`ing of the JSON for a type in terms of another type. As alluded to above, rendering and parsing of `Guid` values can be expressed succinctly in this manner. The following Converter, when applied to a field, will render it without dashes in the rendered form:
+
+```fsharp
+type GuidConverter() =
+    inherit JsonIsomorphism<Guid, string>()
+    override __.Pickle g = g.ToString "N"
+    override __.UnPickle g = Guid.Parse g
+```
+
+## CONTRIBUTING
 
 The intention is to keep this set of converters minimal and interoperable, e.g., many candidates are deliberately being excluded from this set; _its definitely a non-goal for this to become a compendium of every possible converter_. **So, especially in this repo, the bar for adding converters will be exceedingly high and hence any contribution should definitely be preceded by a discussion.**
 
