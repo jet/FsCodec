@@ -66,8 +66,10 @@ type Codec private () =
             /// to the representation (typically a Discrimninated Union) that is to be represented to the programming model
             up : FsCodec.IEvent<byte[]> * 'Contract -> 'Union,
             /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the `TypeShape UnionConverter` 'Contract
-            /// The function is also expected to derive a `metadata` (which may be `null`) and an Event Creation TimeStamp
-            down : 'Union -> 'Contract * byte[] * DateTimeOffset,
+            /// The function is also expected to derive
+            ///   a `metadata` object which will be serialized with the same settings (if it's not `null`)
+            ///   and an Event Creation `timestamp`
+            down : 'Union -> 'Contract * obj * DateTimeOffset,
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
             ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
@@ -82,9 +84,9 @@ type Codec private () =
                 allowNullaryCases=not (defaultArg rejectNullaryCases false))
         { new FsCodec.IUnionEncoder<'Union,byte[]> with
             member __.Encode value =
-                let (evt, meta, timestamp) = down value
-                let enc = dataCodec.Encode evt
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, meta, timestamp) :> _
+                let (evt, meta : obj, timestamp) = down value
+                let (enc, metaUtf8) = dataCodec.Encode evt, bytesEncoder.Encode meta
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, metaUtf8, timestamp) :> _
             member __.TryDecode encoded =
                 let evt = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
                 match evt with None -> None | Some e -> (encoded,e) |> up |> Some }
