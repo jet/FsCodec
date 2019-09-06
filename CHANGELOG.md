@@ -13,9 +13,13 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - `tests/FsCodec.NewtonsoftJson.Tests/examples.fsx` counterpart to the `README.md`
 - Exposed `TypeSafeEnum`
 - `IndexedEventData` type to replace usage of impromptu objects
+- overload with `up`/`down` arguments on `FsCodec.NewtonsoftJson.Codec.Create` facilitating surfacing index, metadata, and other such information in the event as surfaced to the programming model functions [#17](https://github.com/jet/FsCodec/pull/17)
 
 ### Changed
 ### Removed
+
+- `FsCodec.NewtonsoftJson.Codec.Create` overload with `genMetadata` and `genTimestamp` arguments (equivalent functionality can be achieved via `up`/`down` arguments) [#17](https://github.com/jet/FsCodec/pull/17)
+
 ### Fixed
 
 - Pushed `TypeShape`'s `PackageReference` down into `FsCodec.NewtonsoftJson`
