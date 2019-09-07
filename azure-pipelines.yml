@@ -1,6 +1,6 @@
 name: $(Rev:r)
 trigger:
-- master
+- v0
 - refs/tags/*
 jobs:
 - job: Windows
