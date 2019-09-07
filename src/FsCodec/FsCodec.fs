@@ -15,35 +15,48 @@ type IEvent<'Format> =
     /// </remarks>
     abstract member Timestamp : System.DateTimeOffset
 
-/// Defines a contract interpreter for a Discriminated Union representing a set of events borne by a stream
-type IUnionEncoder<'Union, 'Format> =
-    /// Encodes a union instance into a decoded representation
-    abstract Encode      : value:'Union -> IEvent<'Format>
-    /// Decodes a formatted representation into a union instance. Does not throw exception on format mismatches
-    abstract TryDecode   : encoded:IEvent<'Format> -> 'Union option
-
 namespace FsCodec.Core
 
-open System
-
 /// Represents a Domain Event or Unfold, together with it's Index in the event sequence
-// Included here to enable extraction of this ancillary information (by downcasting IEvent in one's IUnionEncoder.TryDecode implementation)
-// in the corner cases where this coupling is absolutely definitely better than all other approaches
 type IIndexedEvent<'Format> =
     inherit FsCodec.IEvent<'Format>
     /// The index into the event sequence of this event
     abstract member Index : int64
     /// Indicates this is not a Domain Event, but actually an Unfolded Event based on the state inferred from the events up to `Index`
-    abstract member IsUnfold: bool
+    abstract member IsUnfold : bool
+
+namespace FsCodec
+
+/// Defines a contract interpreter for a Discriminated Union representing a set of events borne by a stream
+type IUnionEncoder<'Union, 'Format> =
+    /// Encodes a union instance into a decoded representation
+    abstract Encode : value: 'Union -> IEvent<'Format>
+    /// Decodes a formatted representation into a union instance. Does not throw exception on format mismatches
+    abstract TryDecode : encoded: IEvent<'Format> -> 'Union option
+
+namespace FsCodec.Core
+
+open System
 
 /// An Event about to be written, see IEvent for further information
 type EventData<'Format> =
-    { eventType : string; data : 'Format; meta : 'Format; timestamp: DateTimeOffset }
+    { eventType : string; data : 'Format; meta : 'Format; timestamp : DateTimeOffset }
     interface FsCodec.IEvent<'Format> with
         member __.EventType = __.eventType
         member __.Data = __.data
         member __.Meta = __.meta
         member __.Timestamp = __.timestamp
+
+/// An Event that's been read from a Store
+[<NoComparison; NoEquality>]
+type IndexedEventData<'Format>(index, isUnfold, eventType, data, metadata, timestamp) =
+    interface FsCodec.Core.IIndexedEvent<'Format> with
+        member __.Index = index
+        member __.IsUnfold = isUnfold
+        member __.EventType = eventType
+        member __.Data = data
+        member __.Meta = metadata
+        member __.Timestamp = timestamp
 
 type EventData =
     static member Create(eventType, data, ?meta, ?timestamp) =

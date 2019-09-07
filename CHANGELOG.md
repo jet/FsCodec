@@ -10,12 +10,11 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-- `tests/FsCodec.NewtonsoftJson.Tests/examples.fsx` counterpart to the README
+- `tests/FsCodec.NewtonsoftJson.Tests/examples.fsx` counterpart to the `README.md`
+- Exposed `TypeSafeEnum`
+- `IndexedEventData` type to replace usage of impromptu objects
 
 ### Changed
-
-- Exposed `TypeSafeEnum`
-
 ### Removed
 ### Fixed
 

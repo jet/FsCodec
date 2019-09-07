@@ -49,6 +49,7 @@ module Core =
 
 // Provides Codecs that render to a UTF-8 array suitable for storage in EventStore or CosmosDb based on explicit functions you supply using `Newtonsoft.Json` and
 /// `TypeShape.UnionContract.UnionContractEncoder` - if you need full control and/or have have your own codecs, see `FsCodec.Codec.Create` instead
+/// See <a href=""https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs"></a> for example usage.
 type Codec private () =
 
     static let defaultSettings = lazy Settings.Create()
