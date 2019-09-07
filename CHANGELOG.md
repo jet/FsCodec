@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="1.0.1-rc2"></a>
+## [1.0.0-rc2] - 2019-09-07
+
+### Added
 
 - `tests/FsCodec.NewtonsoftJson.Tests/examples.fsx` counterpart to the `README.md`
 - Exposed `TypeSafeEnum`
