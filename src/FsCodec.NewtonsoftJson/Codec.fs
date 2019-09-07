@@ -56,37 +56,52 @@ type Codec private () =
 
     /// Generate a codec suitable for use with <c>Equinox.EventStore</c>, <c>Equinox.Cosmos</c> or <c>Propulsion</c> libraries,
     ///   using the supplied `Newtonsoft.Json` <c>settings</c>.
+    /// Uses <c>up</c> and <c>down</c> functions to faciliate upconversion/downconversion
+    ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Union</c>
     /// The Event Type Names are inferred based on either explicit `DataMember(Name=` Attributes,
-    ///   or (if unspecified) the Discriminated Union Case Name
-    /// The Union must be tagged with `interface TypeShape.UnionContract.IUnionContract` to signify this scheme applies.
-    /// See https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs for example usage.
-    static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
-        (   /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
+    ///   or (if unspecified) the Discriminated Union Case Name on the <c>'Contract</c> type.
+    /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    static member Create<'Union,'Meta,'Contract when 'Contract :> TypeShape.UnionContract.IUnionContract>
+        (   /// Maps from the `TypeShape UnionConverter` 'Contract case the event has been mapped to (with the raw event data as context)
+            /// to the representation (typically a Discrimninated Union) that is to be represented to the programming model
+            up : FsCodec.IIndexedEvent<byte[]> * 'Contract -> 'Union,
+            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the `TypeShape UnionConverter` 'Contract
+            /// The function is also expected to derive
+            ///   a `metadata` object that will be serialized with the same settings (if it's not <c>None</c>)
+            ///   and an Event Creation `timestamp`
+            down : 'Union -> 'Contract * 'Meta option * DateTimeOffset option,
+            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
             ?settings,
-            /// Generate a metadata object to serialize from a given 'value
-            [<Optional;DefaultParameterValue(null)>]?mapMeta : 'Union -> obj,
-            /// Provides a function that can be used to determine the creation time for a given event 'value
-            [<Optional;DefaultParameterValue(null)>]?genTimestamp : 'Union -> DateTimeOffset,
-            /// Fail encoder generation if union contains nullary cases. Defaults to <c>true</c>.<
-            [<Optional;DefaultParameterValue(null)>]?allowNullaryCases)
+            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
         : FsCodec.IUnionEncoder<'Union,byte[]> =
         let settings = match settings with Some x -> x | None -> defaultSettings.Value
         let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = new Core.BytesEncoder(settings) :> _
         let dataCodec =
-            TypeShape.UnionContract.UnionContractEncoder.Create<'Union,byte[]>(
+            TypeShape.UnionContract.UnionContractEncoder.Create<'Contract,byte[]>(
                 bytesEncoder,
                 requireRecordFields=true, // See JsonConverterTests - roundtripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
-                ?allowNullaryCases=allowNullaryCases)
-        let (metaf, timestampf) =
-            match mapMeta,genTimestamp with
-            | Some mf, Some gts -> (fun value -> bytesEncoder.Encode (mf value)), (fun value -> Some (gts value))
-            | Some mf, None -> (fun value -> bytesEncoder.Encode (mf value)), (fun _ -> None)
-            | None, Some gts -> (fun _ -> null), (fun value -> Some (gts value))
-            | None, None -> (fun _ -> null), (fun _ -> None)
+                allowNullaryCases=not (defaultArg rejectNullaryCases false))
         { new FsCodec.IUnionEncoder<'Union,byte[]> with
             member __.Encode value =
-                let enc = dataCodec.Encode value
-                let (meta, timestamp) = metaf value, timestampf value
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, meta, ?timestamp=timestamp) :> _
+                let (evt, meta : 'Meta option, timestamp : DateTimeOffset option) = down value
+                let enc = dataCodec.Encode evt
+                let metaUtf8 = meta |> Option.map bytesEncoder.Encode<'Meta>
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, meta=defaultArg metaUtf8 null, ?timestamp = timestamp) :> _
             member __.TryDecode encoded =
-                dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } }
+                let evt = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
+                match evt with None -> None | Some e -> (encoded,e) |> up |> Some }
+
+    /// Generate a codec suitable for use with <c>Equinox.EventStore</c>, <c>Equinox.Cosmos</c> or <c>Propulsion</c> libraries,
+    ///   using the supplied `Newtonsoft.Json` <c>settings</c>.
+    /// The Event Type Names are inferred based on either explicit `DataMember(Name=` Attributes,
+    ///   or (if unspecified) the Discriminated Union Case Name
+    /// <c>'Union</c? must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
+        (   // Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
+            [<Optional;DefaultParameterValue(null)>]
+            ?settings,
+            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
+        : FsCodec.IUnionEncoder<'Union,byte[]> =
+        Codec.Create(up=snd, down=(fun evt -> evt,None,None), ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
