@@ -73,7 +73,7 @@ type VerbatimUtf8Tests() =
                 e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
-        let loaded = FsCodec.Core.EventData.Create(des.e.[0].c,des.e.[0].d)
+        let loaded = FsCodec.Core.IndexedEventData(-1L, false, des.e.[0].c, des.e.[0].d, null, DateTimeOffset.MinValue)
         let decoded = uEncoder.TryDecode loaded |> Option.get
         x =! decoded
 
@@ -82,7 +82,8 @@ type VerbatimUtf8Tests() =
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
         let encoded = uEncoder.Encode x
-        let decoded = uEncoder.TryDecode encoded |> Option.get
+        let adapted = FsCodec.Core.IndexedEventData(-1L, false, encoded.EventType, encoded.Data, encoded.Meta, encoded.Timestamp)
+        let decoded = uEncoder.TryDecode adapted |> Option.get
         test <@ x = decoded @>
 
     //// NB while this aspect works, we don't support it as it gets messy when you then use the VerbatimUtf8Converter
