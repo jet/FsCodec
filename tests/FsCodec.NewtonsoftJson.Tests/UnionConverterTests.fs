@@ -55,8 +55,10 @@ type TestDU =
     | CaseY of a: Mode * b: Mode
     | CaseZ of a: Mode * b: Mode option
 
+#nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
+
 // no camel case, because I want to test "Item" as a record property
-// Centred on ignoreNulls for backcompat; roundtripping test covers the case where they get rendered too
+// Centred on ignoreNulls for backcompat; round-tripping test covers the case where they get rendered too
 let settings = Settings.Create(camelCase = false, ignoreNulls = true)
 
 [<Fact>]
@@ -83,7 +85,7 @@ let ``produces expected output`` () =
     let g = CaseG {Item = "hi"}
     test <@ """{"case":"CaseG","Item":"hi"}""" = serialize g @>
 
-    // this may not be expected, but I don't itend changing it
+    // this may not be expected, but I don't intend changing it
     let h = CaseH {test = "hi"}
     test <@ """{"case":"CaseH","test":"hi"}""" = serialize h @>
 
@@ -126,10 +128,10 @@ let ``deserializes properly`` () =
     test <@ CaseL (Nullable 1, Nullable 2) = deserialize """{"case":"CaseL", "a": 1, "b": 2 }""" @>
 
     let requiredSettingsToHandleOptionalFields = Settings.Create()
-    let deserialzeCustom s = JsonConvert.DeserializeObject<TestDU>(s, requiredSettingsToHandleOptionalFields)
-    test <@ CaseM (Some 1) = deserialzeCustom """{"case":"CaseM","a":1}""" @>
-    test <@ CaseN (1, Some 2) = deserialzeCustom """{"case":"CaseN", "a":1, "b":2 }""" @>
-    test <@ CaseO (Some 1, Some 2) = deserialzeCustom """{"case":"CaseO", "a": 1, "b": 2 }""" @>
+    let deserializeCustom s = JsonConvert.DeserializeObject<TestDU>(s, requiredSettingsToHandleOptionalFields)
+    test <@ CaseM (Some 1) = deserializeCustom """{"case":"CaseM","a":1}""" @>
+    test <@ CaseN (1, Some 2) = deserializeCustom """{"case":"CaseN", "a":1, "b":2 }""" @>
+    test <@ CaseO (Some 1, Some 2) = deserializeCustom """{"case":"CaseO", "a": 1, "b": 2 }""" @>
 
     test <@ CaseP (CartId.Parse "0000000000000000948d503fcfc20f17") = deserialize """{"case":"CaseP","Item":"0000000000000000948d503fcfc20f17"}""" @>
 
@@ -144,7 +146,7 @@ module MissingFieldsHandling =
             Settings.Create(errorOnMissing=true)]
 
     [<Fact>]
-    let ``lets converters reject missing valus by feeding them a null`` () =
+    let ``lets converters reject missing values by feeding them a null`` () =
         raisesWith <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseY","a":"Fast"}""") @>
             (fun e -> <@ "Unexpected token when reading TypeSafeEnum: Null" = e.Message @>)
         raises<ArgumentNullException> <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseX"}""") @>

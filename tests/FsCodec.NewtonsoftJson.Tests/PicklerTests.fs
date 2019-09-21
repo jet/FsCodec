@@ -60,6 +60,8 @@ and private CartIdJsonConverter() =
     /// Input must be a Guid.Parseable value
     override __.UnPickle input = CartId.Parse input
 
+#nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
+
 module JsonIsomorphismTests =
 
     // NB Feel free to ignore this opinion and copy the 4 lines into your own globals - the pinning test will remain here

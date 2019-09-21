@@ -22,7 +22,7 @@ type U =
     //| S of string // Too messy/confusing to support
     //| DTO of DateTimeOffset // Have not delved into what the exact problem is; no point implementing if strings cant work
     //| DT of DateTime // Have not analyzed but seems to be same issue as DTO
-    | EDTO of EmbeddedDateTimeOffset
+    | EDto of EmbeddedDateTimeOffset
     | ES of EmbeddedString
     //| I of int // works but removed as no other useful top level values work
     | N
@@ -52,6 +52,8 @@ type [<NoEquality; NoComparison; JsonObject(ItemRequired=Required.Always)>]
 
 let defaultSettings = Settings.CreateDefault()
 
+#nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
+
 type VerbatimUtf8Tests() =
     let unionEncoder = Codec.Create()
 
@@ -66,7 +68,7 @@ type VerbatimUtf8Tests() =
 
     let uEncoder = Codec.Create<U>(defaultSettings)
 
-    let [<Property(MaxTest=100)>] ``roundtrips diverse bodies correctly`` (x: U) =
+    let [<Property(MaxTest=100)>] ``round-trips diverse bodies correctly`` (x: U) =
         let encoded = uEncoder.Encode x
         let e : Batch =
             {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
@@ -94,7 +96,7 @@ type VerbatimUtf8Tests() =
     //    let decoded = sEncoder.TryDecode encoded |> Option.get
     //    test <@ x = decoded @>
 
-module VerbatimeUtf8NullHandling =
+module VerbatimUtf8NullHandling =
     type [<NoEquality; NoComparison>] EventHolderWithAndWithoutRequired =
         {   /// Event body, as UTF-8 encoded json ready to be injected directly into the Json being rendered
             [<JsonConverter(typeof<VerbatimUtf8JsonConverter>)>]
@@ -111,7 +113,7 @@ module VerbatimeUtf8NullHandling =
             [| System.Text.Encoding.UTF8.GetBytes "{}" |] |]
 
     [<Theory; MemberData "values">]
-    let ``roundtrips nulls and empties consistently`` value =
+    let ``round-trips nulls and empties consistently`` value =
         let e : EventHolderWithAndWithoutRequired = { d = value; m = value }
         let ser = JsonConvert.SerializeObject(e)
         let des = JsonConvert.DeserializeObject<EventHolderWithAndWithoutRequired>(ser)
