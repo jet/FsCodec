@@ -1,7 +1,7 @@
 namespace FsCodec
 
 /// Common form for either a Domain Event or an Unfolded Event
-type IEvent<'Format> =
+type IEventData<'Format> =
     /// The Event Type, used to drive deserialization
     abstract member EventType : string
     /// Event body, as UTF-8 encoded json ready to be injected into the Store
@@ -17,7 +17,7 @@ type IEvent<'Format> =
 
 /// Represents a Domain Event or Unfold, together with it's Index in the event sequence
 type IIndexedEvent<'Format> =
-    inherit IEvent<'Format>
+    inherit IEventData<'Format>
     /// The index into the event sequence of this event
     abstract member Index : int64
     /// Indicates this is not a Domain Event, but actually an Unfolded Event based on the state inferred from the events up to `Index`
@@ -26,7 +26,7 @@ type IIndexedEvent<'Format> =
 /// Defines a contract interpreter for a Discriminated Union representing a set of events borne by a stream
 type IUnionEncoder<'Union, 'Format> =
     /// Encodes a union instance into a decoded representation
-    abstract Encode : value: 'Union -> IEvent<'Format>
+    abstract Encode : value: 'Union -> IEventData<'Format>
     /// Decodes a formatted representation into a union instance. Does not throw exception on format mismatches
     abstract TryDecode : encoded: IIndexedEvent<'Format> -> 'Union option
 
@@ -39,7 +39,7 @@ open System
 type EventData<'Format> private (eventType, data, meta, timestamp) =
     static member Create(eventType, data, ?meta, ?timestamp) =
         EventData(eventType, data, defaultArg meta Unchecked.defaultof<_>, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
-    interface FsCodec.IEvent<'Format> with
+    interface FsCodec.IEventData<'Format> with
         member __.EventType = eventType
         member __.Data = data
         member __.Meta = meta
