@@ -47,30 +47,28 @@ module Core =
                 use jsonReader = Utf8BytesEncoder.makeJsonReader ms
                 serializer.Deserialize<'T>(jsonReader)
 
-// Provides Codecs that render to a UTF-8 array suitable for storage in EventStore or CosmosDb based on explicit functions you supply using `Newtonsoft.Json` and
-/// `TypeShape.UnionContract.UnionContractEncoder` - if you need full control and/or have have your own codecs, see `FsCodec.Codec.Create` instead
+// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores based using <c>Newtonsoft.Json</c> and the conventions implied by using
+/// <c>TypeShape.UnionContract.UnionContractEncoder</c> - if you need full control and/or have have your own codecs, see <c>FsCodec.Codec.Create</c> instead
 /// See <a href=""https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs"></a> for example usage.
 type Codec private () =
 
     static let defaultSettings = lazy Settings.Create()
 
-    /// Generate a codec suitable for use with <c>Equinox.EventStore</c>, <c>Equinox.Cosmos</c> or <c>Propulsion</c> libraries,
-    ///   using the supplied `Newtonsoft.Json` <c>settings</c>.
-    /// Uses <c>up</c> and <c>down</c> functions to faciliate upconversion/downconversion
+    /// Generate a <code>IUnionEncoder</code> Codec, using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
+    /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Union</c>
-    /// The Event Type Names are inferred based on either explicit `DataMember(Name=` Attributes,
-    ///   or (if unspecified) the Discriminated Union Case Name on the <c>'Contract</c> type.
+    /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
     static member Create<'Union,'Meta,'Contract when 'Contract :> TypeShape.UnionContract.IUnionContract>
-        (   /// Maps from the `TypeShape UnionConverter` 'Contract case the event has been mapped to (with the raw event data as context)
-            /// to the representation (typically a Discrimninated Union) that is to be represented to the programming model
+        (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
+            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.IIndexedEvent<byte[]> * 'Contract -> 'Union,
-            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the `TypeShape UnionConverter` 'Contract
+            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
-            ///   a `metadata` object that will be serialized with the same settings (if it's not <c>None</c>)
-            ///   and an Event Creation `timestamp`
+            ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
+            ///   and an Event Creation <c>timestamp</c>.
             down : 'Union -> 'Contract * 'Meta option * DateTimeOffset option,
-            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
+            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
@@ -80,7 +78,7 @@ type Codec private () =
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract,byte[]>(
                 bytesEncoder,
-                requireRecordFields=true, // See JsonConverterTests - roundtripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
+                requireRecordFields=true, // See JsonConverterTests - round-tripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
                 allowNullaryCases=not (defaultArg rejectNullaryCases false))
         { new FsCodec.IUnionEncoder<'Union,byte[]> with
             member __.Encode value =
@@ -92,13 +90,11 @@ type Codec private () =
                 let evt = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
                 match evt with None -> None | Some e -> (encoded,e) |> up |> Some }
 
-    /// Generate a codec suitable for use with <c>Equinox.EventStore</c>, <c>Equinox.Cosmos</c> or <c>Propulsion</c> libraries,
-    ///   using the supplied `Newtonsoft.Json` <c>settings</c>.
-    /// The Event Type Names are inferred based on either explicit `DataMember(Name=` Attributes,
-    ///   or (if unspecified) the Discriminated Union Case Name
-    /// <c>'Union</c? must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    /// Generate a <code>IUnionEncoder</code> Codec using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
+    /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
+    /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
-        (   // Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as `Settings.Create()`<
+        (   // Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional;DefaultParameterValue(null)>]
             ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
