@@ -10,6 +10,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- Removed comparison support from `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
+- Changed `IndexedEventData` ctor to `.Create` and aligned with `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
+
 ### Removed
 ### Fixed
 
