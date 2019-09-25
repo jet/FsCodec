@@ -35,28 +35,26 @@ namespace FsCodec.Core
 open System
 
 /// An Event about to be written, see IEvent for further information
-type EventData<'Format> =
-    { eventType : string; data : 'Format; meta : 'Format; timestamp : DateTimeOffset }
+[<NoComparison; NoEquality>]
+type EventData<'Format> private (eventType, data, meta, timestamp) =
+    static member Create(eventType, data, ?meta, ?timestamp) =
+        EventData(eventType, data, defaultArg meta Unchecked.defaultof<_>, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
     interface FsCodec.IEvent<'Format> with
-        member __.EventType = __.eventType
-        member __.Data = __.data
-        member __.Meta = __.meta
-        member __.Timestamp = __.timestamp
+        member __.EventType = eventType
+        member __.Data = data
+        member __.Meta = meta
+        member __.Timestamp = timestamp
 
 /// An Event that's been read from a Store
 [<NoComparison; NoEquality>]
-type IndexedEventData<'Format>(index, isUnfold, eventType, data, metadata, timestamp) =
+type IndexedEventData<'Format> private (index, isUnfold, eventType, data, meta, timestamp) =
+    static member Create(index, eventType, data, ?meta, ?timestamp, ?isUnfold) =
+        let isUnfold, meta = defaultArg isUnfold false, defaultArg meta Unchecked.defaultof<_>
+        IndexedEventData(index, isUnfold, eventType, data, meta, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
     interface FsCodec.IIndexedEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold
         member __.EventType = eventType
         member __.Data = data
-        member __.Meta = metadata
+        member __.Meta = meta
         member __.Timestamp = timestamp
-
-type EventData =
-    static member Create(eventType, data, ?meta, ?timestamp) =
-        {   eventType = eventType
-            data = data
-            meta = defaultArg meta null
-            timestamp = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow }
