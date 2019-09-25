@@ -62,7 +62,7 @@ type Codec private () =
     static member Create<'Union,'Meta,'Contract when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
-            up : FsCodec.IIndexedEvent<byte[]> * 'Contract -> 'Union,
+            up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Union,
             /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)

@@ -13,6 +13,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 - Removed comparison support from `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
 - Changed `IndexedEventData` ctor to `.Create` and aligned with `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
+- Renamed `IEvent` to `IEventData` (to avoid clashes with `FSharp.Control.IEvent`) [#20](https://github.com/jet/FsCodec/pull/20)
+- Renamed `IIndexedEvent` to `ITimelineEvent` (to avoid clashes with `FSharp.Control.IEvent`) [#20](https://github.com/jet/FsCodec/pull/20)
+- Renamed `IndexedEventData` to `TimelineEvent` [#20](https://github.com/jet/FsCodec/pull/20)
 
 ### Removed
 ### Fixed
