@@ -10,15 +10,19 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+### Removed
+### Fixed
+
+<a name="1.0.0"></a>
+## [1.0.0] - 2019-09-
+
+### Changed
 
 - Removed comparison support from `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
 - Changed `IndexedEventData` ctor to `.Create` and aligned with `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
 - Renamed `IEvent` to `IEventData` (to avoid clashes with `FSharp.Control.IEvent`) [#20](https://github.com/jet/FsCodec/pull/20)
 - Renamed `IIndexedEvent` to `ITimelineEvent` (to avoid clashes with `FSharp.Control.IEvent`) [#20](https://github.com/jet/FsCodec/pull/20)
 - Renamed `IndexedEventData` to `TimelineEvent` [#20](https://github.com/jet/FsCodec/pull/20)
-
-### Removed
-### Fixed
 
 <a name="1.0.0-rc2"></a>
 ## [1.0.0-rc2] - 2019-09-07
@@ -52,7 +56,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/equinox/compare/1.0.0-rc2...HEAD
+[Unreleased]: https://github.com/jet/equinox/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/jet/FsCodec/compare/1.0.0-rc2...1.0.0
 [1.0.0-rc2]: https://github.com/jet/FsCodec/compare/1.0.0-rc1...1.0.0-rc2
 [1.0.0-rc1]: https://github.com/jet/FsCodec/compare/0.2.2...1.0.0-rc1
 [0.2.2]: https://github.com/jet/FsCodec/compare/0eb459b3aca873a40492d6a6c19cab4111d8f53e...0.2.2
