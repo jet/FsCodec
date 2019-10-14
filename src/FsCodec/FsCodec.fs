@@ -14,6 +14,8 @@ type IEventData<'Format> =
     /// - For Cosmos, the value is not exposed where the event `IsUnfold`.
     /// </remarks>
     abstract member Timestamp : System.DateTimeOffset
+    abstract member CorrelationId : string
+    abstract member CausationId : string
 
 /// Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence
 type ITimelineEvent<'Format> =
@@ -24,9 +26,9 @@ type ITimelineEvent<'Format> =
     abstract member IsUnfold : bool
 
 /// Defines a contract interpreter for a Discriminated Union representing a set of events borne by a stream
-type IUnionEncoder<'Union, 'Format> =
+type IUnionEncoder<'Union, 'Format, 'Context> =
     /// Encodes a union instance into a decoded representation
-    abstract Encode : value: 'Union -> IEventData<'Format>
+    abstract Encode : context: 'Context option * value: 'Union -> IEventData<'Format>
     /// Decodes a formatted representation into a <c>'Union<c> instance. Does not throw exception on format mismatches
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Union option
 
@@ -36,21 +38,24 @@ open System
 
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
-type EventData<'Format> private (eventType, data, meta, timestamp) =
-    static member Create(eventType, data, ?meta, ?timestamp) =
-        EventData(eventType, data, defaultArg meta Unchecked.defaultof<_>, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
+type EventData<'Format> private (eventType, data, meta, correlationId, causationId, timestamp) =
+    static member Create(eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp) =
+        EventData(eventType, data, defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
     interface FsCodec.IEventData<'Format> with
         member __.EventType = eventType
         member __.Data = data
         member __.Meta = meta
         member __.Timestamp = timestamp
+        member __.CorrelationId = correlationId
+        member __.CausationId = causationId
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
-type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, timestamp) =
-    static member Create(index, eventType, data, ?meta, ?timestamp, ?isUnfold) =
+type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp) =
+    static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold) =
         let isUnfold, meta = defaultArg isUnfold false, defaultArg meta Unchecked.defaultof<_>
-        TimelineEvent(index, isUnfold, eventType, data, meta, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
+        let corr, cause = defaultArg correlationId null, defaultArg causationId null
+        TimelineEvent(index, isUnfold, eventType, data, meta, corr, cause, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold
@@ -58,3 +63,5 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, tim
         member __.Data = data
         member __.Meta = meta
         member __.Timestamp = timestamp
+        member __.CorrelationId = correlationId
+        member __.CausationId = causationId

@@ -8,17 +8,17 @@ type Codec =
     // Leaving this helper private until we have a real use case which will e.g. enable us to decide whether to align the signature with the up/down functions
     //   employed in the convention-based Codec
     // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
-    static member private Create<'Union>
-        (   /// Maps a 'Union to an Event Type Name with UTF-8 arrays representing the <c>Data</c> and <c>Meta</c>.
-            encode : 'Union -> string * byte[] * byte[],
+    static member private Create<'Union,'Context>
+        (   /// Maps a 'Union to an Event Type Name with UTF-8 arrays representing the <c>Data</c> and <c>Meta</c> together with the correlationId, causationId and timestamp.
+            encode : 'Context option -> 'Union -> string * byte[] * byte[] * string * string * System.DateTimeOffset option,
             /// Attempts to map from an Event Type Name and UTF-8 arrays representing the <c>Data</c> and <c>Meta</c>
             ///   to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : string * byte[] * byte[] -> 'Union option)
-        : IUnionEncoder<'Union,byte[]> =
-        { new IUnionEncoder<'Union, byte[]> with
-            member __.Encode e =
-                let eventType, payload, metadata = encode e
-                Core.EventData.Create(eventType, payload, metadata, ?timestamp=None) :> _
+        : IUnionEncoder<'Union, byte[], 'Context> =
+        { new IUnionEncoder<'Union, byte[], 'Context> with
+            member __.Encode(c, e) =
+                let eventType, payload, metadata, correlationId, causationId, timestamp = encode c e
+                Core.EventData.Create(eventType, payload, metadata, correlationId, causationId, ?timestamp=timestamp) :> _
             member __.TryDecode ie =
                 tryDecode (ie.EventType, ie.Data, ie.Meta) }
 
@@ -28,7 +28,7 @@ type Codec =
             encode : 'Union -> string * byte[],
             /// Attempts to map an Event Type Name and a UTF-8 <c>Data</c> array to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : string * byte[] -> 'Union option)
-        : IUnionEncoder<'Union,byte[]> =
-        let encode' value = let c, d = encode value in c, d, null
+        : IUnionEncoder<'Union, byte[], obj> =
+        let encode' _context value = let c, d = encode value in c, d, null, null, null, None
         let tryDecode' (et,d,_md) = tryDecode (et, d)
         Codec.Create(encode', tryDecode')
