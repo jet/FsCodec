@@ -9,6 +9,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- Defined `CorrelationId` and `CausationId` properties for `IEventData` [#21](https://github.com/jet/FsCodec/pull/21)
+- Added `context : 'Context option` param to `IUnionEncoder.Encode`, enabling `down` to enrich events with `correlationId` and `causationId` values without reference to external state [#21](https://github.com/jet/FsCodec/pull/21)
+
 ### Changed
 
 - Removed comparison support from `EventData` [#19](https://github.com/jet/FsCodec/pull/19)
