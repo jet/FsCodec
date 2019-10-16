@@ -14,7 +14,9 @@ type IEventData<'Format> =
     /// - For Cosmos, the value is not exposed where the event `IsUnfold`.
     /// </remarks>
     abstract member Timestamp : System.DateTimeOffset
+    /// The Correlation Id associated with the flow that generated this event. Can be `null`
     abstract member CorrelationId : string
+    /// The Causation Id associated with the flow that generated this event. Can be `null`
     abstract member CausationId : string
 
 /// Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence
@@ -40,7 +42,8 @@ open System
 [<NoComparison; NoEquality>]
 type EventData<'Format> private (eventType, data, meta, correlationId, causationId, timestamp) =
     static member Create(eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp) =
-        EventData(eventType, data, defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
+        let meta, correlationId, causationId = defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null
+        EventData(eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
     interface FsCodec.IEventData<'Format> with
         member __.EventType = eventType
         member __.Data = data
@@ -54,8 +57,8 @@ type EventData<'Format> private (eventType, data, meta, correlationId, causation
 type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp) =
     static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold) =
         let isUnfold, meta = defaultArg isUnfold false, defaultArg meta Unchecked.defaultof<_>
-        let corr, cause = defaultArg correlationId null, defaultArg causationId null
-        TimelineEvent(index, isUnfold, eventType, data, meta, corr, cause, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
+        let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
+        TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold

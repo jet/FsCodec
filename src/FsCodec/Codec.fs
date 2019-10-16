@@ -1,4 +1,5 @@
 namespace FsCodec
+open System
 
 /// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores, based on explicit functions you supply
 /// Does not involve conventions / Type Shapes / Reflection or specific Json processing libraries - see FsCodec.*.Codec for batteries-included Coding/Decoding
@@ -13,14 +14,14 @@ type Codec =
             encode : 'Context option -> 'Union -> string * byte[] * byte[] * string * string * System.DateTimeOffset option,
             /// Attempts to map from an Event Type Name and UTF-8 arrays representing the <c>Data</c> and <c>Meta</c>
             ///   to a <c>'Union</c> case, or <c>None</c> if not mappable.
-            tryDecode : string * byte[] * byte[] -> 'Union option)
+            tryDecode : string * byte[] -> byte[] * string * string * DateTimeOffset -> 'Union option)
         : IUnionEncoder<'Union, byte[], 'Context> =
         { new IUnionEncoder<'Union, byte[], 'Context> with
-            member __.Encode(c, e) =
-                let eventType, payload, metadata, correlationId, causationId, timestamp = encode c e
-                Core.EventData.Create(eventType, payload, metadata, correlationId, causationId, ?timestamp=timestamp) :> _
+            member __.Encode(context, event) =
+                let eventType, data, metadata, correlationId, causationId, timestamp = encode context event
+                Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp=timestamp) :> _
             member __.TryDecode ie =
-                tryDecode (ie.EventType, ie.Data, ie.Meta) }
+                tryDecode (ie.EventType, ie.Data) (ie.Meta, ie.CorrelationId, ie.CausationId, ie.Timestamp) }
 
     /// Generate a <code>IUnionEncoder</code> Codec using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
     static member Create<'Union>
@@ -29,6 +30,6 @@ type Codec =
             /// Attempts to map an Event Type Name and a UTF-8 <c>Data</c> array to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : string * byte[] -> 'Union option)
         : IUnionEncoder<'Union, byte[], obj> =
-        let encode' _context value = let c, d = encode value in c, d, null, null, null, None
-        let tryDecode' (et,d,_md) = tryDecode (et, d)
+        let encode' _context value = let et, d = encode value in et, d, null, null, null, None
+        let tryDecode' (et,d) _ = tryDecode (et, d)
         Codec.Create(encode', tryDecode')

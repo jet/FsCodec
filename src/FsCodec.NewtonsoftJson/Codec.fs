@@ -82,10 +82,10 @@ type Codec private () =
                 allowNullaryCases=not (defaultArg rejectNullaryCases false))
         { new FsCodec.IUnionEncoder<'Union,byte[],'Context> with
             member __.Encode(context,value) =
-                let (evt, meta : 'Meta option, corr, cause, timestamp : DateTimeOffset option) = down context value
+                let (evt, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down context value
                 let enc = dataCodec.Encode evt
                 let metaUtf8 = meta |> Option.map bytesEncoder.Encode<'Meta>
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, meta=defaultArg metaUtf8 null, ?timestamp = timestamp) :> _
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, correlationId, causationId, ?timestamp=timestamp) :> _
             member __.TryDecode encoded =
                 let evt = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
                 match evt with None -> None | Some e -> (encoded,e) |> up |> Some }
