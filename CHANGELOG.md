@@ -20,6 +20,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - Renamed `IEvent` to `IEventData` (to avoid clashes with `FSharp.Control.IEvent`) [#20](https://github.com/jet/FsCodec/pull/20)
 - Renamed `IIndexedEvent` to `ITimelineEvent` (to avoid clashes with `FSharp.Control.IEvent`) [#20](https://github.com/jet/FsCodec/pull/20)
 - Renamed `IndexedEventData` to `TimelineEvent` [#20](https://github.com/jet/FsCodec/pull/20)
+- Updated `TypeShape` dependency to `8.0.0`
+- Updated `MinVer` internal dependency to `2.0.0`
 
 ### Removed
 ### Fixed
