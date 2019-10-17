@@ -59,7 +59,7 @@ type VerbatimUtf8Tests() =
 
     [<Fact>]
     let ``encodes correctly`` () =
-        let encoded = unionEncoder.Encode(A { embed = "\"" })
+        let encoded = unionEncoder.Encode(None, A { embed = "\"" })
         let e : Batch =
             {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
                 e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
@@ -69,7 +69,7 @@ type VerbatimUtf8Tests() =
     let uEncoder = Codec.Create<U>(defaultSettings)
 
     let [<Property(MaxTest=100)>] ``round-trips diverse bodies correctly`` (x: U) =
-        let encoded = uEncoder.Encode x
+        let encoded = uEncoder.Encode(None,x)
         let e : Batch =
             {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
                 e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
@@ -83,8 +83,8 @@ type VerbatimUtf8Tests() =
     // https://github.com/JamesNK/Newtonsoft.Json/issues/862 // doesnt apply to this case
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
-        let encoded = uEncoder.Encode x
-        let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data, encoded.Meta, encoded.Timestamp)
+        let encoded = uEncoder.Encode(None,x)
+        let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data, encoded.Meta, timestamp = encoded.Timestamp)
         let decoded = uEncoder.TryDecode adapted |> Option.get
         test <@ x = decoded @>
 
