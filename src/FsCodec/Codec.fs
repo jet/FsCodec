@@ -11,17 +11,40 @@ type Codec =
     // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
     static member private Create<'Union,'Context>
         (   /// Maps a 'Union to an Event Type Name with UTF-8 arrays representing the <c>Data</c> and <c>Meta</c> together with the correlationId, causationId and timestamp.
-            encode : 'Context option -> 'Union -> string * byte[] * byte[] * string * string * System.DateTimeOffset option,
-            /// Attempts to map from an Event Type Name and UTF-8 arrays representing the <c>Data</c> and <c>Meta</c>
-            ///   to a <c>'Union</c> case, or <c>None</c> if not mappable.
-            tryDecode : string * byte[] -> byte[] * string * string * DateTimeOffset -> 'Union option)
+            encode : 'Context option * 'Union -> string * byte[] * byte[] * string * string * System.DateTimeOffset option,
+            /// Attempts to map from an Event's Data to a <c>'Union</c> case, or <c>None</c> if not mappable.
+            tryDecode : ITimelineEvent<byte[]> -> 'Union option)
         : IUnionEncoder<'Union, byte[], 'Context> =
         { new IUnionEncoder<'Union, byte[], 'Context> with
-            member __.Encode(context, event) =
-                let eventType, data, metadata, correlationId, causationId, timestamp = encode context event
+            member __.Encode(context, union) =
+                let eventType, data, metadata, correlationId, causationId, timestamp = encode (context,union)
                 Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp=timestamp) :> _
-            member __.TryDecode ie =
-                tryDecode (ie.EventType, ie.Data) (ie.Meta, ie.CorrelationId, ie.CausationId, ie.Timestamp) }
+            member __.TryDecode encoded =
+                tryDecode encoded }
+
+    /// Generate a <code>IUnionEncoder</code> Codec suitable using the supplied <c>encode</c> and <c>tryDecode</code> functions to map to/from UTF8.
+    /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the Context passed to the encoder
+    static member Create<'Context,'Union>
+        (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
+            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
+            tryDecode : FsCodec.ITimelineEvent<byte[]> -> 'Union option,
+            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
+            /// The function is also expected to derive
+            ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
+            ///   and an Event Creation <c>timestamp</c>.
+            encode : 'Union -> string * byte[] * DateTimeOffset option,
+            /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
+            mapCausation : 'Context option * 'Union -> byte[] * string * string,
+            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
+            ?settings,
+            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            ?rejectNullaryCases)
+        : FsCodec.IUnionEncoder<'Union,byte[],'Context> =
+        let encode (context,union) =
+            let et, d, t = encode union
+            let m, correlationId, causationId = mapCausation (context, union)
+            et, d, m, correlationId, causationId, t
+        Codec.Create(encode,tryDecode)
 
     /// Generate a <code>IUnionEncoder</code> Codec using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
     static member Create<'Union>
@@ -30,6 +53,6 @@ type Codec =
             /// Attempts to map an Event Type Name and a UTF-8 <c>Data</c> array to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : string * byte[] -> 'Union option)
         : IUnionEncoder<'Union, byte[], obj> =
-        let encode' _context value = let et, d = encode value in et, d, null, null, null, None
-        let tryDecode' (et,d) _ = tryDecode (et, d)
+        let encode' (_context,union) = let et, d = encode union in et, d, null, null, null, None
+        let tryDecode' (encoded : FsCodec.ITimelineEvent<_>) = tryDecode (encoded.EventType,encoded.Data)
         Codec.Create(encode', tryDecode')

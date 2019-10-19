@@ -13,6 +13,13 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="1.1.0"></a>
+## [1.1.0] - 2019-09-19
+
+### Added
+
+- Polished overloads of `Codec.Create` and `NewtonsoftJson.Codec.Create` to be more navigable, and usable from C# [#23](https://github.com/jet/FsCodec/pull/23)
+
 <a name="1.0.0"></a>
 ## [1.0.0] - 2019-09-17
 
