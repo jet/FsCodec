@@ -22,8 +22,8 @@ type Codec =
             member __.TryDecode ie =
                 tryDecode ie }
 
-    /// Generate a <code>IUnionEncoder</code> Codec suitable using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
-    /// <c>mapCausation</c> provides correlation/causationId mapping
+    /// Generate a <code>IUnionEncoder</code> Codec suitable using the supplied <c>encode</c> and <c>tryDecode</code> functions to map to/from UTF8.
+    /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the Context passed to the encoder
     static member Create<'Union,'Context>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.

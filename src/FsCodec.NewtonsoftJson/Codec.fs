@@ -47,7 +47,7 @@ module Core =
                 use jsonReader = Utf8BytesEncoder.makeJsonReader ms
                 serializer.Deserialize<'T>(jsonReader)
 
-// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores based using <c>Newtonsoft.Json</c> and the conventions implied by using
+/// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores based using <c>Newtonsoft.Json</c> and the conventions implied by using
 /// <c>TypeShape.UnionContract.UnionContractEncoder</c> - if you need full control and/or have have your own codecs, see <c>FsCodec.Codec.Create</c> instead
 /// See <a href=""https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs"></a> for example usage.
 type Codec private () =
