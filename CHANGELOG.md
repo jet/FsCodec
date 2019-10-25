@@ -10,8 +10,13 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- Generalized `Codec.Create` to no longer presume `Data` and `Metadata` should always be `byte[]` [#24](https://github.com/jet/FsCodec/pull/24)
+
 ### Removed
 ### Fixed
+
+- Removed accidentally pasted `setting` and `allowNullaryCases` in `Codec.Create`  [#23](https://github.com/jet/FsCodec/pull/23)
 
 <a name="1.1.0"></a>
 ## [1.1.0] - 2019-09-19
