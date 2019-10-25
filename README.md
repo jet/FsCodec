@@ -209,7 +209,7 @@ des<Message2> """{"name":null,"outcome":"Discomfort"}"""
 ```
 
  <a name="boxcodec"></a>
-# Features: `FsCcodec.Box.Codec`
+# Features: `FsCodec.Box.Codec`
 
 `FsCodec.Box.Codec` is a drop-in-equivalent for `FsCodec.NewtonsoftJson.Codec` with equivalent `.Create` overloads that encode as `ITimelineEvent<obj>` (as opposed to `ITimelineEvent<byte[]>`.
 
