@@ -23,7 +23,7 @@ type Codec private () =
             up : FsCodec.ITimelineEvent<obj> * 'Contract -> 'Union,
             /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive a <c>meta</c> object that will be held alongside the data (if it's not <c>None</c>)
-            ///   and an Event Creation <c>timestamp</c>.
+            ///   together with its <c>correlationId</c>, <c>causationId</c> and an Event Creation <c>timestamp</c> (defaults to <c>UtcNow</c>).
             down : 'Context option * 'Union -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
