@@ -2,7 +2,7 @@ namespace FsCodec
 
 open System
 
-/// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores, based on explicit functions you supply
+/// Provides Codecs that render to store-supported form (e.g., a UTF-8 byte array) suitable for storage in Event Stores, based on explicit functions you supply
 /// Does not involve conventions / Type Shapes / Reflection or specific Json processing libraries - see FsCodec.*.Codec for batteries-included Coding/Decoding
 type Codec =
 
@@ -11,9 +11,9 @@ type Codec =
     //   employed in the convention-based Codec
     // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
     static member private Create<'Union,'Format,'Context>
-        (   /// Maps a 'Union to an Event Type Name with UTF-8 arrays representing the <c>Data</c> and <c>Meta</c> together with the correlationId, causationId and timestamp.
+        (   /// Maps a 'Union to an Event Type Name, a pair of <>'Format</c>'s representing the  <c>Data</c> and <c>Meta</c> together with the <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.
             encode : 'Context option * 'Union -> string * 'Format * 'Format * string * string * System.DateTimeOffset option,
-            /// Attempts to map from an Event's Data to a <c>'Union</c> case, or <c>None</c> if not mappable.
+            /// Attempts to map from an Event's stored data to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : ITimelineEvent<'Format> -> 'Union option)
         : IUnionEncoder<'Union, 'Format, 'Context> =
         { new IUnionEncoder<'Union, 'Format, 'Context> with
@@ -23,8 +23,8 @@ type Codec =
             member __.TryDecode encoded =
                 tryDecode encoded }
 
-    /// Generate a <code>IUnionEncoder</code> Codec suitable using the supplied <c>encode</c> and <c>tryDecode</code> functions to map to/from UTF8.
-    /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the Context passed to the encoder
+    /// Generate a <code>IUnionEncoder</code> Codec suitable using the supplied <c>encode</c> and <c>tryDecode</code> functions to map to/from the stored form.
+    /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the <c>context</c> passed to the encoder
     static member Create<'Context,'Union,'Format>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
