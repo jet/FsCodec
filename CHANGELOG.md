@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="1.2.0"></a>
+## [1.2.0] - 2019-09-26
+
+### Added
 
 - `FsCodec.Box.Codec.Create`: an API equivalent substitute for `FsCodec.NewtonsoftJson.Codec.Create` for use in unit and integration tests [#25](https://github.com/jet/FsCodec/pull/25)
 
@@ -17,7 +25,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - Generalized `Codec.Create` to no longer presume `Data` and `Metadata` should always be `byte[]` [#24](https://github.com/jet/FsCodec/pull/24)
 
 ### Removed
-### Fixed
 
 - Removed accidentally pasted `setting` and `allowNullaryCases` in `Codec.Create`  [#23](https://github.com/jet/FsCodec/pull/23)
 
@@ -78,7 +85,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/equinox/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/jet/equinox/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/jet/FsCodec/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/jet/FsCodec/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/jet/FsCodec/compare/1.0.0-rc2...1.0.0
 [1.0.0-rc2]: https://github.com/jet/FsCodec/compare/1.0.0-rc1...1.0.0-rc2
