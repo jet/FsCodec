@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `FsCodec.Box.Codec.Create`: an API equivalent substitute for `FsCodec.NewtonsoftJson.Codec.Create` for use in unit and integration tests [#25](https://github.com/jet/FsCodec/pull/25)
+
 ### Changed
 ### Removed
 ### Fixed

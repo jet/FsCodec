@@ -208,6 +208,21 @@ des<Message2> """{"name":null,"outcome":"Discomfort"}"""
 // val it : Message = {name = None; outcome = Other;}
 ```
 
+ <a name="boxcodec"></a>
+# Features: `FsCodec.Box.Codec`
+
+`FsCodec.Box.Codec` is a drop-in-equivalent for `FsCodec.NewtonsoftJson.Codec` with equivalent `.Create` overloads that encode as `ITimelineEvent<obj>` (as opposed to `ITimelineEvent<byte[]>`.
+
+This is useful when storing events in a `MemoryStore` as it allows one to take the perf cost and ancillary yak shaving induced by round-tripping arbitrary event payloads to the concrete serialization format out of the picture when writing property based unit and integration tests.
+
+NOTE this does not imply one should avoid testing this aspect; the opposite in fact -- one should apply the [Test Pyramid principles](https://martinfowler.com/articles/practical-test-pyramid.html):
+- have a focused series of tests that validate that the various data representations in the event bodies are round-trippable
+  a. in the chosen encoding format (i.e. UTF8 json)
+  b. with the selected concrete json encoder (i.e. `Newtonsoft.Json` for now 🙁)
+- integration tests can in general use `BoxEncoder` and `MemoryStore`
+
+_You should absolutely have acceptance tests that apply the actual serialization encoding with the real store for a representative number of scenarios at the top of the pyramid_
+
 ## CONTRIBUTING
 
 The intention is to keep this set of converters minimal and interoperable, e.g., many candidates are deliberately being excluded from this set; _its definitely a non-goal for this to become a compendium of every possible converter_. **So, especially in this repo, the bar for adding converters will be exceedingly high and hence any contribution should definitely be preceded by a discussion.**
