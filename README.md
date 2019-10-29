@@ -62,7 +62,7 @@ There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](t
 
 ## `Serdes`
 
-[`FsCodec.NewtonsoftJson.Serders`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert\.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings.Create` (above). Methods:
+[`FsCodec.NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert\.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings.Create` (above). Methods:
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings.Create`
 
