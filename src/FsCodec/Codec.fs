@@ -26,14 +26,14 @@ type Codec =
     /// Generate a <code>IUnionEncoder</code> Codec suitable using the supplied <c>encode</c> and <c>tryDecode</code> functions to map to/from the stored form.
     /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the <c>context</c> passed to the encoder
     static member Create<'Context,'Union,'Format>
-        (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
-            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
-            tryDecode : FsCodec.ITimelineEvent<'Format> -> 'Union option,
-            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
+        (   /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
             ///   and an Event Creation <c>timestamp</c>.
             encode : 'Union -> string * 'Format * DateTimeOffset option,
+            /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
+            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
+            tryDecode : FsCodec.ITimelineEvent<'Format> -> 'Union option,
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
             mapCausation : 'Context option * 'Union -> 'Format * string * string)
         : FsCodec.IUnionEncoder<'Union,'Format,'Context> =

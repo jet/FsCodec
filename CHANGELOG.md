@@ -13,6 +13,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+- Flipped misaligned argument order in `FsCode.Codec.Create(tryDecode,encode,mapCausation)` [#28](https://github.com/jet/FsCodec/pull/28)
+
 <a name="1.2.0"></a>
 ## [1.2.0] - 2019-09-26
 
