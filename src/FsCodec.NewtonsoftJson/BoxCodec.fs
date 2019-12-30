@@ -27,14 +27,14 @@ type Codec private () =
             down : 'Context option * 'Union -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union,obj,'Context> =
+        : FsCodec.IEventCodec<'Union,obj,'Context> =
         let boxEncoder : TypeShape.UnionContract.IEncoder<obj> = new TypeShape.UnionContract.BoxEncoder() :> _
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract,obj>(
                 boxEncoder,
                 requireRecordFields=true,
                 allowNullaryCases=not (defaultArg rejectNullaryCases false))
-        { new FsCodec.IUnionEncoder<'Union,obj,'Context> with
+        { new FsCodec.IEventCodec<'Union,obj,'Context> with
             member __.Encode(context,u) =
                 let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context,u)
                 let enc = dataCodec.Encode c
@@ -62,7 +62,7 @@ type Codec private () =
             mapCausation : 'Context option * 'Meta option -> 'Meta option * string * string,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union,obj,'Context> =
+        : FsCodec.IEventCodec<'Union,obj,'Context> =
         let down (context,union) =
             let c, m, t = down union
             let m', correlationId, causationId = mapCausation (context,m)
@@ -85,7 +85,7 @@ type Codec private () =
             down : 'Union -> 'Contract * 'Meta option * DateTimeOffset option,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union,obj,obj> =
+        : FsCodec.IEventCodec<'Union,obj,obj> =
         let mapCausation (_context : obj, m : ' Meta option) = m,null,null
         Codec.Create(up=up, down=down, mapCausation=mapCausation, ?rejectNullaryCases=rejectNullaryCases)
 
@@ -95,7 +95,7 @@ type Codec private () =
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
         (   /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union, obj, obj> =
+        : FsCodec.IEventCodec<'Union, obj, obj> =
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (u : 'Union) = u, None, None
         Codec.Create(up=up, down=down, ?rejectNullaryCases=rejectNullaryCases)

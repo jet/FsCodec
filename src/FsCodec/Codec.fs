@@ -15,8 +15,8 @@ type Codec =
             encode : 'Context option * 'Union -> string * 'Format * 'Format * string * string * System.DateTimeOffset option,
             /// Attempts to map from an Event's stored data to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : ITimelineEvent<'Format> -> 'Union option)
-        : IUnionEncoder<'Union, 'Format, 'Context> =
-        { new IUnionEncoder<'Union, 'Format, 'Context> with
+        : IEventCodec<'Union, 'Format, 'Context> =
+        { new IEventCodec<'Union, 'Format, 'Context> with
             member __.Encode(context, union) =
                 let eventType, data, metadata, correlationId, causationId, timestamp = encode (context,union)
                 Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp=timestamp) :> _
@@ -36,7 +36,7 @@ type Codec =
             tryDecode : FsCodec.ITimelineEvent<'Format> -> 'Union option,
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
             mapCausation : 'Context option * 'Union -> 'Format * string * string)
-        : FsCodec.IUnionEncoder<'Union,'Format,'Context> =
+        : FsCodec.IEventCodec<'Union,'Format,'Context> =
         let encode (context,union) =
             let et, d, t = encode union
             let m, correlationId, causationId = mapCausation (context, union)
@@ -49,7 +49,7 @@ type Codec =
             encode : 'Union -> string * 'Format,
             /// Attempts to map an Event Type Name and a UTF-8 <c>Data</c> array to a <c>'Union</c> case, or <c>None</c> if not mappable.
             tryDecode : string * 'Format -> 'Union option)
-        : IUnionEncoder<'Union, 'Format, obj> =
+        : IEventCodec<'Union, 'Format, obj> =
         let encode' (_context : obj,union) = let (et, d : 'Format) = encode union in et, d, null, null, null, None
         let tryDecode' (encoded : FsCodec.ITimelineEvent<'Format>) = tryDecode (encoded.EventType,encoded.Data)
         Codec.Create(encode', tryDecode')

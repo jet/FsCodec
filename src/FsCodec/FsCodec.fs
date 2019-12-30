@@ -28,8 +28,8 @@ type ITimelineEvent<'Format> =
     abstract member IsUnfold : bool
 
 /// Defines a contract interpreter for a Discriminated Union representing a set of events borne by a stream
-type IUnionEncoder<'Union, 'Format, 'Context> =
-    /// Encodes a union instance into a decoded representation
+type IEventCodec<'Union, 'Format, 'Context> =
+    /// Encodes a <c>'Union</c> instance into a <c>'Format</c> representation
     abstract Encode : context: 'Context option * value: 'Union -> IEventData<'Format>
     /// Decodes a formatted representation into a <c>'Union<c> instance. Does not throw exception on format mismatches
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Union option

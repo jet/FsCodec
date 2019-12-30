@@ -72,7 +72,7 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union,byte[],'Context> =
+        : FsCodec.IEventCodec<'Union,byte[],'Context> =
         let settings = match settings with Some x -> x | None -> defaultSettings.Value
         let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = new Core.BytesEncoder(settings) :> _
         let dataCodec =
@@ -80,7 +80,7 @@ type Codec private () =
                 bytesEncoder,
                 requireRecordFields=true, // See JsonConverterTests - round-tripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
                 allowNullaryCases=not (defaultArg rejectNullaryCases false))
-        { new FsCodec.IUnionEncoder<'Union,byte[],'Context> with
+        { new FsCodec.IEventCodec<'Union,byte[],'Context> with
             member __.Encode(context,u) =
                 let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context,u)
                 let enc = dataCodec.Encode c
@@ -110,7 +110,7 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union,byte[],'Context> =
+        : FsCodec.IEventCodec<'Union,byte[],'Context> =
         let down (context,union) =
             let c, m, t = down union
             let m', correlationId, causationId = mapCausation (context,m)
@@ -135,7 +135,7 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union,byte[],obj> =
+        : FsCodec.IEventCodec<'Union,byte[],obj> =
         let mapCausation (_context : obj, m : ' Meta option) = m,null,null
         Codec.Create(up=up, down=down, mapCausation=mapCausation, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
 
@@ -147,7 +147,7 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IUnionEncoder<'Union, byte[], obj> =
+        : FsCodec.IEventCodec<'Union, byte[], obj> =
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (u : 'Union) = u, None, None
         Codec.Create(up=up, down=down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
