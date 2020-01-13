@@ -9,13 +9,16 @@
   <ItemGroup>
     <None Include="Examples.fsx" />
     <Compile Include="PicklerTests.fs" />
-    <Compile Include="UnionConverterTests.fs" />
+    <Compile Include="EventCodecTests.fs" />
     <Compile Include="VerbatimUtf8ConverterTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FsCheck.Xunit" Version="2.14.0" />
+    <PackageReference Include="FSharp.UMX" Version="1.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
+    <PackageReference Include="Serilog" Version="2.9.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.0.0" />
     <PackageReference Include="Unquote" Version="4.0.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />

@@ -11,7 +11,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
 
 - [![Codec NuGet](https://img.shields.io/nuget/v/FsCodec.svg)](https://www.nuget.org/packages/FsCodec/) `FsCodec` Defines interfaces with trivial implementation helpers.
   - No dependencies.
-  - [`FsCodec.IUnionEncoder`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19): defines a base interface for serializers.
+  - [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19): defines a base interface for serializers.
   - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in a serializer and/or Union Encoder of your choice (typically this is used to supply a pair `encode` and `tryDecode` functions)
 - [![Newtonsoft.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.NewtonsoftJson.svg)](https://www.nuget.org/packages/FsCodec.NewtonsoftJson/) `FsCodec.NewtonsoftJson`: As described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/), enabled tagging of F# Discriminated Union cases in a versionable manner with low-dependencies using [TypeShape](https://github.com/eiriktsarpalis/TypeShape)'s [`UnionContractEncoder`](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores)
   - Uses the ubiquitous [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) library to serialize the event bodies.
@@ -25,8 +25,8 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 
 - [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4) represents a single event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type)
 - [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23) represents a single stored event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type). Inherits `IEventData`, adding `Index` and `IsUnfold` in order to represent the position on the timeline which the event logically occupies.
-- [`FsCodec.IUnionEncoder`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode : 'Context option * 'Union -> IEventData` and `TryDecode : ITimelineEvent -> 'Union option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
-- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IUnionEncoder` in terms of supplied `encode : 'Union -> string * byte[]` and `tryDecode : string * byte[] -> 'Union option` functions (other overloads are available for advanced cases)
+- [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode : 'Context option * 'Event -> IEventData` and `TryDecode : ITimelineEvent -> 'Event option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
+- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode : 'Event -> string * byte[]` and `tryDecode : string * byte[] -> 'Event option` functions (other overloads are available for advanced cases)
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L44) is a low level helper to create an `IEventData` directly for purposes such as tests etc.
 - [`FsCodec.Core.TimelineEvent.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L58) is a low level helper to create an `ITimelineEvent` directly for purposes such as tests etc.
 
@@ -36,7 +36,7 @@ There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](t
 
 # Features: `FsCodec.NewtonsoftJson`
 
-[`FsCodec.NewtonsoftJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IUnionEncoder` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` to serialize the bodies.
+[`FsCodec.NewtonsoftJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IEventCodec` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` to serialize the bodies.
 
 ## `Newtonsoft.Json.Converter`s
 
@@ -207,6 +207,144 @@ More importantly, the formerly invalid value now gets mapped to our fallback val
 des<Message2> """{"name":null,"outcome":"Discomfort"}"""
 // val it : Message = {name = None; outcome = Other;}
 ```
+
+<a name="IEventCodec"></a>
+# Features: `IEventCodec`
+
+`IEventCodec` represents a standard contract for the encoding and decoding of events used in event sourcing and event based notification scenarios:
+- encoding pending/tentative "source of truth" events ('Facts') in Event Sourced systems (including encoding ones on the way to the store that are not yet accepted on a _Timeline_) - (see [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4))
+- decoding event records from an Event Store in a [programming model](https://github.com/jet/equinox/blob/master/DOCUMENTATION.md#programming-model), which involves mapping from the source event together with contextual information (see [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23)) such as:
+  - The _event type_, which signifies the event that has taken place (if you're familiar with ADTs, this maps to the Discriminator in a Discriminated Union)
+  - the core _event data_ (often encoded as JSON, protobufs etc), the schema for which typically varies by _event type_
+  - _event metadata_ (contextual information optionally stored alongside the event)
+  - the `Timestamp` at which the event was generated
+  - the `Index` representing the position of this event within the sequence of events on the timeline represented by the stream from which one is hydrating the event
+- routing and filtering of events for the purpose of managing projections, notification or reactions to events. Such events may either emanate directly from an Event Store's timeline as in the preceding cases, or represent versioned [summary events](http://verraes.net/2019/05/patterns-for-decoupling-distsys-summary-event/)
+
+module StreamCodec =
+
+    /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
+    let tryDecode (codec : FsCodec.IEventCodec<_,_,_>) (log : Serilog.ILogger) (stream : string) (x : FsCodec.ITimelineEvent<byte[]>) =
+        match codec.TryDecode x with
+        | None ->
+            if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
+                log.ForContext("event", System.Text.Encoding.UTF8.GetString(x.Data), true)
+                    .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, stream)
+            None
+        | x -> x
+
+open FSharp.UMX
+
+type [<Measure>] clientId
+type ClientId = string<clientId>
+module ClientId =
+    let parse value : ClientId = % value
+    let toString (value : ClientId) : string = % value
+let (|ClientId|) = ClientId.parse
+
+module Events =
+
+    let [<Literal>] categoryId = "Favorites"
+
+    type Added = { item : string }
+    type Removed = { name: string }
+    type Event =
+        | Added of Added
+        | Removed of Removed
+        interface TypeShape.UnionContract.IUnionContract
+
+    let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
+
+    let (|Decode|_|) stream = StreamCodec.tryDecode codec Serilog.Log.Logger stream
+
+module Stream =
+
+    let private catSeparators = [|'-'|]
+    let private split (streamName : string) = streamName.Split(catSeparators, 2, StringSplitOptions.RemoveEmptyEntries)
+    let category (streamName : string) = let fragments = split streamName in fragments.[0]
+    let (|Category|Unknown|) (streamName : string) =
+        match split streamName with
+        | [| category; id |] -> Category (category, id)
+        | _ -> Unknown streamName
+
+let utf8 (s : string) = System.Text.Encoding.UTF8.GetBytes(s)
+let events = [
+    "Favorites-ClientA", FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "a" }""")
+    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "b" }""")
+    "Favorites-ClientA", FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "b" }""")
+    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "a" }""")
+    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(2L, "Removed",   utf8 """{ "item": "a" }""")
+    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")
+    "Misc-x", FsCodec.Core.TimelineEvent.Create(0L, "Dummy",   utf8 """{ "item": "z" }""")
+]
+
+let runCodec () =
+    for stream, event in events do
+        match stream, event with
+        | Stream.Category (Events.categoryId, ClientId id), (Events.Decode stream e) ->
+            printfn "Client %s, event %A" (ClientId.toString id) e
+        | Stream.Category (cat, id), e ->
+            printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+        | Stream.Unknown streamName, _e ->
+            failwithf "Invalid Stream Name: %s" streamName
+runCodec ()
+
+// Switch on debug logging to get detailed information about events that don't match (which has no singificant perf cost when not switched on)
+open Serilog
+open Serilog.Events
+let outputTemplate = "{Message} {Properties}{NewLine}"
+Serilog.Log.Logger <-
+    LoggerConfiguration()
+        .MinimumLevel.Debug()
+        .WriteTo.Console(LogEventLevel.Debug, outputTemplate=outputTemplate)
+        .CreateLogger()
+runCodec ()
+(*
+Client ClientA, event Added {item = "a";}
+Client ClientB, event Added {item = "b";}
+Client ClientA, event Added {item = "b";}
+Client ClientB, event Added {item = "a";}
+Client ClientB, event Removed {name = null;}
+Codec "<Snipped>" Could not decode "Exported" in "Favorites-ClientB" {event="{ \"count\": 2 }"}
+Unhandled Event: Category Favorites, Id ClientB, Index 3, Event: "Exported"
+Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
+*)
+
+(* Decoding contextual information
+
+   Events arriving from a store (e.g. Equinox etc) or source (e.g. Propulsion) bear contextual information.
+   Where relevant, a decoding process may want to extract such context alongside mapping the base information.
+*)
+
+type EventWithMeta = int64 * DateTimeOffset * Events.Event
+let codec =
+    let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) =
+        raw.Index, raw.Timestamp, contract
+    let down (_index, timestamp, event) =
+        event, None, Some timestamp
+    FsCodec.NewtonsoftJson.Codec.Create(up, down)
+let (|DecodeWithMeta|_|) stream = StreamCodec.tryDecode codec Serilog.Log.Logger stream
+
+let runWithContext () =
+    for stream, event in events do
+        match stream, event with
+        | Stream.Category (Events.categoryId, ClientId id), (DecodeWithMeta stream (index, ts, e)) ->
+            printfn "Client %s index %d time %O event %A" (ClientId.toString id) index (ts.ToString "u") e
+        | Stream.Category (cat, id), e ->
+            printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+        | Stream.Unknown streamName, _e ->
+            failwithf "Invalid Stream Name: %s" streamName
+runWithContext ()
+(*
+Client ClientA index 0 time 2020-01-13 09:44:37Z event Added {item = "a";}
+Client ClientB index 0 time 2020-01-13 09:44:37Z event Added {item = "b";}
+Client ClientA index 1 time 2020-01-13 09:44:37Z event Added {item = "b";}
+Client ClientB index 1 time 2020-01-13 09:44:37Z event Added {item = "a";}
+Client ClientB index 2 time 2020-01-13 09:44:37Z event Removed {name = null;}
+Codec "<Snipped>" Could not decode "Exported" in "Favorites-ClientB" {event="{ \"count\": 2 }"}
+Unhandled Event: Category Favorites, Id ClientB, Index 3, Event: "Exported"
+Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
+*)
 
  <a name="boxcodec"></a>
 # Features: `FsCodec.Box.Codec`

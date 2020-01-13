@@ -4,7 +4,7 @@
     <Company>Jet.com</Company>
     <Description>F# Union Event Codec with versioning tolerant converters</Description>
     <PackageProjectUrl>https://github.com/jet/FsCodec</PackageProjectUrl>
-    <PackageTags>fsharp unionconverter unionencoder JsonPickler JsonIsomorphism json converters typeshape</PackageTags>
+    <PackageTags>fsharp unionconverter eventcodec JsonPickler JsonIsomorphism json converters typeshape</PackageTags>
     <PackageLicense>Apache-2.0</PackageLicense>
     <Copyright>Copyright © 2016-20</Copyright>
 
