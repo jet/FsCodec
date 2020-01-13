@@ -135,13 +135,15 @@ open FSharp.UMX
 type [<Measure>] clientId
 type ClientId = string<clientId>
 module ClientId =
-    let parse value : ClientId = % value
+    let parse (str : string) : ClientId = % str
     let toString (value : ClientId) : string = % value
-let (|ClientId|) = ClientId.parse
 
 module Events =
 
+    // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
     let [<Literal>] categoryId = "Favorites"
+    // The second part of the stream name is the ClientId; here we define an Active Pattern to enable easy decoding of this portion into a UMX type
+    let (|ClientId|) = ClientId.parse
 
     type Added = { item : string }
     type Removed = { name: string }
@@ -178,7 +180,7 @@ let events = [
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | Stream.Category (Events.categoryId, ClientId id), (Events.Decode stream e) ->
+        | Stream.Category (Events.categoryId, Events.ClientId id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
         | Stream.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
@@ -213,19 +215,21 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
    Where relevant, a decoding process may want to extract such context alongside mapping the base information.
 *)
 
-type EventWithMeta = int64 * DateTimeOffset * Events.Event
-let codec =
-    let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) =
-        raw.Index, raw.Timestamp, contract
-    let down (_index, timestamp, event) =
-        event, None, Some timestamp
-    FsCodec.NewtonsoftJson.Codec.Create(up, down)
-let (|DecodeWithMeta|_|) stream = StreamCodec.tryDecode codec Serilog.Log.Logger stream
+module EventsWithMeta =
+
+    type EventWithMeta = int64 * DateTimeOffset * Events.Event
+    let codec =
+        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : EventWithMeta =
+            raw.Index, raw.Timestamp, contract
+        let down ((_index, timestamp, event) : EventWithMeta) =
+            event, None, Some timestamp
+        FsCodec.NewtonsoftJson.Codec.Create(up, down)
+    let (|Decode|_|) stream event : EventWithMeta option = StreamCodec.tryDecode codec Serilog.Log.Logger stream event
 
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | Stream.Category (Events.categoryId, ClientId id), (DecodeWithMeta stream (index, ts, e)) ->
+        | Stream.Category (Events.categoryId, Events.ClientId id), (EventsWithMeta.Decode stream (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString id) index (ts.ToString "u") e
         | Stream.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
