@@ -328,7 +328,7 @@ Where:
 
 - `{CategoryName}` represents a high level contract/grouping; all stream names starting with `Category-`
 - `-` (hyphen/minus) represents the by-convention canonical stream name separator
-- `Identifier` represents the identifier of the aggregate [root] for which we're maintaining the data
+- `{Identifier}` represents the identifier of the aggregate [root] for which we're maintaining the data
 
 In F#, the following set of helpers are useful for splitting and filtering Stream Names by Categories and/or Identifiers. Similar helpers would of course make sense in other languages e.g. C#:
 
@@ -346,7 +346,7 @@ module Stream =
 
 ## Decoding events
 
-Given some example events from 3 streams:
+Given the following example events from across streams:
 
 ```
 let utf8 (s : string) = System.Text.Encoding.UTF8.GetBytes(s)
@@ -375,7 +375,7 @@ let runCodec () =
             failwithf "Invalid Stream Name: %s" streamName
 ```
 
-Now, invoking: `runCodec ()` yields:
+invoking `runCodec ()` yields:
 
 ```
 Client ClientA, event Added {item = "a";}
@@ -389,8 +389,8 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 
 There are two events that we were not able to decode, for varying reasons:
 
-- `"Misc-x", FsCodec.Core.TimelineEvent.Create(0L, "Dummy",   utf8 """{ "item": "z" }""")` represents an Event that happens to pass through our event processor that we don't want to decode and/or handle - we don't need to define a contract type for
-- `"Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")` represents an Event that has recently been defined in the source system, but not yet handled by the processor. In the event of such an unclassified event occurring within a stream contract we want to know when we're not handling a given event. That's trapped above and logged as `Unhandled Event: Category Favorites, Id ClientB, Index 3, Event: "Exported"`.
+1. `"Misc-x", FsCodec.Core.TimelineEvent.Create(0L, "Dummy",   utf8 """{ "item": "z" }""")` represents an Event that happens to pass through our event processor that we don't want to decode and/or handle - we don't need to define a contract type for
+2. `"Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")` represents an Event that has recently been defined in the source system, but not yet handled by the processor. In the event of such an unclassified event occurring within a stream contract we want to know when we're not handling a given event. That's trapped above and logged as `Unhandled Event: Category Favorites, Id ClientB, Index 3, Event: "Exported"`.
 
 _Note however, that we don't have a clean way to trap the data and log it. See [Logging unmatched events](#logging-unmatched-events) for an example of how one might log such unmatched events_
 
@@ -454,7 +454,7 @@ module EventsWithMeta =
     let (|Decode|_|) stream event : EventWithMeta option = StreamCodec.tryDecode codec Serilog.Log.Logger stream event
 ```
 
-This allows us to tweak the `runCodec` above as follows to also surface additional contextual information:-
+This allows us to tweak the `runCodec` above as follows to also surface additional contextual information:
 
 ```
 let runWithContext () =
