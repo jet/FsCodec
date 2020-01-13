@@ -6,7 +6,7 @@
     <PackageProjectUrl>https://github.com/jet/FsCodec</PackageProjectUrl>
     <PackageTags>fsharp unionconverter unionencoder JsonPickler JsonIsomorphism json converters typeshape</PackageTags>
     <PackageLicense>Apache-2.0</PackageLicense>
-    <Copyright>Copyright © 2016-9</Copyright>
+    <Copyright>Copyright © 2016-20</Copyright>
 
     <ThisDirAbsolute>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</ThisDirAbsolute>
 
