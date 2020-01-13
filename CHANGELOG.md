@@ -11,7 +11,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Added
 ### Changed
 
-- Update to `Microsoft.SourceLink.GitHub` to v `1.0.0`
+- Update `Microsoft.SourceLink.GitHub`, `Microsoft.Framework.ReferenceAssemblies` to `1.0.0`
 
 ### Removed
 ### Fixed
