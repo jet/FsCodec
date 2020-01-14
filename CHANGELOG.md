@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="2.0.0-rc1"></a>
+## [2.0.0-rc1] - 2020-01-14
+
+### Added
 
 - Tutorial and Documentation re `IEventCodec` [#29](https://github.com/jet/FsCodec/pull/29)
 
@@ -17,9 +25,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - renamed `IUnionEncoder` to `IEventCodec` [#29](https://github.com/jet/FsCodec/pull/29)
 - adjusted return types for `FsCodec.Core.EventData.Create` and `.TimelineEvent.Create` to relevant interfaces [#29](https://github.com/jet/FsCodec/pull/29)
 - Update `Microsoft.SourceLink.GitHub`, `Microsoft.Framework.ReferenceAssemblies` to `1.0.0`
-
-### Removed
-### Fixed
 
 <a name="1.2.1"></a>
 ## [1.2.1] - 2019-11-08

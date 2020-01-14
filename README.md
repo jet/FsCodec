@@ -211,11 +211,13 @@ des<Message2> """{"name":null,"outcome":"Discomfort"}"""
 <a name="IEventCodec"></a>
 # Features: `IEventCodec`
 
+_See [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx) for a worked example suitable for playing with in F# interactive based on the following tutorial_
+
 <a name="IEventCodec"></a>
 ## [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31)
 
 ```
-/// Defines a contract interpreter that encodes and/or decodes events defined in terms of a <c>'Contract</c> Discriminated Union representing the known set of events borne by a stream category
+/// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
 type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
     abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
@@ -235,9 +237,9 @@ type IEventCodec<'Event, 'Format, 'Context> =
 - routing and filtering of events for the purpose of managing projections, notification or reactions to events. Such events may either emanate directly from an Event Store's timeline as in the preceding cases, or represent versioned [summary events](http://verraes.net/2019/05/patterns-for-decoupling-distsys-summary-event/)
 
 <a name="IEventData"></a>
-## [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4))
+## [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4)
 
-Both pending and timeline Events share the following common contract:
+Pending and timeline Events share the following common contract:
 
 ```
 /// Common form for either a Domain Event or an Unfolded Event, without any context regarding its place in the timeline of events
@@ -262,8 +264,6 @@ type IEventData<'Format> =
 
 <a name="ITimelineEvent"></a>
 ## [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23)
-
-_See [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx) for a worked example suitable for playing with in F#$ interactive based on the following tutorial:_
 
 Events from a versioned feed and/or being loaded from an Event Store bring additional context beyond the base information in [IEventData](#IEventData)
 
@@ -357,7 +357,7 @@ let events = [
     "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "a" }""")
     "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(2L, "Removed",   utf8 """{ "item": "a" }""")
     "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")
-    "Misc-x", FsCodec.Core.TimelineEvent.Create(0L, "Dummy",   utf8 """{ "item": "z" }""")
+    "Misc-x",            FsCodec.Core.TimelineEvent.Create(0L, "Dummy",     utf8 """{ "item": "z" }""")
 ]
 ```
 
@@ -396,7 +396,7 @@ _Note however, that we don't have a clean way to trap the data and log it. See [
 
 ## Logging unmatched events
 
-The following helper (which uses the `Serilog` library), can be used to selectively layer on some logging when run with logging upped to `Debug` level:
+The following helper (which uses the [`Serilog`](https://github.com/serilog/serilog) library), can be used to selectively layer on some logging when run with logging upped to `Debug` level:
 
 ```
 module StreamCodec =
@@ -468,7 +468,7 @@ let runWithContext () =
             failwithf "Invalid Stream Name: %s" streamName
 ```
 
-This yields the following output:
+which yields the following output:
 
     Client ClientA index 0 time 2020-01-13 09:44:37Z event Added {item = "a";}
     Client ClientB index 0 time 2020-01-13 09:44:37Z event Added {item = "b";}

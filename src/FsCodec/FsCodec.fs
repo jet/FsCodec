@@ -27,7 +27,7 @@ type ITimelineEvent<'Format> =
     /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
     abstract member IsUnfold : bool
 
-/// Defines a contract interpreter that encodes and/or decodes events defined in terms of a <c>'Contract</c> Discriminated Union representing the known set of events borne by a stream category
+/// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
 type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
     abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
