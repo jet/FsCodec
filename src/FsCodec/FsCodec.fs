@@ -27,15 +27,16 @@ type ITimelineEvent<'Format> =
     /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
     abstract member IsUnfold : bool
 
-/// Defines a contract interpreter for a Discriminated Union representing a set of events borne by a stream
-type IUnionEncoder<'Union, 'Format, 'Context> =
-    /// Encodes a union instance into a decoded representation
-    abstract Encode : context: 'Context option * value: 'Union -> IEventData<'Format>
-    /// Decodes a formatted representation into a <c>'Union<c> instance. Does not throw exception on format mismatches
-    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Union option
+/// Defines a contract interpreter that encodes and/or decodes events defined in terms of a <c>'Contract</c> Discriminated Union representing the known set of events borne by a stream category
+type IEventCodec<'Event, 'Format, 'Context> =
+    /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
+    abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
+    /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
+    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event option
 
 namespace FsCodec.Core
 
+open FsCodec
 open System
 
 /// An Event about to be written, see <c>IEventData<c> for further information
@@ -44,6 +45,7 @@ type EventData<'Format> private (eventType, data, meta, correlationId, causation
     static member Create(eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp) =
         let meta, correlationId, causationId = defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null
         EventData(eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
+        :> IEventData<'Format>
     interface FsCodec.IEventData<'Format> with
         member __.EventType = eventType
         member __.Data = data
@@ -59,6 +61,7 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, cor
         let isUnfold, meta = defaultArg isUnfold false, defaultArg meta Unchecked.defaultof<_>
         let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
         TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
+        :> ITimelineEvent<'Format>
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold
