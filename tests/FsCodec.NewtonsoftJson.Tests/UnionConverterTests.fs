@@ -1,4 +1,4 @@
-﻿module FsCodec.NewtonsoftJson.Tests.EventCodecTests
+﻿module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
 
 open FsCheck
 open FsCodec.NewtonsoftJson

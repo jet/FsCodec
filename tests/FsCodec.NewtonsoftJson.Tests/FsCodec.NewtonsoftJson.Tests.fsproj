@@ -9,7 +9,7 @@
   <ItemGroup>
     <None Include="Examples.fsx" />
     <Compile Include="PicklerTests.fs" />
-    <Compile Include="EventCodecTests.fs" />
+    <Compile Include="UnionConverterTests.fs" />
     <Compile Include="VerbatimUtf8ConverterTests.fs" />
   </ItemGroup>
 
