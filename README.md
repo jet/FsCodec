@@ -299,8 +299,8 @@ module Events =
 
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
 
-    // See "logging unmatched events" later in this section for information about StreamCodec
-    let (|Decode|_|) stream = StreamCodec.tryDecode codec Serilog.Log.Logger stream
+    // See "logging unmatched events" later in this section for information about EventCodec
+    let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 ```
 
 <a name="umx"></a>
@@ -333,15 +333,15 @@ Where:
 In F#, the following set of helpers are useful for splitting and filtering Stream Names by Categories and/or Identifiers. Similar helpers would of course make sense in other languages e.g. C#:
 
 ```
-module Stream =
+module StreamName =
 
     let private catSeparators = [|'-'|]
     let private split (streamName : string) = streamName.Split(catSeparators, 2, StringSplitOptions.RemoveEmptyEntries)
     let category (streamName : string) = let fragments = split streamName in fragments.[0]
-    let (|Category|Unknown|) (streamName : string) =
+    let (|Category|Other|) (streamName : string) =
         match split streamName with
         | [| category; id |] -> Category (category, id)
-        | _ -> Unknown streamName
+        | _ -> Other streamName
 ```
 
 ## Decoding events
@@ -367,11 +367,11 @@ and the helpers defined above, we can route and/or filter them as follows:
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | Stream.Category (Events.categoryId, ClientId id), (Events.Decode stream e) ->
+        | StreamName.Category (Events.categoryId, ClientId id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
-        | Stream.Category (cat, id), e ->
+        | StreamName.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        | Stream.Unknown streamName, _e ->
+        | StreamName.Other streamName, _e ->
             failwithf "Invalid Stream Name: %s" streamName
 ```
 
@@ -399,7 +399,7 @@ _Note however, that we don't have a clean way to trap the data and log it. See [
 The following helper (which uses the [`Serilog`](https://github.com/serilog/serilog) library), can be used to selectively layer on some logging when run with logging upped to `Debug` level:
 
 ```
-module StreamCodec =
+module EventCodec =
 
     /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
     let tryDecode (codec : FsCodec.IEventCodec<_,_,_>) (log : Serilog.ILogger) (stream : string) (x : FsCodec.ITimelineEvent<byte[]>) =
@@ -451,7 +451,7 @@ module EventsWithMeta =
         let down ((_index, timestamp, event) : EventWithMeta) =
             event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
-    let (|Decode|_|) stream event : EventWithMeta option = StreamCodec.tryDecode codec Serilog.Log.Logger stream event
+    let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
 ```
 
 This allows us to tweak the `runCodec` above as follows to also surface additional contextual information:
@@ -460,11 +460,11 @@ This allows us to tweak the `runCodec` above as follows to also surface addition
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | Stream.Category (Events.categoryId, Events.ClientId id), (EventsWithMeta.Decode stream (index, ts, e)) ->
+        | StreamName.Category (Events.categoryId, Events.ClientId id), (EventsWithMeta.Decode stream (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString id) index (ts.ToString "u") e
-        | Stream.Category (cat, id), e ->
+        | StreamName.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        | Stream.Unknown streamName, _e ->
+        | StreamName.Other streamName, _e ->
             failwithf "Invalid Stream Name: %s" streamName
 ```
 

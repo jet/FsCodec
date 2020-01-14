@@ -118,7 +118,7 @@ Illustrating usage of IEventCodec and its accompanying active patterns
 
 *)
 
-module StreamCodec =
+module EventCodec =
 
     /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
     let tryDecode (codec : FsCodec.IEventCodec<_,_,_>) (log : Serilog.ILogger) (stream : string) (x : FsCodec.ITimelineEvent<byte[]>) =
@@ -154,17 +154,17 @@ module Events =
 
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
 
-    let (|Decode|_|) stream = StreamCodec.tryDecode codec Serilog.Log.Logger stream
+    let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 
-module Stream =
+module StreamName =
 
     let private catSeparators = [|'-'|]
     let private split (streamName : string) = streamName.Split(catSeparators, 2, StringSplitOptions.RemoveEmptyEntries)
     let category (streamName : string) = let fragments = split streamName in fragments.[0]
-    let (|Category|Unknown|) (streamName : string) =
+    let (|Category|Other|) (streamName : string) =
         match split streamName with
         | [| category; id |] -> Category (category, id)
-        | _ -> Unknown streamName
+        | _ -> Other streamName
 
 let utf8 (s : string) = System.Text.Encoding.UTF8.GetBytes(s)
 let events = [
@@ -180,11 +180,11 @@ let events = [
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | Stream.Category (Events.categoryId, Events.ClientId id), (Events.Decode stream e) ->
+        | StreamName.Category (Events.categoryId, Events.ClientId id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
-        | Stream.Category (cat, id), e ->
+        | StreamName.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        | Stream.Unknown streamName, _e ->
+        | StreamName.Other streamName, _e ->
             failwithf "Invalid Stream Name: %s" streamName
 runCodec ()
 
@@ -224,16 +224,16 @@ module EventsWithMeta =
         let down ((_index, timestamp, event) : EventWithMeta) =
             event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
-    let (|Decode|_|) stream event : EventWithMeta option = StreamCodec.tryDecode codec Serilog.Log.Logger stream event
+    let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
 
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | Stream.Category (Events.categoryId, Events.ClientId id), (EventsWithMeta.Decode stream (index, ts, e)) ->
+        | StreamName.Category (Events.categoryId, Events.ClientId id), (EventsWithMeta.Decode stream (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString id) index (ts.ToString "u") e
-        | Stream.Category (cat, id), e ->
+        | StreamName.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        | Stream.Unknown streamName, _e ->
+        | StreamName.Other streamName, _e ->
             failwithf "Invalid Stream Name: %s" streamName
 runWithContext ()
 (*
