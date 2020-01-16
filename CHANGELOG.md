@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `ITimelineEvent.Context` extension field [#30](https://github.com/jet/FsCodec/pull/30)
+
 ### Changed
 ### Removed
 ### Fixed

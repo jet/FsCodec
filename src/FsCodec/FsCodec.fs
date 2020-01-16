@@ -21,6 +21,8 @@ type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
     abstract member Index : int64
+    /// Application-supplied context related to the origin of this event
+    abstract member Context : obj
     /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
     abstract member IsUnfold : bool
 
@@ -53,14 +55,16 @@ type EventData<'Format> private (eventType, data, meta, correlationId, causation
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
-type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp) =
-    static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold) : ITimelineEvent<'Format> =
-        let isUnfold, meta = defaultArg isUnfold false, defaultArg meta Unchecked.defaultof<_>
+type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp, context) =
+    static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
+        let meta, timestamp = defaultArg meta Unchecked.defaultof<_>, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        let isUnfold, context = defaultArg isUnfold false, defaultArg context null
         let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
-        TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
+        TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp, context) :> _
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold
+        member __.Context = context
         member __.EventType = eventType
         member __.Data = data
         member __.Meta = meta

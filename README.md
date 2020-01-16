@@ -271,6 +271,8 @@ type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
     abstract member Index : int64
+    /// Application-supplied context related to the origin of this event
+    abstract member Context : obj
     /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
     abstract member IsUnfold : bool
 ```
