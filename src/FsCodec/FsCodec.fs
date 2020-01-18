@@ -9,10 +9,7 @@ type IEventData<'Format> =
     /// Optional metadata (null, or same as Data, not written if missing)
     abstract member Meta : 'Format
     /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
-    /// <remarks>
-    /// - For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.
-    /// - For Cosmos, the value is not exposed where the event `IsUnfold`.
-    /// </remarks>
+    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
     abstract member Timestamp : System.DateTimeOffset
     /// The Correlation Id associated with the flow that generated this event. Can be `null`
     abstract member CorrelationId : string
