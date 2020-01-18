@@ -12,7 +12,7 @@ type Settings private () =
     /// Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
     static member CreateDefault
         (   [<Optional;ParamArray>]converters : JsonConverter[],
-            /// Use multi-line, indented formatting when serializing json; defaults to false.
+            /// Use multi-line, indented formatting when serializing JSON; defaults to false.
             [<Optional;DefaultParameterValue(null)>]?indent : bool,
             /// Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`. Defaults to false.
             [<Optional;DefaultParameterValue(null)>]?camelCase : bool,
@@ -43,7 +43,7 @@ type Settings private () =
     static member Create
         (   /// List of converters to apply. An implicit OptionConverter() will be prepended and/or be used as a default
             [<Optional;ParamArray>]converters : JsonConverter[],
-            /// Use multi-line, indented formatting when serializing json; defaults to false.
+            /// Use multi-line, indented formatting when serializing JSON; defaults to false.
             [<Optional;DefaultParameterValue(null)>]?indent : bool,
             /// Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`.
             ///  Defaults to false on basis that you'll use record and tuple field names that are camelCase (and hence not `CLSCompliant`).

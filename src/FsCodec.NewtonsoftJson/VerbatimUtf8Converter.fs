@@ -3,7 +3,7 @@ namespace FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-/// Manages injecting prepared json into the data being submitted to a store such as CosmosDB as-is, on the basis we can trust it to be valid json
+/// Manages injecting prepared JSON into the data being submitted to a store such as CosmosDB as-is, on the basis we can trust it to be valid json
 type VerbatimUtf8JsonConverter() =
     inherit JsonConverter()
 

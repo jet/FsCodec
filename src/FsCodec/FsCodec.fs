@@ -4,7 +4,7 @@ namespace FsCodec
 type IEventData<'Format> =
     /// The Event Type, used to drive deserialization
     abstract member EventType : string
-    /// Event body, as UTF-8 encoded json ready to be injected into the Store
+    /// Event body, as UTF-8 encoded JSON, protobuf etc, ready to be injected into the Store
     abstract member Data : 'Format
     /// Optional metadata (null, or same as Data, not written if missing)
     abstract member Meta : 'Format
@@ -24,11 +24,11 @@ type ITimelineEvent<'Format> =
     /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
     abstract member IsUnfold : bool
 
-/// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
+/// Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category
 type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
     abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
-    /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
+    /// Decodes a formatted representation into a <c>'Event<c> instance. Returns <c>None</c> on undefined <c>EventType</c>s
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event option
 
 namespace FsCodec.Core
@@ -39,10 +39,10 @@ open System
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
 type EventData<'Format> private (eventType, data, meta, correlationId, causationId, timestamp) =
-    static member Create(eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp) =
+    static member Create(eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp) : IEventData<'Format> =
         let meta, correlationId, causationId = defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null
-        EventData(eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
-        :> IEventData<'Format>
+        EventData(eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
+
     interface FsCodec.IEventData<'Format> with
         member __.EventType = eventType
         member __.Data = data
@@ -54,11 +54,10 @@ type EventData<'Format> private (eventType, data, meta, correlationId, causation
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
 type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp) =
-    static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold) =
+    static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold) : ITimelineEvent<'Format> =
         let isUnfold, meta = defaultArg isUnfold false, defaultArg meta Unchecked.defaultof<_>
         let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
-        TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow)
-        :> ITimelineEvent<'Format>
+        TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold

@@ -98,11 +98,11 @@ type VerbatimUtf8Tests() =
 
 module VerbatimUtf8NullHandling =
     type [<NoEquality; NoComparison>] EventHolderWithAndWithoutRequired =
-        {   /// Event body, as UTF-8 encoded json ready to be injected directly into the Json being rendered
+        {   /// Event body, as UTF-8 encoded JSON ready to be injected directly into the Json being rendered
             [<JsonConverter(typeof<VerbatimUtf8JsonConverter>)>]
             d: byte[] // required
 
-            /// Optional metadata, as UTF-8 encoded json, ready to emit directly (entire field is not written if value is null)
+            /// Optional metadata, as UTF-8 encoded JSON, ready to emit directly (entire field is not written if value is null)
             [<JsonConverter(typeof<VerbatimUtf8JsonConverter>)>]
             [<JsonProperty(Required=Required.Default, NullValueHandling=NullValueHandling.Ignore)>]
             m: byte[] }

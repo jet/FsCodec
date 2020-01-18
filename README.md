@@ -73,7 +73,7 @@ In a contract assembly used as a way to supply types as part of a client library
 
 #### Simple contracts that tag all types or fields necessitating `Converter`s directly and only records and `option`s
 
-The minimal code needed to define helpers to consistently roundtrip where one only uses simple types is to simply state" _Please use `FsCodec.NewtonsoftJson.Serdes` to encode/decode json payloads correctly. However, an alternate approach is to employ the convention of providing a pair of helper methods alongside the type :-
+The minimal code needed to define helpers to consistently roundtrip where one only uses simple types is to simply state" _Please use `FsCodec.NewtonsoftJson.Serdes` to encode/decode JSON payloads correctly. However, an alternate approach is to employ the convention of providing a pair of helper methods alongside the type :-
 
 ```fsharp
 module Contract =
@@ -246,7 +246,7 @@ Pending and timeline Events share the following common contract:
 type IEventData<'Format> =
     /// The Event Type, used to drive deserialization
     abstract member EventType : string
-    /// Event body, as UTF-8 encoded json ready to be injected into the Store
+    /// Event body, as UTF-8 encoded JSON ready to be injected into the Store
     abstract member Data : 'Format
     /// Optional metadata (null, or same as Data, not written if missing)
     abstract member Meta : 'Format
@@ -485,7 +485,7 @@ This is useful when storing events in a `MemoryStore` as it allows one to take t
 
 NOTE this does not imply one should avoid testing this aspect; the opposite in fact -- one should apply the [Test Pyramid principles](https://martinfowler.com/articles/practical-test-pyramid.html):
 - have a focused series of tests that validate that the various data representations in the event bodies are round-trippable
-  a. in the chosen encoding format (i.e. UTF8 json)
+  a. in the chosen encoding format (i.e. UTF8 JSON)
   b. with the selected concrete json encoder (i.e. `Newtonsoft.Json` for now 🙁)
 - integration tests can in general use `BoxEncoder` and `MemoryStore`
 
