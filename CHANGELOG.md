@@ -13,13 +13,19 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="2.0.0-rc2"></a>
+## [2.0.0-rc2] - 2020-01-30
+
+### Added
+
+- `StreamName`, with associated helper module [#31](https://github.com/jet/FsCodec/pull/31)
+
 <a name="2.0.0-rc1"></a>
 ## [2.0.0-rc1] - 2020-01-14
 
 ### Added
 
 - Tutorial and Documentation re `IEventCodec` [#29](https://github.com/jet/FsCodec/pull/29)
-- `StreamName`, with associated helper module [#31](https://github.com/jet/FsCodec/pull/31)
 
 ### Changed
 
@@ -106,7 +112,9 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/equinox/compare/1.2.1...HEAD
+[Unreleased]: https://github.com/jet/equinox/compare/2.0.0-rc2...HEAD
+[2.0.0-rc2]: https://github.com/jet/FsCodec/compare/2.0.0-rc1...2.0.0-rc2
+[2.0.0-rc1]: https://github.com/jet/FsCodec/compare/1.2.1...2.0.0-rc1
 [1.2.1]: https://github.com/jet/FsCodec/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/jet/FsCodec/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/jet/FsCodec/compare/1.0.0...1.1.0
