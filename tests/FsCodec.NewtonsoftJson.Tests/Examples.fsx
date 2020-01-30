@@ -1,4 +1,4 @@
-open FsCodec
+//open FsCodec
 
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.NewtonsoftJson.Tests before attempting to send this to FSI with Alt-Enter
@@ -121,74 +121,81 @@ Illustrating usage of IEventCodec and its accompanying active patterns
 module EventCodec =
 
     /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
-    let tryDecode (codec : FsCodec.IEventCodec<_,_,_>) (log : Serilog.ILogger) (stream : string) (x : FsCodec.ITimelineEvent<byte[]>) =
+    let tryDecode (codec : FsCodec.IEventCodec<_,_,_>) (log : Serilog.ILogger) streamName (x : FsCodec.ITimelineEvent<byte[]>) =
         match codec.TryDecode x with
         | None ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
                 log.ForContext("event", System.Text.Encoding.UTF8.GetString(x.Data), true)
-                    .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, stream)
+                    .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, streamName)
             None
         | x -> x
 
 open FSharp.UMX
 
-type [<Measure>] clientId
 type ClientId = string<clientId>
+and [<Measure>] clientId
 module ClientId =
     let parse (str : string) : ClientId = % str
     let toString (value : ClientId) : string = % value
+    let (|Parse|) = parse
 
 module Events =
 
     // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
-    let [<Literal>] categoryId = "Favorites"
-    // The second part of the stream name is the ClientId; here we define an Active Pattern to enable easy decoding of this portion into a UMX type
-    let (|ClientId|) = ClientId.parse
+    let [<Literal>] CategoryId = "Favorites"
+    /// Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
+    /// Yields a strongly typed id from the aggregateId if the Category does match
+    let (|MatchesCategory|_|) = function
+        | FsCodec.StreamName.CategoryAndId (CategoryId, ClientId.Parse clientId) -> Some clientId
+        | _ -> None
 
     type Added = { item : string }
-    type Removed = { name: string }
+    type Removed = { name : string }
     type Event =
         | Added of Added
         | Removed of Removed
         interface TypeShape.UnionContract.IUnionContract
 
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
-
     let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+    /// Yields decoded event and relevant strongly typed ids if the category of the Stream Name is correct
+    let (|Match|_|) (streamName, span) =
+        match streamName, span with
+        | MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        | _ -> None
 
-module StreamName =
-
-    let private catSeparators = [|'-'|]
-    let private split (streamName : string) = streamName.Split(catSeparators, 2, StringSplitOptions.RemoveEmptyEntries)
-    let category (streamName : string) = let fragments = split streamName in fragments.[0]
-    let (|Category|Other|) (streamName : string) =
-        match split streamName with
-        | [| category; id |] -> Category (category, id)
-        | _ -> Other streamName
+open FsCodec
 
 let utf8 (s : string) = System.Text.Encoding.UTF8.GetBytes(s)
 let events = [
-    "Favorites-ClientA", FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "a" }""")
-    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "b" }""")
-    "Favorites-ClientA", FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "b" }""")
-    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "a" }""")
-    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(2L, "Removed",   utf8 """{ "item": "a" }""")
-    "Favorites-ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")
-    "Misc-x", FsCodec.Core.TimelineEvent.Create(0L, "Dummy",   utf8 """{ "item": "z" }""")
+    StreamName.parse "Favorites-ClientA",    FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "a" }""")
+    StreamName.parse "Favorites-ClientB",    FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "b" }""")
+    StreamName.parse "Favorites-ClientA",    FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "b" }""")
+    StreamName.parse "Favorites-ClientB",    FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "a" }""")
+    StreamName.parse "Favorites-ClientB",    FsCodec.Core.TimelineEvent.Create(2L, "Removed",   utf8 """{ "item": "a" }""")
+    StreamName.create "Favorites" "ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")
+    StreamName.parse "Misc-x",               FsCodec.Core.TimelineEvent.Create(0L, "Dummy",     utf8 """{ "item": "z" }""")
 ]
 
+// Explicit matching
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | StreamName.Category (Events.categoryId, Events.ClientId id), (Events.Decode stream e) ->
+        | StreamName.CategoryAndId (Events.CategoryId, ClientId.Parse id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
-        | StreamName.Category (cat, id), e ->
+        | StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        | StreamName.Other streamName, _e ->
-            failwithf "Invalid Stream Name: %s" streamName
 runCodec ()
+let runCodecCleaner () =
+    for stream, event in events do
+        match stream, event with
+        | Events.Match (clientId, event) ->
+            printfn "Client %s, event %A" (ClientId.toString clientId) event
+        | FsCodec.StreamName.CategoryAndId (cat, id), e ->
+            printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+runCodecCleaner ()
 
-// Switch on debug logging to get detailed information about events that don't match (which has no singificant perf cost when not switched on)
+// Switch on debug logging to get detailed information about events that don't match (which has no significant perf cost when not switched on)
 open Serilog
 open Serilog.Events
 let outputTemplate = "{Message} {Properties}{NewLine}"
@@ -225,16 +232,18 @@ module EventsWithMeta =
             event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
     let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    let (|Match|_|) (streamName, span) =
+        match streamName, span with
+        | Events.MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        | _ -> None
 
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | StreamName.Category (Events.categoryId, Events.ClientId id), (EventsWithMeta.Decode stream (index, ts, e)) ->
-            printfn "Client %s index %d time %O event %A" (ClientId.toString id) index (ts.ToString "u") e
-        | StreamName.Category (cat, id), e ->
+        | EventsWithMeta.Match (clientId, (index, ts, e)) ->
+            printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
+        | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        | StreamName.Other streamName, _e ->
-            failwithf "Invalid Stream Name: %s" streamName
 runWithContext ()
 (*
 Client ClientA index 0 time 2020-01-13 09:44:37Z event Added {item = "a";}

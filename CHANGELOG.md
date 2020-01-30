@@ -19,6 +19,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Added
 
 - Tutorial and Documentation re `IEventCodec` [#29](https://github.com/jet/FsCodec/pull/29)
+- `StreamName`, with associated helper module [#31](https://github.com/jet/FsCodec/pull/31)
 
 ### Changed
 
