@@ -9,12 +9,16 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-
-- `ITimelineEvent.Context` extension field [#30](https://github.com/jet/FsCodec/pull/30)
-
 ### Changed
 ### Removed
 ### Fixed
+
+<a name="2.0.0-rc3"></a>
+## [2.0.0-rc3] - 2020-01-31
+
+### Added
+
+- `ITimelineEvent.Context` extension field [#30](https://github.com/jet/FsCodec/pull/30)
 
 <a name="2.0.0-rc2"></a>
 ## [2.0.0-rc2] - 2020-01-30
@@ -115,7 +119,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/equinox/compare/2.0.0-rc2...HEAD
+[Unreleased]: https://github.com/jet/equinox/compare/2.0.0-rc3...HEAD
+[2.0.0-rc3]: https://github.com/jet/FsCodec/compare/2.0.0-rc2...2.0.0-rc3
 [2.0.0-rc2]: https://github.com/jet/FsCodec/compare/2.0.0-rc1...2.0.0-rc2
 [2.0.0-rc1]: https://github.com/jet/FsCodec/compare/1.2.1...2.0.0-rc1
 [1.2.1]: https://github.com/jet/FsCodec/compare/1.2.0...1.2.1
