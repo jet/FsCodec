@@ -21,13 +21,13 @@ module private Utf8BytesEncoder =
     let wrapAsStream json =
         // This is the most efficient way of approaching this without using Spans etc.
         // RecyclableMemoryStreamManager does not have any wins to provide us
-        new MemoryStream(json,writable=false)
+        new MemoryStream(json, writable = false)
     let makeJsonReader(ms : MemoryStream) =
         new JsonTextReader(new StreamReader(ms), ArrayPool = CharBuffersPool.instance)
     let private utf8NoBom = new System.Text.UTF8Encoding(false, true)
     let makeJsonWriter ms =
         // We need to `leaveOpen` in order to allow .Dispose of the `.rentStream`'d to return it
-        let sw = new StreamWriter(ms, utf8NoBom, 1024, leaveOpen=true) // same middle args as StreamWriter default ctor 
+        let sw = new StreamWriter(ms, utf8NoBom, 1024, leaveOpen = true) // same middle args as StreamWriter default ctor 
         new JsonTextWriter(sw, ArrayPool = CharBuffersPool.instance)
 
 module Core =
@@ -59,7 +59,7 @@ type Codec private () =
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
-    static member Create<'Event,'Contract,'Meta,'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
+    static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Event,
@@ -72,30 +72,30 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event,byte[],'Context> =
+        : FsCodec.IEventCodec<'Event, byte[], 'Context> =
         let settings = match settings with Some x -> x | None -> defaultSettings.Value
         let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = new Core.BytesEncoder(settings) :> _
         let dataCodec =
-            TypeShape.UnionContract.UnionContractEncoder.Create<'Contract,byte[]>(
+            TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, byte[]>(
                 bytesEncoder,
-                requireRecordFields=true, // See JsonConverterTests - round-tripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
-                allowNullaryCases=not (defaultArg rejectNullaryCases false))
-        { new FsCodec.IEventCodec<'Event,byte[],'Context> with
-            member __.Encode(context,event) =
+                requireRecordFields = true, // See JsonConverterTests - round-tripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
+                allowNullaryCases = not (defaultArg rejectNullaryCases false))
+        { new FsCodec.IEventCodec<'Event, byte[], 'Context> with
+            member __.Encode(context, event) =
                 let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let metaUtf8 = meta |> Option.map bytesEncoder.Encode<'Meta>
                 FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, correlationId, causationId, ?timestamp=timestamp)
             member __.TryDecode encoded =
                 let cOption = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
-                match cOption with None -> None | Some contract -> let union = up (encoded,contract) in Some union }
+                match cOption with None -> None | Some contract -> let union = up (encoded, contract) in Some union }
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
-    static member Create<'Event,'Contract,'Meta,'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
+    static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Event,
@@ -110,19 +110,19 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event,byte[],'Context> =
-        let down (context,union) =
+        : FsCodec.IEventCodec<'Event, byte[], 'Context> =
+        let down (context, union) =
             let c, m, t = down union
-            let m', correlationId, causationId = mapCausation (context,m)
+            let m', correlationId, causationId = mapCausation (context, m)
             c, m', correlationId, causationId, t
-        Codec.Create(up=up, down=down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
-    static member Create<'Event,'Contract,'Meta when 'Contract :> TypeShape.UnionContract.IUnionContract>
+    static member Create<'Event, 'Contract, 'Meta when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Event,
@@ -135,9 +135,9 @@ type Codec private () =
             [<Optional;DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event,byte[],obj> =
-        let mapCausation (_context : obj, m : ' Meta option) = m,null,null
-        Codec.Create(up=up, down=down, mapCausation=mapCausation, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
+        : FsCodec.IEventCodec<'Event, byte[], obj> =
+        let mapCausation (_context : obj, m : ' Meta option) = m, null, null
+        Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -150,4 +150,4 @@ type Codec private () =
         : FsCodec.IEventCodec<'Union, byte[], obj> =
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (event : 'Union) = event, None, None
-        Codec.Create(up=up, down=down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
