@@ -7,7 +7,7 @@ open System.Runtime.InteropServices
 type Serdes private () =
 
     static let defaultSettings = lazy Settings.Create()
-    static let indentSettings = lazy Settings.Create(indent=true)
+    static let indentSettings = lazy Settings.Create(indent = true)
 
     /// Serializes given value to a JSON string.
     static member Serialize<'T>
