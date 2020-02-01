@@ -30,8 +30,8 @@ type JsonPickler<'T>() =
 
         memoize (fun t -> isMatching [t])
 
-    abstract Write : writer:JsonWriter * serializer:JsonSerializer * source:'T  -> unit
-    abstract Read : reader:JsonReader * serializer:JsonSerializer -> 'T
+    abstract Write : writer: JsonWriter * serializer: JsonSerializer * source: 'T  -> unit
+    abstract Read : reader: JsonReader * serializer: JsonSerializer -> 'T
 
     override __.CanConvert t = isMatchingType t
 
@@ -52,13 +52,13 @@ type JsonIsomorphism<'T, 'U>(?targetPickler : JsonPickler<'U>) =
     abstract Pickle   : 'T -> 'U
     abstract UnPickle : 'U -> 'T
 
-    override __.Write(writer:JsonWriter, serializer:JsonSerializer, source:'T) =
+    override __.Write(writer : JsonWriter, serializer : JsonSerializer, source : 'T) =
         let target = __.Pickle source
         match targetPickler with
         | None -> serializer.Serialize(writer, target, typeof<'U>)
         | Some p -> p.Write(writer, serializer, target)
 
-    override __.Read(reader:JsonReader, serializer:JsonSerializer) =
+    override __.Read(reader : JsonReader, serializer : JsonSerializer) =
         let target =
             match targetPickler with
             | None -> serializer.Deserialize<'U>(reader)
