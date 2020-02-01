@@ -55,7 +55,7 @@ module private Union =
                 match inputJObject.[fi.Name] with
                 | null when
                     // Afford converters an opportunity to handle the missing field in the best way I can figure out to signal that
-                    // The specific need being covered (see tests) is to ensure tha, even with MissingMemberHandling=Ignore,
+                    // The specific need being covered (see tests) is to ensure that, even with MissingMemberHandling=Ignore,
                     // the TypeSafeEnumConverter should reject missing values
                     // not having this case would go direct to `null` without passing go
                     typeHasJsonConverterAttribute fi.PropertyType
@@ -74,9 +74,9 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
     new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
     new() = UnionConverter("case")
 
-    override __.CanConvert (t: Type) = Union.isUnion t
+    override __.CanConvert (t : Type) = Union.isUnion t
 
-    override __.WriteJson(writer: JsonWriter, value: obj, jsonSerializer: JsonSerializer) =
+    override __.WriteJson(writer : JsonWriter, value : obj, jsonSerializer : JsonSerializer) =
         let union = Union.getUnion (value.GetType())
         let tag = union.tagReader value
         let case = union.cases.[tag]
@@ -110,7 +110,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
 
         writer.WriteEndObject()
 
-    override __.ReadJson(reader: JsonReader, t: Type, _: obj, jsonSerializer: JsonSerializer) =
+    override __.ReadJson(reader : JsonReader, t : Type, _ : obj, jsonSerializer : JsonSerializer) =
         let token = JToken.ReadFrom reader
         if token.Type <> JTokenType.Object then raise (FormatException(sprintf "Expected object token, got %O" token.Type))
         let inputJObject = token :?> JObject
