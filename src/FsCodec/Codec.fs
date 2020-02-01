@@ -19,7 +19,7 @@ type Codec =
         { new IEventCodec<'Event, 'Format, 'Context> with
             member __.Encode(context, event) =
                 let eventType, data, metadata, correlationId, causationId, timestamp = encode (context, event)
-                Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp=timestamp)
+                Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp = timestamp)
             member __.TryDecode encoded =
                 tryDecode encoded }
 

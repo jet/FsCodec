@@ -69,9 +69,9 @@ type Codec private () =
             ///   and an Event Creation <c>timestamp</c>.
             down : 'Context option * 'Event -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
-            [<Optional;DefaultParameterValue(null)>]?settings,
+            [<Optional; DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], 'Context> =
         let settings = match settings with Some x -> x | None -> defaultSettings.Value
         let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = new Core.BytesEncoder(settings) :> _
@@ -85,7 +85,7 @@ type Codec private () =
                 let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let metaUtf8 = meta |> Option.map bytesEncoder.Encode<'Meta>
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, correlationId, causationId, ?timestamp=timestamp)
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, correlationId, causationId, ?timestamp = timestamp)
             member __.TryDecode encoded =
                 let cOption = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
                 match cOption with None -> None | Some contract -> let union = up (encoded, contract) in Some union }
@@ -107,15 +107,15 @@ type Codec private () =
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
             mapCausation : 'Context option * 'Meta option -> 'Meta option * string * string,
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
-            [<Optional;DefaultParameterValue(null)>]?settings,
+            [<Optional; DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], 'Context> =
         let down (context, union) =
             let c, m, t = down union
             let m', correlationId, causationId = mapCausation (context, m)
             c, m', correlationId, causationId, t
-        Codec.Create(up = up, down = down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
@@ -132,22 +132,22 @@ type Codec private () =
             ///   and an Event Creation <c>timestamp</c>.
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
-            [<Optional;DefaultParameterValue(null)>]?settings,
+            [<Optional; DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], obj> =
-        let mapCausation (_context : obj, m : ' Meta option) = m, null, null
-        Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
+        let mapCausation (_context : obj, m : 'Meta option) = m, null, null
+        Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
         (   // Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
-            [<Optional;DefaultParameterValue(null)>]?settings,
+            [<Optional; DefaultParameterValue(null)>]?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, byte[], obj> =
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (event : 'Union) = event, None, None
-        Codec.Create(up = up, down = down, ?settings=settings, ?rejectNullaryCases=rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
