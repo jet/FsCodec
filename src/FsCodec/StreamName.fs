@@ -58,7 +58,7 @@ module StreamName =
 
     /// Attempts to split a Stream Name in the form {category}-{id} into the two elements.
     /// Yields <code>NotCategorized</code> if it does not adhere to that form.
-    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string*string,unit> =
+    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string * string, unit> =
         match trySplitCategoryAndId rawStreamName with
         | Some catAndId -> Categorized catAndId
         | None -> NotCategorized
