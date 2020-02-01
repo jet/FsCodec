@@ -14,7 +14,7 @@ type OptionConverter() =
         let value =
             if value = null then null
             else
-                let _,fields = FSharpValue.GetUnionFields(value, value.GetType())
+                let _, fields = FSharpValue.GetUnionFields(value, value.GetType())
                 fields.[0]
         serializer.Serialize(writer, value)
 
