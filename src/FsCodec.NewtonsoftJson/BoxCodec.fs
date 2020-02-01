@@ -18,7 +18,7 @@ type Codec private () =
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or, if unspecified, the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
-    static member Create<'Event,'Contract,'Meta,'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
+    static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.ITimelineEvent<obj> * 'Contract -> 'Event,
@@ -28,29 +28,29 @@ type Codec private () =
             down : 'Context option * 'Event -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
             /// Enables one to fail encoder generation if 'Contract contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event,obj,'Context> =
+        : FsCodec.IEventCodec<'Event, obj, 'Context> =
         let boxEncoder : TypeShape.UnionContract.IEncoder<obj> = new TypeShape.UnionContract.BoxEncoder() :> _
         let dataCodec =
-            TypeShape.UnionContract.UnionContractEncoder.Create<'Contract,obj>(
+            TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, obj>(
                 boxEncoder,
-                requireRecordFields=true,
-                allowNullaryCases=not (defaultArg rejectNullaryCases false))
-        { new FsCodec.IEventCodec<'Event,obj,'Context> with
-            member __.Encode(context,event) =
-                let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context,event)
+                requireRecordFields = true,
+                allowNullaryCases = not (defaultArg rejectNullaryCases false))
+        { new FsCodec.IEventCodec<'Event, obj, 'Context> with
+            member __.Encode(context, event) =
+                let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let meta = meta |> Option.map boxEncoder.Encode<'Meta>
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg meta null, correlationId, causationId, ?timestamp=timestamp)
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg meta null, correlationId, causationId, ?timestamp = timestamp)
             member __.TryDecode encoded =
                 let cOption = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
-                match cOption with None -> None | Some contract -> let event = up (encoded,contract) in Some event }
+                match cOption with None -> None | Some contract -> let event = up (encoded, contract) in Some event }
 
     /// Generate an <code>IEventCodec</code> that roundtrips events by holding the boxed form of the Event body.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
-    static member Create<'Event,'Contract,'Meta,'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
+    static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.ITimelineEvent<obj> * 'Contract -> 'Event,
@@ -63,19 +63,19 @@ type Codec private () =
             mapCausation : 'Context option * 'Meta option -> 'Meta option * string * string,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event,obj,'Context> =
+        : FsCodec.IEventCodec<'Event, obj, 'Context> =
         let down (context, event) =
             let c, m, t = down event
-            let m', correlationId, causationId = mapCausation (context,m)
+            let m', correlationId, causationId = mapCausation (context, m)
             c, m', correlationId, causationId, t
-        Codec.Create(up=up, down=down, ?rejectNullaryCases=rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> that roundtrips events by holding the boxed form of the Event body.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
-    static member Create<'Event,'Contract,'Meta when 'Contract :> TypeShape.UnionContract.IUnionContract>
+    static member Create<'Event, 'Contract, 'Meta when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
             up : FsCodec.ITimelineEvent<obj> * 'Contract -> 'Event,
@@ -86,9 +86,9 @@ type Codec private () =
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional;DefaultParameterValue(null)>]?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event,obj,obj> =
-        let mapCausation (_context : obj, m : ' Meta option) = m,null,null
-        Codec.Create(up=up, down=down, mapCausation=mapCausation, ?rejectNullaryCases=rejectNullaryCases)
+        : FsCodec.IEventCodec<'Event, obj, obj> =
+        let mapCausation (_context : obj, m : 'Meta option) = m, null, null
+        Codec.Create(up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> that roundtrips events by holding the boxed form of the Event body.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -99,4 +99,4 @@ type Codec private () =
         : FsCodec.IEventCodec<'Union, obj, obj> =
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (event : 'Union) = event, None, None
-        Codec.Create(up=up, down=down, ?rejectNullaryCases=rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
