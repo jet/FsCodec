@@ -61,6 +61,7 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, cor
         let isUnfold, context = defaultArg isUnfold false, defaultArg context null
         let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
         TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp, context) :> _
+
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
         member __.IsUnfold = isUnfold
