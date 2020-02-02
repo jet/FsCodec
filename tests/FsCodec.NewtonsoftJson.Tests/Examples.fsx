@@ -95,6 +95,7 @@ and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
     override __.Pickle v =
         TypeSafeEnum.toString v
+
     override __.UnPickle json =
         json
         |> TypeSafeEnum.tryParse<OutcomeWithOther>
