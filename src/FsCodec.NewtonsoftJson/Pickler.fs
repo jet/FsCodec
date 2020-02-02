@@ -38,11 +38,11 @@ type JsonPickler<'T>() =
     override __.CanRead = true
     override __.CanWrite = true
 
-    override __.WriteJson(writer, source : obj, serialize : JsonSerializer) =
-        __.Write(writer, serialize, source :?> 'T)
+    override __.WriteJson(writer : JsonWriter, value : obj, jsonSerializer : JsonSerializer) =
+        __.Write(writer, jsonSerializer, value :?> 'T)
 
-    override __.ReadJson(reader : JsonReader, _, _, serializer : JsonSerializer) =
-        __.Read(reader, serializer) :> obj
+    override __.ReadJson(reader : JsonReader, _ : Type, _ : obj, jsonSerializer : JsonSerializer) =
+        __.Read(reader, jsonSerializer) :> obj
 
 /// Json Converter that serializes based on an isomorphic type
 [<AbstractClass>]

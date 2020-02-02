@@ -16,10 +16,12 @@ type Codec =
             /// Attempts to map from an Event's stored data to <c>Some 'Event</c>, or <c>None</c> if not mappable.
             tryDecode : ITimelineEvent<'Format> -> 'Event option)
         : IEventCodec<'Event, 'Format, 'Context> =
+
         { new IEventCodec<'Event, 'Format, 'Context> with
             member __.Encode(context, event) =
                 let eventType, data, metadata, correlationId, causationId, timestamp = encode (context, event)
                 Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp = timestamp)
+
             member __.TryDecode encoded =
                 tryDecode encoded }
 
@@ -37,6 +39,7 @@ type Codec =
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
             mapCausation : 'Context option * 'Event -> 'Format * string * string)
         : FsCodec.IEventCodec<'Event, 'Format, 'Context> =
+
         let encode (context, event) =
             let et, d, t = encode event
             let m, correlationId, causationId = mapCausation (context, event)
@@ -50,6 +53,7 @@ type Codec =
             /// Attempts to map an Event Type Name and a UTF-8 array <c>Data</c> to <c>Some 'Event</c> case, or <c>None</c> if not mappable.
             tryDecode : string * 'Format -> 'Event option)
         : IEventCodec<'Event, 'Format, obj> =
+
         let encode' (_context : obj, event) = let (et, d : 'Format) = encode event in et, d, null, null, null, None
         let tryDecode' (encoded : FsCodec.ITimelineEvent<'Format>) = tryDecode (encoded.EventType, encoded.Data)
         Codec.Create(encode', tryDecode')

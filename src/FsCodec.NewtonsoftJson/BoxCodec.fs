@@ -27,20 +27,23 @@ type Codec private () =
             ///   together with its <c>correlationId</c>, <c>causationId</c> and an event creation <c>timestamp</c> (defaults to <c>UtcNow</c>).
             down : 'Context option * 'Event -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
             /// Enables one to fail encoder generation if 'Contract contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, obj, 'Context> =
+
         let boxEncoder : TypeShape.UnionContract.IEncoder<obj> = new TypeShape.UnionContract.BoxEncoder() :> _
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, obj>(
                 boxEncoder,
                 requireRecordFields = true,
                 allowNullaryCases = not (defaultArg rejectNullaryCases false))
+
         { new FsCodec.IEventCodec<'Event, obj, 'Context> with
             member __.Encode(context, event) =
                 let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let meta = meta |> Option.map boxEncoder.Encode<'Meta>
                 FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg meta null, correlationId, causationId, ?timestamp = timestamp)
+
             member __.TryDecode encoded =
                 let cOption = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
                 match cOption with None -> None | Some contract -> let event = up (encoded, contract) in Some event }
@@ -62,8 +65,9 @@ type Codec private () =
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
             mapCausation : 'Context option * 'Meta option -> 'Meta option * string * string,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, obj, 'Context> =
+
         let down (context, event) =
             let c, m, t = down event
             let m', correlationId, causationId = mapCausation (context, m)
@@ -85,8 +89,9 @@ type Codec private () =
             ///   and an Event Creation <c>timestamp</c>.
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, obj, obj> =
+
         let mapCausation (_context : obj, m : 'Meta option) = m, null, null
         Codec.Create(up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
@@ -95,8 +100,9 @@ type Codec private () =
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
         (   /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>]?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, obj, obj> =
+
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (event : 'Union) = event, None, None
         Codec.Create(up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)

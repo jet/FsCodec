@@ -16,6 +16,7 @@ module TypeSafeEnum =
         union.cases
         |> Array.tryFindIndex (fun case -> case.Name = str)
         |> Option.map (fun tag -> (union.caseConstructor.[tag] [||]))
+
     let tryParse<'T> (str : string) = tryParseT typeof<'T> str |> Option.map (fun e -> e :?> 'T)
 
     let parseT (t : Type) (str : string) =
@@ -24,6 +25,7 @@ module TypeSafeEnum =
         | None   ->
             // Keep exception compat, but augment with a meaningful message.
             raise (KeyNotFoundException(sprintf "Could not find case '%s' for type '%s'" str t.FullName))
+
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
     let toString (x : obj) =
@@ -41,7 +43,7 @@ type TypeSafeEnumConverter() =
         let str = TypeSafeEnum.toString value
         writer.WriteValue str
 
-    override __.ReadJson(reader, t : Type, _ : obj, _ : JsonSerializer) =
+    override __.ReadJson(reader : JsonReader, t : Type, _ : obj, _ : JsonSerializer) =
         if reader.TokenType <> JsonToken.String then
             sprintf "Unexpected token when reading TypeSafeEnum: %O" reader.TokenType |> JsonSerializationException |> raise
         let str = reader.Value :?> string

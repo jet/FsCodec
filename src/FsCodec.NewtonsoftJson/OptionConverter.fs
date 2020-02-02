@@ -8,17 +8,18 @@ open System
 type OptionConverter() =
     inherit JsonConverter()
 
-    override __.CanConvert(t) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<option<_>>
+    override __.CanConvert(t : Type) = t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<option<_>>
 
-    override __.WriteJson(writer, value, serializer) =
+    override __.WriteJson(writer : JsonWriter, value : obj, jsonSerializer : JsonSerializer) =
         let value =
             if value = null then null
             else
                 let _, fields = FSharpValue.GetUnionFields(value, value.GetType())
                 fields.[0]
-        serializer.Serialize(writer, value)
 
-    override __.ReadJson(reader, t, _existingValue, serializer) =
+        jsonSerializer.Serialize(writer, value)
+
+    override __.ReadJson(reader : JsonReader, t : Type, _existingValue : obj, jsonSerializer : JsonSerializer) =
         let innerType =
             let innerType = t.GetGenericArguments().[0]
             if innerType.IsValueType then typedefof<Nullable<_>>.MakeGenericType(innerType)
@@ -27,6 +28,6 @@ type OptionConverter() =
         let cases = Union.getUnionCases t
         if reader.TokenType = JsonToken.Null then FSharpValue.MakeUnion(cases.[0], Array.empty)
         else
-            let value = serializer.Deserialize(reader, innerType)
+            let value = jsonSerializer.Deserialize(reader, innerType)
             if value = null then FSharpValue.MakeUnion(cases.[0], Array.empty)
             else FSharpValue.MakeUnion(cases.[1], [|value|])

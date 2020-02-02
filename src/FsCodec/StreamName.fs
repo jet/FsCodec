@@ -66,7 +66,8 @@ module StreamName =
     (* Rendering *)
 
     /// Strip off the strong typing (It's recommended to pattern match as below in the general case)
-    let toString (streamName : StreamName) : string = UMX.untag streamName
+    let toString (streamName : StreamName) : string =
+        UMX.untag streamName
 
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)

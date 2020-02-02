@@ -28,6 +28,7 @@ module private Union =
             fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
             caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
         }
+
     let getUnion = memoize createUnion
 
     /// Paralells F# behavior wrt how it generates a DU's underlying .NET Type
@@ -71,8 +72,8 @@ module private Union =
 type UnionConverter private (discriminator : string, ?catchAllCase) =
     inherit JsonConverter()
 
-    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
     new() = UnionConverter("case")
+    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
 
     override __.CanConvert (t : Type) = Union.isUnion t
 
@@ -130,5 +131,6 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
                     sprintf "No case defined for '%s', nominated catchAllCase: '%s' not found in type '%s'"
                         inputCaseNameValue catchAllCaseName t.FullName |> invalidOp
                 | Some foundIndex -> foundIndex
+
         let targetCaseFields, targetCaseCtor = union.cases.[targetCaseIndex].GetFields(), union.caseConstructor.[targetCaseIndex]
         targetCaseCtor (Union.mapTargetCaseArgs inputJObject jsonSerializer targetCaseFields)
