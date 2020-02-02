@@ -48,9 +48,9 @@ module private Union =
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to let json.net step in to convert argument types
-    let mapTargetCaseArgs (inputJObject : JObject) jsonSerializer : PropertyInfo[] -> obj [] = function
+    let mapTargetCaseArgs (inputJObject : JObject) serializer : PropertyInfo[] -> obj [] = function
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
-            [| inputJObject.ToObject(singleCaseArg.PropertyType, jsonSerializer) |]
+            [| inputJObject.ToObject(singleCaseArg.PropertyType, serializer) |]
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
                 match inputJObject.[fi.Name] with
@@ -60,12 +60,12 @@ module private Union =
                     // the TypeSafeEnumConverter should reject missing values
                     // not having this case would go direct to `null` without passing go
                     typeHasJsonConverterAttribute fi.PropertyType
-                    || jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error ->
+                    || serializer.MissingMemberHandling = MissingMemberHandling.Error ->
                         // NB caller can opt out of erroring by setting NullValueHandling = NullValueHandling.Ignore)
                         // which renders the following equivalent to the next case
-                        JToken.Parse("null").ToObject(fi.PropertyType, jsonSerializer)
+                        JToken.Parse("null").ToObject(fi.PropertyType, serializer)
                 | null -> null
-                | itemValue -> itemValue.ToObject(fi.PropertyType, jsonSerializer) |]
+                | itemValue -> itemValue.ToObject(fi.PropertyType, serializer) |]
 
 /// Serializes a discriminated union case with a single field that is a
 /// record by flattening the record fields to the same level as the discriminator
@@ -77,7 +77,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
 
     override __.CanConvert (t : Type) = Union.isUnion t
 
-    override __.WriteJson(writer : JsonWriter, value : obj, jsonSerializer : JsonSerializer) =
+    override __.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
         let union = Union.getUnion (value.GetType())
         let tag = union.tagReader value
         let case = union.cases.[tag]
@@ -92,9 +92,9 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         match fieldInfos with
         | [| fi |] ->
             match fieldValues.[0] with
-            | null when jsonSerializer.NullValueHandling = NullValueHandling.Ignore -> ()
+            | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
-                let token = if fv = null then JToken.Parse "null" else JToken.FromObject(fv, jsonSerializer)
+                let token = if fv = null then JToken.Parse "null" else JToken.FromObject(fv, serializer)
                 match token.Type with
                 | JTokenType.Object ->
                     // flatten the object properties into the same one as the discriminator
@@ -105,13 +105,13 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
                     token.WriteTo writer
         | _ ->
             for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
-                if fieldValue <> null || jsonSerializer.NullValueHandling = NullValueHandling.Include then
+                if fieldValue <> null || serializer.NullValueHandling = NullValueHandling.Include then
                     writer.WritePropertyName(fieldInfo.Name)
-                    jsonSerializer.Serialize(writer, fieldValue)
+                    serializer.Serialize(writer, fieldValue)
 
         writer.WriteEndObject()
 
-    override __.ReadJson(reader : JsonReader, t : Type, _ : obj, jsonSerializer : JsonSerializer) =
+    override __.ReadJson(reader : JsonReader, t : Type, _ : obj, serializer : JsonSerializer) =
         let token = JToken.ReadFrom reader
         if token.Type <> JTokenType.Object then raise (FormatException(sprintf "Expected object token, got %O" token.Type))
         let inputJObject = token :?> JObject
@@ -133,4 +133,4 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
                 | Some foundIndex -> foundIndex
 
         let targetCaseFields, targetCaseCtor = union.cases.[targetCaseIndex].GetFields(), union.caseConstructor.[targetCaseIndex]
-        targetCaseCtor (Union.mapTargetCaseArgs inputJObject jsonSerializer targetCaseFields)
+        targetCaseCtor (Union.mapTargetCaseArgs inputJObject serializer targetCaseFields)

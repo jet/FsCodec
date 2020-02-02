@@ -13,9 +13,9 @@ type VerbatimUtf8JsonConverter() =
     override __.CanConvert(t : Type) =
         typeof<byte[]>.Equals(t)
 
-    override __.WriteJson(writer : JsonWriter, value : obj, jsonSerializer : JsonSerializer) =
+    override __.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
         let array = value :?> byte[]
-        if array = null || array.Length = 0 then jsonSerializer.Serialize(writer, null)
+        if array = null || array.Length = 0 then serializer.Serialize(writer, null)
         else writer.WriteRawValue(enc.GetString(array))
 
     override __.ReadJson(reader : JsonReader, _ : Type, _ : obj, _ : JsonSerializer) =
