@@ -61,7 +61,7 @@ ser Guid.Empty
 // "00000000-0000-0000-0000-000000000000"
 
 let settings = Settings.Create(converters = [| GuidConverter() |])
-Serdes.Serialize(Guid.Empty,settings)
+Serdes.Serialize(Guid.Empty, settings)
 // 00000000000000000000000000000000
 
 (* TypeSafeEnumConverter basic usage *)
@@ -95,6 +95,7 @@ and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
     override __.Pickle v =
         TypeSafeEnum.toString v
+
     override __.UnPickle json =
         json
         |> TypeSafeEnum.tryParse<OutcomeWithOther>
@@ -112,16 +113,12 @@ des<Message2> """{"name":null,"outcome":"Joy"}"""
 des<Message2> """{"name":null,"outcome":"Discomfort"}"""
 // val it : Message = {name = None; outcome = Other;}
 
-(*
-
-Illustrating usage of IEventCodec and its accompanying active patterns
-
-*)
+(* Illustrating usage of IEventCodec and its accompanying active patterns *)
 
 module EventCodec =
 
     /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
-    let tryDecode (codec : FsCodec.IEventCodec<_,_,_>) (log : Serilog.ILogger) streamName (x : FsCodec.ITimelineEvent<byte[]>) =
+    let tryDecode (codec : FsCodec.IEventCodec<_, _, _>) (log : Serilog.ILogger) streamName (x : FsCodec.ITimelineEvent<byte[]>) =
         match codec.TryDecode x with
         | None ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
@@ -143,6 +140,7 @@ module Events =
 
     // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
     let [<Literal>] CategoryId = "Favorites"
+
     /// Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the aggregateId if the Category does match
     let (|MatchesCategory|_|) = function
@@ -158,6 +156,7 @@ module Events =
 
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
     let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+
     /// Yields decoded event and relevant strongly typed ids if the category of the Stream Name is correct
     let (|Match|_|) (streamName, span) =
         match streamName, span with
@@ -185,7 +184,9 @@ let runCodec () =
             printfn "Client %s, event %A" (ClientId.toString id) e
         | StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+
 runCodec ()
+
 let runCodecCleaner () =
     for stream, event in events do
         match stream, event with
@@ -193,6 +194,7 @@ let runCodecCleaner () =
             printfn "Client %s, event %A" (ClientId.toString clientId) event
         | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+
 runCodecCleaner ()
 
 // Switch on debug logging to get detailed information about events that don't match (which has no significant perf cost when not switched on)
@@ -204,6 +206,7 @@ Serilog.Log.Logger <-
         .MinimumLevel.Debug()
         .WriteTo.Console(LogEventLevel.Debug, outputTemplate=outputTemplate)
         .CreateLogger()
+
 runCodec ()
 (*
 Client ClientA, event Added {item = "a";}
@@ -225,13 +228,16 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 module EventsWithMeta =
 
     type EventWithMeta = int64 * DateTimeOffset * Events.Event
+
     let codec =
         let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : EventWithMeta =
             raw.Index, raw.Timestamp, contract
         let down ((_index, timestamp, event) : EventWithMeta) =
             event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
+
     let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+
     let (|Match|_|) (streamName, span) =
         match streamName, span with
         | Events.MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
@@ -244,6 +250,7 @@ let runWithContext () =
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
         | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+
 runWithContext ()
 (*
 Client ClientA index 0 time 2020-01-13 09:44:37Z event Added {item = "a";}

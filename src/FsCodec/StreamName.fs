@@ -58,7 +58,7 @@ module StreamName =
 
     /// Attempts to split a Stream Name in the form {category}-{id} into the two elements.
     /// Yields <code>NotCategorized</code> if it does not adhere to that form.
-    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string*string,unit> =
+    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string * string, unit> =
         match trySplitCategoryAndId rawStreamName with
         | Some catAndId -> Categorized catAndId
         | None -> NotCategorized
@@ -66,7 +66,8 @@ module StreamName =
     (* Rendering *)
 
     /// Strip off the strong typing (It's recommended to pattern match as below in the general case)
-    let toString (streamName : StreamName) : string = UMX.untag streamName
+    let toString (streamName : StreamName) : string =
+        UMX.untag streamName
 
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
