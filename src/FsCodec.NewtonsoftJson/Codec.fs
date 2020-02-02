@@ -92,8 +92,9 @@ type Codec private () =
                 FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, correlationId, causationId, ?timestamp = timestamp)
 
             member __.TryDecode encoded =
-                let cOption = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
-                match cOption with None -> None | Some contract -> let union = up (encoded, contract) in Some union }
+                match dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } with
+                | None -> None
+                | Some contract -> up (encoded, contract) |> Some }
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
