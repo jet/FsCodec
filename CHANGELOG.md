@@ -13,6 +13,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+- Reorder to fix consistency of type args in `FsCodec.Code.Create<'Event, 'Format, 'Context>`
+
 <a name="2.0.0-rc3"></a>
 ## [2.0.0-rc3] - 2020-01-31
 

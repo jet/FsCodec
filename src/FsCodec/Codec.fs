@@ -27,7 +27,7 @@ type Codec =
 
     /// Generate an <code>IEventCodec</code> suitable using the supplied <c>encode</c> and <c>tryDecode</code> functions to map to/from the stored form.
     /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the <c>context</c> passed to the encoder
-    static member Create<'Context, 'Event, 'Format>
+    static member Create<'Event, 'Format, 'Context>
         (   /// Maps a fresh <c>'Event</c> resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
