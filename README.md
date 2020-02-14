@@ -359,18 +359,19 @@ module StreamName =
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
 
-    // Attempts to split a Stream Name in the form {category}-{id} into the two elements.
-    // Returns <code>None</code> if it does not adhere to that form.
+    // Attempts to split a Stream Name in the form {category}-{id} into its two elements.
+    // The {id} segment is permitted to include embedded '-' (dash) characters
     let trySplitCategoryAndId (rawStreamName : string) : (string * string) option = ...
 
-    // Attempts to split a Stream Name in the form {category}-{id} into the two elements.
+    // Attempts to split a Stream Name in the form {category}-{id} into its two elements.
+    // The {id} segment is permitted to include embedded '-' (dash) characters
     // Yields <code>NotCategorized</code> if it does not adhere to that form.
     let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string*string,unit> = ...
 
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
 
-    // Splits a well-formed Stream Name of the form {category}-{id} into the two elements.
+    // Splits a well-formed Stream Name of the form {category}-{id} into its two elements.
     // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
     // <remarks>Inverse of <code>create</code>
     let splitCategoryAndId (streamName : StreamName) : string * string = ...
