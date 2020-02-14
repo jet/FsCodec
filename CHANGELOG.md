@@ -121,7 +121,7 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/equinox/compare/2.0.0-rc3...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.0.0-rc3...HEAD
 [2.0.0-rc3]: https://github.com/jet/FsCodec/compare/2.0.0-rc2...2.0.0-rc3
 [2.0.0-rc2]: https://github.com/jet/FsCodec/compare/2.0.0-rc1...2.0.0-rc2
 [2.0.0-rc1]: https://github.com/jet/FsCodec/compare/1.2.1...2.0.0-rc1
