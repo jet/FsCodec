@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- Add `EventId` to `IEventData` [#36](https://github.com/jet/FsCodec/pull/36)
+
 ### Changed
 
 - Permit embedded dashes in `FsCodec.StreamName`'s `{aggregateId}` segment [#34](https://github.com/jet/FsCodec/pull/34)

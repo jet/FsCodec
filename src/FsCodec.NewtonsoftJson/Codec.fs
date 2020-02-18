@@ -27,7 +27,7 @@ module private Utf8BytesEncoder =
     let private utf8NoBom = new System.Text.UTF8Encoding(false, true)
     let makeJsonWriter ms =
         // We need to `leaveOpen` in order to allow .Dispose of the `.rentStream`'d to return it
-        let sw = new StreamWriter(ms, utf8NoBom, 1024, leaveOpen = true) // same middle args as StreamWriter default ctor 
+        let sw = new StreamWriter(ms, utf8NoBom, 1024, leaveOpen = true) // same middle args as StreamWriter default ctor
         new JsonTextWriter(sw, ArrayPool = CharBuffersPool.instance)
 
 module Core =
@@ -69,7 +69,7 @@ type Codec private () =
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
             ///   and an Event Creation <c>timestamp</c>.
-            down : 'Context option * 'Event -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
+            down : 'Context option * 'Event -> 'Contract * 'Meta option * Guid * string * string * DateTimeOffset option,
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
@@ -86,10 +86,10 @@ type Codec private () =
 
         { new FsCodec.IEventCodec<'Event, byte[], 'Context> with
             member __.Encode(context, event) =
-                let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
+                let (c, meta : 'Meta option, eventId, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let metaUtf8 = meta |> Option.map bytesEncoder.Encode<'Meta>
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, correlationId, causationId, ?timestamp = timestamp)
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, eventId, correlationId, causationId, ?timestamp = timestamp)
 
             member __.TryDecode encoded =
                 match dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } with
@@ -111,7 +111,7 @@ type Codec private () =
             ///   and an Event Creation <c>timestamp</c>.
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
-            mapCausation : 'Context option * 'Meta option -> 'Meta option * string * string,
+            mapCausation : 'Context option * 'Meta option -> 'Meta option * Guid * string * string,
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
@@ -120,8 +120,8 @@ type Codec private () =
 
         let down (context, union) =
             let c, m, t = down union
-            let m', correlationId, causationId = mapCausation (context, m)
-            c, m', correlationId, causationId, t
+            let m', eventId, correlationId, causationId = mapCausation (context, m)
+            c, m', eventId, correlationId, causationId, t
         Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
@@ -144,7 +144,7 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], obj> =
 
-        let mapCausation (_context : obj, m : 'Meta option) = m, null, null
+        let mapCausation (_context : obj, m : 'Meta option) = m, Guid.NewGuid(), null, null
         Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.

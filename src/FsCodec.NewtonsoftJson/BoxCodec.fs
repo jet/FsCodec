@@ -24,13 +24,13 @@ type Codec private () =
             up : FsCodec.ITimelineEvent<obj> * 'Contract -> 'Event,
             /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionContract</c> <c>'Contract</c>
             /// The function is also expected to derive a <c>meta</c> object that will be held alongside the data (if it's not <c>None</c>)
-            ///   together with its <c>correlationId</c>, <c>causationId</c> and an event creation <c>timestamp</c> (defaults to <c>UtcNow</c>).
-            down : 'Context option * 'Event -> 'Contract * 'Meta option * string * string * DateTimeOffset option,
+            ///   together with its <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and an event creation <c>timestamp</c> (defaults to <c>UtcNow</c>).
+            down : 'Context option * 'Event -> 'Contract * 'Meta option * Guid * string * string * DateTimeOffset option,
             /// Enables one to fail encoder generation if 'Contract contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, obj, 'Context> =
 
-        let boxEncoder : TypeShape.UnionContract.IEncoder<obj> = new TypeShape.UnionContract.BoxEncoder() :> _
+        let boxEncoder : TypeShape.UnionContract.IEncoder<obj> = TypeShape.UnionContract.BoxEncoder() :> _
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, obj>(
                 boxEncoder,
@@ -39,10 +39,10 @@ type Codec private () =
 
         { new FsCodec.IEventCodec<'Event, obj, 'Context> with
             member __.Encode(context, event) =
-                let (c, meta : 'Meta option, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
+                let (c, meta : 'Meta option, eventId, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let meta = meta |> Option.map boxEncoder.Encode<'Meta>
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg meta null, correlationId, causationId, ?timestamp = timestamp)
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg meta null, eventId, correlationId, causationId, ?timestamp = timestamp)
 
             member __.TryDecode encoded =
                 let cOption = dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data }
@@ -63,15 +63,15 @@ type Codec private () =
             ///   and an Event Creation <c>timestamp</c>.
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
-            mapCausation : 'Context option * 'Meta option -> 'Meta option * string * string,
+            mapCausation : 'Context option * 'Meta option -> 'Meta option * Guid * string * string,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, obj, 'Context> =
 
         let down (context, event) =
             let c, m, t = down event
-            let m', correlationId, causationId = mapCausation (context, m)
-            c, m', correlationId, causationId, t
+            let m', eventId, correlationId, causationId = mapCausation (context, m)
+            c, m', eventId, correlationId, causationId, t
         Codec.Create(up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> that roundtrips events by holding the boxed form of the Event body.
@@ -92,7 +92,7 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, obj, obj> =
 
-        let mapCausation (_context : obj, m : 'Meta option) = m, null, null
+        let mapCausation (_context : obj, m : 'Meta option) = m, Guid.NewGuid(), null, null
         Codec.Create(up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// Generate an <code>IEventCodec</code> that roundtrips events by holding the boxed form of the Event body.

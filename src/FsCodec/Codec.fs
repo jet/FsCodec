@@ -12,15 +12,15 @@ type Codec =
     // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
     static member private Create<'Event, 'Format, 'Context>
         (   /// Maps an 'Event to: an Event Type Name, a pair of <>'Format</c>'s representing the <c>Data</c> and <c>Meta</c> together with the <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.
-            encode : 'Context option * 'Event -> string * 'Format * 'Format * string * string * System.DateTimeOffset option,
+            encode : 'Context option * 'Event -> string * 'Format * 'Format * Guid * string * string * System.DateTimeOffset option,
             /// Attempts to map from an Event's stored data to <c>Some 'Event</c>, or <c>None</c> if not mappable.
             tryDecode : ITimelineEvent<'Format> -> 'Event option)
         : IEventCodec<'Event, 'Format, 'Context> =
 
         { new IEventCodec<'Event, 'Format, 'Context> with
             member __.Encode(context, event) =
-                let eventType, data, metadata, correlationId, causationId, timestamp = encode (context, event)
-                Core.EventData.Create(eventType, data, metadata, correlationId, causationId, ?timestamp = timestamp)
+                let eventType, data, metadata, eventId, correlationId, causationId, timestamp = encode (context, event)
+                Core.EventData.Create(eventType, data, metadata, eventId, correlationId, causationId, ?timestamp = timestamp)
 
             member __.TryDecode encoded =
                 tryDecode encoded }
@@ -37,13 +37,13 @@ type Codec =
             /// to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
             tryDecode : FsCodec.ITimelineEvent<'Format> -> 'Event option,
             /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
-            mapCausation : 'Context option * 'Event -> 'Format * string * string)
+            mapCausation : 'Context option * 'Event -> 'Format * Guid * string * string)
         : FsCodec.IEventCodec<'Event, 'Format, 'Context> =
 
         let encode (context, event) =
             let et, d, t = encode event
-            let m, correlationId, causationId = mapCausation (context, event)
-            et, d, m, correlationId, causationId, t
+            let m, eventId, correlationId, causationId = mapCausation (context, event)
+            et, d, m, eventId, correlationId, causationId, t
         Codec.Create(encode, tryDecode)
 
     /// Generate an <code>IEventCodec</code> using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
@@ -54,6 +54,6 @@ type Codec =
             tryDecode : string * 'Format -> 'Event option)
         : IEventCodec<'Event, 'Format, obj> =
 
-        let encode' (_context : obj, event) = let (et, d : 'Format) = encode event in et, d, null, null, null, None
+        let encode' (_context : obj, event) = let (et, d : 'Format) = encode event in et, d, null, Guid.NewGuid(), null, null, None
         let tryDecode' (encoded : FsCodec.ITimelineEvent<'Format>) = tryDecode (encoded.EventType, encoded.Data)
         Codec.Create(encode', tryDecode')
