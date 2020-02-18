@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- Permit embedded dashes in `FsCodec.StreamName`'s `{aggregateId}` segment [#34](https://github.com/jet/FsCodec/pull/34)
+
 ### Removed
 ### Fixed
 

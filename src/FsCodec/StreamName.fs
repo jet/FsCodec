@@ -49,14 +49,16 @@ module StreamName =
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
 
-    /// Attempts to split a Stream Name in the form {category}-{id} into the two elements.
+    /// Attempts to split a Stream Name in the form {category}-{id} into its two elements.
+    /// The {id} segment is permitted to include embedded '-' (dash) characters
     /// Returns <code>None</code> if it does not adhere to that form.
     let trySplitCategoryAndId (rawStreamName : string) : (string * string) option =
-        match rawStreamName.Split dash with
+        match rawStreamName.Split(dash, 2) with
         | [| cat; id |] -> Some (cat, id)
         | _ -> None
 
-    /// Attempts to split a Stream Name in the form {category}-{id} into the two elements.
+    /// Attempts to split a Stream Name in the form {category}-{id} into its two elements.
+    /// The {id} segment is permitted to include embedded '-' (dash) characters
     /// Yields <code>NotCategorized</code> if it does not adhere to that form.
     let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string * string, unit> =
         match trySplitCategoryAndId rawStreamName with
@@ -72,16 +74,16 @@ module StreamName =
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
 
-    /// Splits a well-formed Stream Name of the form {category}-{id} into the two elements.
+    /// Splits a well-formed Stream Name of the form {category}-{id} into its two elements.
     /// Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
     /// <remarks>Inverse of <code>create</code>
     let splitCategoryAndId (streamName : StreamName) : string * string =
         let rawName = toString streamName
         match trySplitCategoryAndId rawName with
         | Some catAndId -> catAndId
-        | None -> invalidArg (sprintf "Stream Name '%s' did not contain exactly one '-' separator" rawName) "streamName"
+        | None -> invalidArg (sprintf "Stream Name '%s' must contain a '-' separator" rawName) "streamName"
 
-    /// Splits a well-formed Stream Name of the form {category}-{id} into the two elements
+    /// Splits a well-formed Stream Name of the form {category}-{id} into its two elements
     /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed
     /// <remarks>Inverse of <code>create</code>
     let (|CategoryAndId|) : StreamName -> (string * string) = splitCategoryAndId
