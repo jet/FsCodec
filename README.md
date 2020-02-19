@@ -251,13 +251,15 @@ type IEventData<'Format> =
     abstract member Data : 'Format
     /// Optional metadata (null, or same as Data, not written if missing)
     abstract member Meta : 'Format
-    /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
-    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
-    abstract member Timestamp : System.DateTimeOffset
+    /// Application-generated identifier used to drive idempotent writes based on deterministic Ids and/or Request Id
+    abstract member EventId : System.Guid
     /// The Correlation Id associated with the flow that generated this event. Can be `null`
     abstract member CorrelationId : string
     /// The Causation Id associated with the flow that generated this event. Can be `null`
     abstract member CausationId : string
+    /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
+    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
+    abstract member Timestamp : System.DateTimeOffset
 ```
 
 <a name="ITimelineEvent"></a>

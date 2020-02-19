@@ -10,13 +10,13 @@ type IEventData<'Format> =
     abstract member Meta : 'Format
     /// Application-generated identifier used to drive idempotent writes based on deterministic Ids and/or Request Id
     abstract member EventId : System.Guid
-    /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
-    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
-    abstract member Timestamp : System.DateTimeOffset
     /// The Correlation Id associated with the flow that generated this event. Can be `null`
     abstract member CorrelationId : string
     /// The Causation Id associated with the flow that generated this event. Can be `null`
     abstract member CausationId : string
+    /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
+    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
+    abstract member Timestamp : System.DateTimeOffset
 
 /// Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence
 type ITimelineEvent<'Format> =
@@ -53,9 +53,9 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
         member __.Data = data
         member __.Meta = meta
         member __.EventId = eventId
-        member __.Timestamp = timestamp
         member __.CorrelationId = correlationId
         member __.CausationId = causationId
+        member __.Timestamp = timestamp
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
@@ -75,6 +75,6 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eve
         member __.Data = data
         member __.Meta = meta
         member __.EventId = eventId
-        member __.Timestamp = timestamp
         member __.CorrelationId = correlationId
         member __.CausationId = causationId
+        member __.Timestamp = timestamp
