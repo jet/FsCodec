@@ -8,13 +8,15 @@ type IEventData<'Format> =
     abstract member Data : 'Format
     /// Optional metadata (null, or same as Data, not written if missing)
     abstract member Meta : 'Format
-    /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
-    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
-    abstract member Timestamp : System.DateTimeOffset
+    /// Application-generated identifier used to drive idempotent writes based on deterministic Ids and/or Request Id
+    abstract member EventId : System.Guid
     /// The Correlation Id associated with the flow that generated this event. Can be `null`
     abstract member CorrelationId : string
     /// The Causation Id associated with the flow that generated this event. Can be `null`
     abstract member CausationId : string
+    /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
+    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
+    abstract member Timestamp : System.DateTimeOffset
 
 /// Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence
 type ITimelineEvent<'Format> =
@@ -40,27 +42,30 @@ open System
 
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
-type EventData<'Format> private (eventType, data, meta, correlationId, causationId, timestamp) =
-    static member Create(eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp) : IEventData<'Format> =
+type EventData<'Format> private (eventType, data, meta, eventId, correlationId, causationId, timestamp) =
+    static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp) : IEventData<'Format> =
         let meta, correlationId, causationId = defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null
-        EventData(eventType, data, meta, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
+        let eventId = match eventId with Some id -> id | None -> Guid.NewGuid()
+        EventData(eventType, data, meta, eventId, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
 
     interface FsCodec.IEventData<'Format> with
         member __.EventType = eventType
         member __.Data = data
         member __.Meta = meta
-        member __.Timestamp = timestamp
+        member __.EventId = eventId
         member __.CorrelationId = correlationId
         member __.CausationId = causationId
+        member __.Timestamp = timestamp
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
-type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp, context) =
-    static member Create(index, eventType, data, ?meta, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
-        let meta, timestamp = defaultArg meta Unchecked.defaultof<_>, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) =
+    static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
         let isUnfold, context = defaultArg isUnfold false, defaultArg context null
+        let meta, eventId = defaultArg meta Unchecked.defaultof<_>, match eventId with Some x -> x | None -> Guid.Empty
+        let timestamp = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
         let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
-        TimelineEvent(index, isUnfold, eventType, data, meta, correlationId, causationId, timestamp, context) :> _
+        TimelineEvent(index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) :> _
 
     interface FsCodec.ITimelineEvent<'Format> with
         member __.Index = index
@@ -69,6 +74,7 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, cor
         member __.EventType = eventType
         member __.Data = data
         member __.Meta = meta
-        member __.Timestamp = timestamp
+        member __.EventId = eventId
         member __.CorrelationId = correlationId
         member __.CausationId = causationId
+        member __.Timestamp = timestamp
