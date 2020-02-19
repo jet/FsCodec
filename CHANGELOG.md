@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="2.0.0"></a>
+## [2.0.0] - 2020-02-19
+
+### Added
 
 - Add `EventId` to `IEventData` [#36](https://github.com/jet/FsCodec/pull/36)
 
@@ -16,7 +24,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 - Permit embedded dashes in `FsCodec.StreamName`'s `{aggregateId}` segment [#34](https://github.com/jet/FsCodec/pull/34)
 
-### Removed
 ### Fixed
 
 - Reorder to fix consistency of type args in `FsCodec.Code.Create<'Event, 'Format, 'Context>`
@@ -127,7 +134,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.0.0-rc3...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/jet/FsCodec/compare/2.0.0-rc3...2.0.0
 [2.0.0-rc3]: https://github.com/jet/FsCodec/compare/2.0.0-rc2...2.0.0-rc3
 [2.0.0-rc2]: https://github.com/jet/FsCodec/compare/2.0.0-rc1...2.0.0-rc2
 [2.0.0-rc1]: https://github.com/jet/FsCodec/compare/1.2.1...2.0.0-rc1
