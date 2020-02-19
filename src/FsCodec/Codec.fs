@@ -11,7 +11,8 @@ type Codec =
     //   employed in the convention-based Codec
     // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
     static member private Create<'Event, 'Format, 'Context>
-        (   /// Maps an 'Event to: an Event Type Name, a pair of <>'Format</c>'s representing the <c>Data</c> and <c>Meta</c> together with the <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.
+        (   /// Maps an 'Event to: an Event Type Name, a pair of <>'Format</c>'s representing the <c>Data</c> and <c>Meta</c> together with the
+            /// <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.
             encode : 'Context option * 'Event -> string * 'Format * 'Format * Guid * string * string * System.DateTimeOffset option,
             /// Attempts to map from an Event's stored data to <c>Some 'Event</c>, or <c>None</c> if not mappable.
             tryDecode : ITimelineEvent<'Format> -> 'Event option)
