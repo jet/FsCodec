@@ -10,11 +10,16 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
-
-- Remove `null` constraint from the `'Format` type arg [#37](https://github.com/jet/FsCodec/pull/36)
-
 ### Removed
 ### Fixed
+
+<a name="2.0.1"></a>
+## [2.0.1] - 2020-02-26
+
+### Changed
+
+- Target SDK ver `3.1.101`, target latest images in CI
+- Remove `null` constraint from the `'Format` type arg [#37](https://github.com/jet/FsCodec/pull/37)
 
 <a name="2.0.0"></a>
 ## [2.0.0] - 2020-02-19

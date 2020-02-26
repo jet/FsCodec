@@ -5,7 +5,7 @@ trigger:
 jobs:
 - job: Windows
   pool:
-    vmImage: 'windows-2019'
+    vmImage: 'windows-latest'
   steps:
   - script: dotnet test build.proj
     displayName: dotnet test
