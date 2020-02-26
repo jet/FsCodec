@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- Remove `null` constraint from the `'Format` type arg [#37](https://github.com/jet/FsCodec/pull/36)
+
 ### Removed
 ### Fixed
 
