@@ -48,13 +48,15 @@ type Codec =
         Codec.Create(encode, tryDecode)
 
     /// Generate an <code>IEventCodec</code> using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
-    static member Create<'Event, 'Format when 'Format : null>
+    static member Create<'Event, 'Format>
         (   /// Maps a <c>'Event</c> to an Event Type Name and a UTF-8 array representing the <c>Data</c>.
             encode : 'Event -> string * 'Format,
             /// Attempts to map an Event Type Name and a UTF-8 array <c>Data</c> to <c>Some 'Event</c> case, or <c>None</c> if not mappable.
             tryDecode : string * 'Format -> 'Event option)
         : IEventCodec<'Event, 'Format, obj> =
 
-        let encode' (_context : obj, event) = let (et, d : 'Format) = encode event in et, d, null, Guid.NewGuid(), null, null, None
+        let encode' (_context : obj, event) =
+            let (eventType, data : 'Format) = encode event
+            eventType, data, Unchecked.defaultof<'Format> (* metadata *), Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), None (* timestamp *)
         let tryDecode' (encoded : FsCodec.ITimelineEvent<'Format>) = tryDecode (encoded.EventType, encoded.Data)
         Codec.Create(encode', tryDecode')
