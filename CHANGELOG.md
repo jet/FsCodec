@@ -18,6 +18,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Changed
 
+- Disabled tests for net461 on non-Windows to silence CI
 - Target SDK ver `3.1.101`, target latest images in CI
 - Remove `null` constraint from the `'Format` type arg [#37](https://github.com/jet/FsCodec/pull/37)
 
