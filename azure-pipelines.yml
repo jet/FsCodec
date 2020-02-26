@@ -25,7 +25,7 @@ jobs:
       artifactName: 'nupkgs'
 - job: Linux
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-latest'
   steps:
   - script: dotnet test build.proj
     displayName: dotnet test
@@ -38,7 +38,7 @@ jobs:
     displayName: dotnet pack
 - job: MacOS
   pool:
-    vmImage: 'macOS-10.13'
+    vmImage: 'macOS-latest'
   steps:
   - script: dotnet test build.proj
     displayName: dotnet test
