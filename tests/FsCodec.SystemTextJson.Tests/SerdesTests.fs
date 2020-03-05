@@ -24,7 +24,7 @@ module StjCharacterization =
                 | Choice2Of2 m -> m.Contains "Deserialization of reference types without parameterless constructor is not supported. Type 'FsCodec.SystemTextJson.Tests.SerdesTests+Record'" @>
 
     let [<Fact>] ``OOTB STJ options`` () =
-        let ootbOptionsWithRecordConverter = Options.CreateDefault(converters = [|Serialization.JsonRecordConverter()|])
+        let ootbOptionsWithRecordConverter = Options.CreateDefault(converters = [|Converters.JsonRecordConverter()|])
         let value = { a = 1; b = Some "str" }
         let ser =  Serdes.Serialize(value, ootbOptions)
         test <@ ser = """{"a":1,"b":{"Value":"str"}}""" @>

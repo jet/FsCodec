@@ -1,5 +1,6 @@
-﻿namespace FsCodec.SystemTextJson.Serialization
+﻿namespace FsCodec.SystemTextJson.Converters
 
+open FsCodec.SystemTextJson.Core
 open FSharp.Reflection
 open System
 open System.Collections.Generic

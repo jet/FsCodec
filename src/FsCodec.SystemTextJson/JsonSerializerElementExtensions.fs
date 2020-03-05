@@ -1,4 +1,4 @@
-﻿namespace FsCodec.SystemTextJson
+﻿namespace FsCodec.SystemTextJson.Core
 
 open System
 open System.Buffers
@@ -6,7 +6,7 @@ open System.Runtime.InteropServices
 open System.Text.Json
 
 [<AutoOpen>]
-module JsonSerializerExtensions =
+module internal JsonSerializerExtensions =
     type JsonSerializer with
         static member SerializeToElement(value: 'T, [<Optional; DefaultParameterValue(null)>] ?options: JsonSerializerOptions) =
             JsonSerializer.Deserialize<JsonElement>(ReadOnlySpan.op_Implicit(JsonSerializer.SerializeToUtf8Bytes(value, defaultArg options null)))

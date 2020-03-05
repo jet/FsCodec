@@ -1,4 +1,4 @@
-namespace FsCodec.SystemTextJson.Serialization
+namespace FsCodec.SystemTextJson.Converters
 
 open System
 open System.Linq.Expressions

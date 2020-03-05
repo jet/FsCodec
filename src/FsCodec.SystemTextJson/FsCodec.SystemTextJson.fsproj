@@ -9,11 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="JsonElementHelpers.fs" />
+    <Compile Include="JsonSerializerElementExtensions.fs" />
     <Compile Include="Utf8JsonReaderExtensions.fs" />
     <Compile Include="JsonOptionConverter.fs" />
     <Compile Include="JsonRecordConverter.fs" />
     <Compile Include="Options.fs" />
+    <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
   </ItemGroup>
 
@@ -24,6 +25,7 @@
     <PackageReference Include="FSharp.Core" Version="4.3.4" Condition=" '$(TargetFramework)' == 'netstandard2.1' " />
 
     <PackageReference Include="System.Text.Json" Version="4.7.0" />
+    <PackageReference Include="TypeShape" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

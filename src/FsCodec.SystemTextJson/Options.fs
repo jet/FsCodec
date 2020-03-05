@@ -1,6 +1,5 @@
 namespace FsCodec.SystemTextJson
 
-open FsCodec.SystemTextJson.Serialization
 open System
 open System.Runtime.InteropServices
 open System.Text.Json
@@ -8,7 +7,9 @@ open System.Text.Json.Serialization
 
 type Options private () =
 
-    static let defaultConverters : JsonConverterFactory[] = [| JsonOptionConverter(); JsonRecordConverter() |]
+    static let defaultConverters : JsonConverterFactory[] =
+        [|  Converters.JsonOptionConverter()
+            Converters.JsonRecordConverter() |]
 
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault
