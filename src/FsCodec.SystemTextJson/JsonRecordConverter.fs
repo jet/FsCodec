@@ -1,13 +1,11 @@
 ﻿namespace FsCodec.SystemTextJson.Serialization
 
-open Equinox.Core
+open FSharp.Reflection
 open System
 open System.Collections.Generic
-open System.Linq
 open System.Linq.Expressions
 open System.Text.Json
 open System.Text.Json.Serialization
-open FSharp.Reflection
 
 type JsonRecordConverterActivator = delegate of JsonSerializerOptions -> JsonConverter
 
@@ -55,7 +53,7 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
                     |> Array.tryHead
                     |> Option.map (fun attr -> (attr :?> JsonPropertyNameAttribute).Name)
                     |> Option.defaultWith (fun () ->
-                        if options.PropertyNamingPolicy |> isNull 
+                        if options.PropertyNamingPolicy |> isNull
                             then f.Name
                             else options.PropertyNamingPolicy.ConvertName f.Name)
 
@@ -92,7 +90,7 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
         |> Array.map KeyValuePair
         |> (fun kvp -> kvp.ToDictionary((fun item -> item.Key), (fun item -> item.Value), StringComparer.OrdinalIgnoreCase))
 #endif
-        
+
     let tryGetFieldByName name =
         match fieldsByName.TryGetValue(name) with
         | true, field -> Some field
@@ -107,7 +105,7 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
             reader.ValidateTokenType(JsonTokenType.PropertyName)
 
             match tryGetFieldByName <| reader.GetString() with
-            | Some field -> 
+            | Some field ->
                 fields.[field.index] <-
                     match field.converter with
                     | Some converter ->
@@ -115,7 +113,7 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
                         converter.Read(&reader, field.fieldType, options)
                     | None ->
                         JsonSerializer.Deserialize(&reader, field.fieldType, options)
-            | _ -> 
+            | _ ->
                 reader.Skip()
 
         constructor fields :?> 'T

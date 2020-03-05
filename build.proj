@@ -14,11 +14,13 @@
   <Target Name="Pack">
     <Exec Command="dotnet pack src/FsCodec $(Cfg) $(PackOptions)" />
     <Exec Command="dotnet pack src/FsCodec.NewtonsoftJson $(Cfg) $(PackOptions)" />
+    <Exec Command="dotnet pack src/FsCodec.SystemTextJson $(Cfg) $(PackOptions)" />
   </Target>
 
   <Target Name="VSTest">
     <Exec Command="dotnet test tests/FsCodec.Tests $(Cfg) $(TestOptions)" />
     <Exec Command="dotnet test tests/FsCodec.NewtonsoftJson.Tests $(Cfg) $(TestOptions)" />
+    <Exec Command="dotnet test tests/FsCodec.SystemTextJson.Tests $(Cfg) $(TestOptions)" />
   </Target>
 
   <Target Name="Build" DependsOnTargets="VSTest;Pack" />

@@ -1,7 +1,7 @@
 ﻿namespace FsCodec.SystemTextJson.Serialization
 
-open System.Text.Json
 open System.Runtime.CompilerServices
+open System.Text.Json
 
 [<Extension>]
 type Utf8JsonReaderExtension =
@@ -12,11 +12,11 @@ type Utf8JsonReaderExtension =
             |> JsonException
             |> raise
 
-    [<Extension>]
-    static member ValidatePropertyName(reader: Utf8JsonReader, expectedPropertyName: string) =
-        reader.ValidateTokenType(JsonTokenType.PropertyName)
-        
-        if not <| reader.ValueTextEquals expectedPropertyName then
-            sprintf "Expected a property named '%s', but encountered property with name '%s'." expectedPropertyName (reader.GetString())
-            |> JsonException
-            |> raise
+//    [<Extension>]
+//    static member ValidatePropertyName(reader: Utf8JsonReader, expectedPropertyName: string) =
+//        reader.ValidateTokenType(JsonTokenType.PropertyName)
+//
+//        if not <| reader.ValueTextEquals expectedPropertyName then
+//            sprintf "Expected a property named '%s', but encountered property with name '%s'." expectedPropertyName (reader.GetString())
+//            |> JsonException
+//            |> raise
