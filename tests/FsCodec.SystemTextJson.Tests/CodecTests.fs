@@ -30,12 +30,10 @@ let roundtrips value =
         | AO e -> "AO",Choice2Of2 e
         | B e  -> "B", Choice1Of2 e
         | BO e -> "BO",Choice2Of2 e
-    // TODO remove skip here to make it fail
-    let encoded, skip =
+    let encoded =
         match embedded with
-        | Choice1Of2 e -> elementEncoder.Encode e,false
-        | Choice2Of2 eo -> elementEncoder.Encode eo, eo.opt = Some null
-    if skip then () else
+        | Choice1Of2 e -> elementEncoder.Encode e
+        | Choice2Of2 eo -> elementEncoder.Encode eo
     let enveloped = { d = encoded }
 
     // the options should be irrelevant, but use the defaults (which would add nulls in that we don't want if it was leaking)
