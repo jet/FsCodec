@@ -17,6 +17,7 @@
   </Target>
 
   <Target Name="VSTest">
+    <Exec Command="dotnet test tests/FsCodec.Tests $(Cfg) $(TestOptions)" />
     <Exec Command="dotnet test tests/FsCodec.NewtonsoftJson.Tests $(Cfg) $(TestOptions)" />
   </Target>
 
