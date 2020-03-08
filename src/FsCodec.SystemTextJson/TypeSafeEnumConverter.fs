@@ -14,7 +14,7 @@ module TypeSafeEnum =
 
     let tryParseT (t : Type) (str : string) =
         match Union.tryGetUnion t with
-        | None -> invalidArg "t" "Type must be a Union."
+        | None -> invalidArg "t" "Type must be a FSharpUnion."
         | Some u ->
             u.cases
             |> Array.tryFindIndex (fun case -> case.Name = str)
