@@ -1,5 +1,5 @@
 /// There's not much to see here - as UMX is a compile-time thing, it should work perfectly with System.Text.Json
-module FsCodec.SystemTextJson.Tests.UnxInteropTests
+module FsCodec.SystemTextJson.Tests.UmxInteropTests
 
 open FsCodec.SystemTextJson
 open FSharp.UMX
