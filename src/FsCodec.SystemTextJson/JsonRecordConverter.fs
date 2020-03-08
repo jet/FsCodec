@@ -66,11 +66,13 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
                     |> Array.tryHead
                     |> Option.map (fun attr -> attr :?> JsonConverterAttribute)
                     |> Option.bind (fun attr ->
-                        let baseConverter = attr.CreateConverter(f.PropertyType)
-
-                        if baseConverter |> isNull then
-                            failwithf "Field %s is decorated with a JsonConverter attribute, but it does not implement a CreateConverter method." f.Name
-
+                        let baseConverter =
+                            match attr.CreateConverter(f.PropertyType) with
+                            | null ->
+                                match Activator.CreateInstance(attr.ConverterType) with
+                                | :? JsonConverter as x -> x
+                                | _ -> failwithf "Field %s is decorated with a JsonConverter attribute that does not implement a CreateConverter method or refer to a valid Converter." f.Name
+                            | created -> created
                         if baseConverter.CanConvert(f.PropertyType) then
                             let converterType = typedefof<RecordFieldConverter<_>>.MakeGenericType(f.PropertyType)
                             let converter = Activator.CreateInstance(converterType) :?> IRecordFieldConverter

@@ -16,6 +16,7 @@
     <Compile Include="Options.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
+    <Compile Include="Pickler.fs" />
   </ItemGroup>
 
   <ItemGroup>

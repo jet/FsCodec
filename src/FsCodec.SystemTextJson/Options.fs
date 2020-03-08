@@ -7,13 +7,13 @@ open System.Text.Json.Serialization
 
 type Options private () =
 
-    static let defaultConverters : JsonConverterFactory[] =
+    static let defaultConverters : JsonConverter[] =
         [|  Converters.JsonOptionConverter()
             Converters.JsonRecordConverter() |]
 
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault
-        (   [<Optional; ParamArray>] converters : JsonConverterFactory[],
+        (   [<Optional; ParamArray>] converters : JsonConverter[],
             /// Use multi-line, indented formatting when serializing JSON; defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?indent : bool,
             /// Render idiomatic camelCase for PascalCase items by using `PropertyNamingPolicy = CamelCase`. Defaults to false.
@@ -37,7 +37,7 @@ type Options private () =
     /// Everything else is as per CreateDefault:- i.e. emit nulls instead of omitting fields, no indenting, no camelCase conversion
     static member Create
         (   /// List of converters to apply. Implicit [JsonOptionConverter(); JsonRecordConverter()] will be prepended and/or be used as a default
-            [<Optional; ParamArray>] converters : JsonConverterFactory[],
+            [<Optional; ParamArray>] converters : JsonConverter[],
             /// Use multi-line, indented formatting when serializing JSON; defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?indent : bool,
             /// Render idiomatic camelCase for PascalCase items by using `PropertyNamingPolicy = CamelCase`.

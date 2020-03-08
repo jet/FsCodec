@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="SerdesTests.fs" />
+    <Compile Include="PicklerTests.fs" />
     <Compile Include="CodecTests.fs" />
   </ItemGroup>
 
