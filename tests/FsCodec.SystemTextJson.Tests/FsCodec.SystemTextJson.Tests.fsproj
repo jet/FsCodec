@@ -24,6 +24,7 @@
     <Compile Include="CodecTests.fs" />
     <Compile Include="SerdesTests.fs" />
     <Compile Include="UmxInteropTests.fs" />
+    <Compile Include="TypeSafeEnumConverterTests.fs" />
   </ItemGroup>
 
 </Project>
