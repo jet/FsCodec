@@ -318,6 +318,7 @@ module ClientId =
     let (|Parse|) = ClientId.parse
 ```
 
+<a name="streamname"></a>
 ## Stream naming conventions
 
 The de-facto standard Event Store [EventStore.org](https://eventstore.org) and its documentation codifies the following convention for the naming of streams:-
