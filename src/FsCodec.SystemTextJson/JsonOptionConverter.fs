@@ -26,7 +26,7 @@ type JsonOptionConverter () =
     override __.CanConvert(t : Type) =
         t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<option<_>>
 
-    override __.CreateConverter (typ, options) =
+    override __.CreateConverter (typ, _options) =
         let valueType = typ.GetGenericArguments() |> Array.head
         let constructor = typedefof<JsonOptionConverter<_>>.MakeGenericType(valueType).GetConstructors() |> Array.head
         let newExpression = Expression.New(constructor)
