@@ -22,8 +22,7 @@ let eventCodec = FsCodec.SystemTextJson.Codec.Create<Union>(ignoreNullOptions)
 [<NoComparison>]
 type Envelope = { d : JsonElement }
 
-[<Property(MaxTest=1000)>]
-let roundtrips value =
+let [<Property>] roundtrips value =
     let eventType, embedded =
         match value with
         | A e  -> "A", Choice1Of2 e
@@ -32,7 +31,7 @@ let roundtrips value =
         | BO e -> "BO",Choice2Of2 e
     let encoded =
         match embedded with
-        | Choice1Of2 e -> elementEncoder.Encode e
+        | Choice1Of2 e  -> elementEncoder.Encode e
         | Choice2Of2 eo -> elementEncoder.Encode eo
     let enveloped = { d = encoded }
 
