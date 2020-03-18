@@ -13,10 +13,10 @@
     <Compile Include="Utf8JsonReaderExtensions.fs" />
     <Compile Include="JsonOptionConverter.fs" />
     <Compile Include="JsonRecordConverter.fs" />
+    <Compile Include="Pickler.fs" />
     <Compile Include="Options.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
-    <Compile Include="Pickler.fs" />
   </ItemGroup>
 
   <ItemGroup>
