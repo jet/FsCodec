@@ -71,7 +71,7 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
                             | null ->
                                 match Activator.CreateInstance(attr.ConverterType) with
                                 | :? JsonConverter as x -> x
-                                | _ -> failwithf "Field %s is decorated with a JsonConverter attribute that does not implement a CreateConverter method or refer to a valid Converter." f.Name
+                                | _ -> failwithf "Field %s is decorated with a JsonConverter attribute that does not implement a CreateConverter method or refer to a valid 'ConverterType'." f.Name
                             | created -> created
                         if baseConverter.CanConvert(f.PropertyType) then
                             let converterType = typedefof<RecordFieldConverter<_>>.MakeGenericType(f.PropertyType)
