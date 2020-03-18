@@ -19,6 +19,7 @@ module TypeSafeEnum =
             u.cases
             |> Array.tryFindIndex (fun case -> case.Name = str)
             |> Option.map (fun tag -> u.caseConstructor.[tag] [||])
+            // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
     let tryParse<'T> (str : string) = tryParseT typeof<'T> str |> Option.map (fun e -> e :?> 'T)
 
     let parseT (t : Type) (str : string) =
@@ -32,6 +33,7 @@ module TypeSafeEnum =
     let toString (x : obj) =
         let union = x.GetType() |> Union.tryGetUnion |> Option.get
         let tag = union.tagReader x
+        // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
         union.cases.[tag].Name
 
 /// Maps strings to/from Union cases; refuses to convert for values not in the Union
