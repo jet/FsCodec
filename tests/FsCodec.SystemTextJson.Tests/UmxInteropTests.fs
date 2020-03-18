@@ -3,9 +3,9 @@ module FsCodec.SystemTextJson.Tests.UmxInteropTests
 
 open FsCodec.SystemTextJson
 open FSharp.UMX
+open Swensen.Unquote
 open System
 open System.Text.Json
-open Swensen.Unquote
 open Xunit
 
 // Borrow the converter from the suite that has validated its' core behaviors

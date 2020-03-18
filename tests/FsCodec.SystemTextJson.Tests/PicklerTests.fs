@@ -2,9 +2,9 @@ module FsCodec.SystemTextJson.Tests.PicklerTests
 
 open FsCodec.SystemTextJson
 open FsCodec.SystemTextJson.Converters
+open Swensen.Unquote
 open System
 open System.Text.Json
-open Swensen.Unquote
 open Xunit
 
 // NB Feel free to ignore this opinion and copy the 4 lines into your own globals - the pinning test will remain here
