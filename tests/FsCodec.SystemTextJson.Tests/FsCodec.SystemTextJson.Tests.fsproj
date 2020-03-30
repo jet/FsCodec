@@ -23,11 +23,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Samples.fs" />
     <Compile Include="PicklerTests.fs" />
     <Compile Include="CodecTests.fs" />
     <Compile Include="SerdesTests.fs" />
     <Compile Include="UmxInteropTests.fs" />
     <Compile Include="TypeSafeEnumConverterTests.fs" />
+    <Compile Include="UnionConverterTests.fs" />
     <None Include="Examples.fsx" />
     <Compile Include="InteropTests.fs" />
   </ItemGroup>
