@@ -114,7 +114,7 @@ type UnionConverter<'T> private (discriminator : string, ?catchAllCase) =
 
         writer.WriteEndObject()
 
-    override __.Read(reader, t : Type, options) =   // TOASK: Change order of methods to satisfy non-uniform instantiation warning
+    override __.Read(reader, t : Type, options) =
         reader.ValidateTokenType(JsonTokenType.StartObject)
         use document = JsonDocument.ParseValue &reader
         let element = document.RootElement
