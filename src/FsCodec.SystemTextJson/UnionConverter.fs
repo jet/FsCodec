@@ -1,11 +1,11 @@
-﻿namespace FsCodec.SystemTextJson
+﻿namespace FsCodec.SystemTextJson.Converters
 
+open FsCodec.SystemTextJson
+open FsCodec.SystemTextJson.Core
 open FSharp.Reflection
 open System
 open System.Reflection
 open System.Text.Json
-
-open FsCodec.SystemTextJson.Core
 
 [<NoComparison; NoEquality>]
 type private Union =

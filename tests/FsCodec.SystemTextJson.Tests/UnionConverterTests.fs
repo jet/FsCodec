@@ -2,6 +2,7 @@
 
 open FsCheck
 open FsCodec.SystemTextJson
+open FsCodec.SystemTextJson.Converters
 open Swensen.Unquote.Assertions
 open System
 open System.IO
