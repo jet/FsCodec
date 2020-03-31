@@ -31,7 +31,7 @@ type SkuId private (id : string) =
     // NB for validation [and XSS] purposes we prove it translatable to a Guid
     static member Parse(input: string) = SkuId (Guid.Parse input)
 /// Represent as a Guid.ToString("N") output externally
-and private SkuIdJsonConverter() =
+and SkuIdJsonConverter() =
     inherit JsonIsomorphism<SkuId, string>()
     /// Renders as per Guid.ToString("N")
     override __.Pickle value = value.Value
@@ -51,7 +51,7 @@ type CartId private (id : string) =
     // NB for validation [and XSS] purposes we must prove it translatable to a Guid
     static member Parse(input: string) = CartId (Guid.Parse input)
 /// Represent as a Guid.ToString("N") output externally
-and private CartIdJsonConverter() =
+and CartIdJsonConverter() =
     inherit JsonIsomorphism<CartId, string>()
     /// Renders as per Guid.ToString("N")
     override __.Pickle value = value.Value
