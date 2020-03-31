@@ -62,7 +62,7 @@ type TestDU =
 
 // no camel case, because I want to test "Item" as a record property
 // Centred on ignoreNulls for backcompat; round-tripping test covers the case where they get rendered too
-let defaultOptions = Options.Create(camelCase = false, ignoreNulls = true)
+let defaultOptions = Options.Create(converters = [| UnionConverter<TestDU> () |], camelCase = false, ignoreNulls = true)
 
 
 [<Fact>]
