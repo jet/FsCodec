@@ -1,9 +1,9 @@
 ﻿module FsCodec.SystemTextJson.Tests.Samples
 
 open FsCodec.SystemTextJson
-open Newtonsoft.Json
 open System
 open System.Runtime.Serialization
+open System.Text.Json.Serialization
 
 /// Endows any type that inherits this class with standard .NET comparison semantics using a supplied token identifier
 [<AbstractClass>]
