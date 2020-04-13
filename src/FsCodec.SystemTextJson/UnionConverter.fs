@@ -53,21 +53,11 @@ module private Union =
             [| JsonSerializer.DeserializeElement (element, singleCaseArg.PropertyType, options) |]
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
-                match element.GetProperty fi.Name with
-                // TOTHINK: I'm not sure this applies with STJ
-
-                //| null when
-                //    // Afford converters an opportunity to handle the missing field in the best way I can figure out to signal that
-                //    // The specific need being covered (see tests) is to ensure that, even with MissingMemberHandling=Ignore,
-                //    // the TypeSafeEnumConverter should reject missing values
-                //    // not having this case would go direct to `null` without passing go
-                //    typeHasJsonConverterAttribute fi.PropertyType
-                //    || serializer.MissingMemberHandling = MissingMemberHandling.Error ->
-                //        // NB caller can opt out of erroring by setting NullValueHandling = NullValueHandling.Ignore)
-                //        // which renders the following equivalent to the next case
-                //        JToken.Parse("null").ToObject(fi.PropertyType, serializer)
-                | el when el.ValueKind = JsonValueKind.Null -> null
-                | el -> JsonSerializer.DeserializeElement (el, fi.PropertyType, options) |]
+                match element.TryGetProperty fi.Name with
+                | false, _ when fi.PropertyType.IsValueType -> Activator.CreateInstance fi.PropertyType
+                | false, _ -> null
+                | true, el when el.ValueKind = JsonValueKind.Null -> null
+                | true, el -> JsonSerializer.DeserializeElement (el, fi.PropertyType, options) |]
 
 /// Serializes a discriminated union case with a single field that is a
 /// record by flattening the record fields to the same level as the discriminator
