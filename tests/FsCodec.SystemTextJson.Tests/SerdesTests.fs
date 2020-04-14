@@ -49,3 +49,25 @@ let [<Fact>] options () =
     test <@ ser = """{"a":1,"b":"str"}""" @>
     let des = Serdes.Deserialize ser
     test <@ value = des @>
+
+// OOTB System.Text.Json over-escapes HTML-sensitive characters; the default profile for FsCodec does not do this
+let [<Fact>] encoding () =
+    let value = { a = 1; b = Some "\"" }
+    let ser = Serdes.Serialize value
+    test <@ ser = """{"a":1,"b":"\""}""" @>
+    let des = Serdes.Deserialize ser
+    test <@ value = des @>
+
+// OOTB System.Text.Json over-escapes HTML-sensitive characters - `CreateDefault` honors this
+// see https://github.com/dotnet/runtime/issues/28567#issuecomment-53581752 for lowdown
+let explicitOptions = Options.CreateDefault(converters = [| Converters.JsonOptionConverter(); Converters.JsonRecordConverter() |])
+type OverescapedOptions() as this =
+    inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
+    do this.Add explicitOptions
+       this.Add(Options.Create(unsafeRelaxedJsonEscaping = false))
+let [<Theory; ClassData(typedefof<OverescapedOptions>)>] ``provides various ways to use HTML-escaped encoding``(opts : System.Text.Json.JsonSerializerOptions) =
+    let value = { a = 1; b = Some "\"" }
+    let ser = Serdes.Serialize(value, opts)
+    test <@ ser = """{"a":1,"b":"\u0022"}""" @>
+    let des = Serdes.Deserialize(ser, opts)
+    test <@ value = des @>
