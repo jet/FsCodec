@@ -34,6 +34,28 @@ module StjCharacterization =
                 | Choice1Of2 v -> v = value
                 | Choice2Of2 m -> m.Contains "The JSON value could not be converted to Microsoft.FSharp.Core.FSharpOption`1[System.String]" @>
 
+    // System.Text.Json's JsonSerializerOptions by default escapes HTML-sensitive characters when generating JSON strings
+    // while this arguably makes sense as a default
+    // - it's not particularly relevant for event encodings
+    // - and is not in alignment with the FsCodec.NewtonsoftJson default options
+    // see https://github.com/dotnet/runtime/issues/28567#issuecomment-53581752 for lowdown
+    let asRequiredForExamples : System.Text.Json.Serialization.JsonConverter [] =
+        [| Converters.JsonOptionConverter()
+           Converters.JsonRecordConverter() |]
+    type OverescapedOptions() as this =
+        inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
+
+        do // OOTB System.Text.Json over-escapes HTML-sensitive characters - `CreateDefault` honors this
+           this.Add(Options.CreateDefault(converters = asRequiredForExamples)) // the value we use here requires two custom Converters
+           // Options.Create provides a simple way to override it
+           this.Add(Options.Create(unsafeRelaxedJsonEscaping = false))
+    let [<Theory; ClassData(typedefof<OverescapedOptions>)>] ``provides various ways to use HTML-escaped encoding``(opts : System.Text.Json.JsonSerializerOptions) =
+        let value = { a = 1; b = Some "\"" }
+        let ser = Serdes.Serialize(value, opts)
+        test <@ ser = """{"a":1,"b":"\u0022"}""" @>
+        let des = Serdes.Deserialize(ser, opts)
+        test <@ value = des @>
+
 (* Serdes + default Options behavior, i.e. the stuff we do *)
 
 let [<Fact>] records () =
@@ -47,5 +69,12 @@ let [<Fact>] options () =
     let value = { a = 1; b = Some "str" }
     let ser = Serdes.Serialize value
     test <@ ser = """{"a":1,"b":"str"}""" @>
+    let des = Serdes.Deserialize ser
+    test <@ value = des @>
+
+let [<Fact>] ``no over-escaping`` () =
+    let value = { a = 1; b = Some "\"+" }
+    let ser = Serdes.Serialize value
+    test <@ ser = """{"a":1,"b":"\"+"}""" @>
     let des = Serdes.Deserialize ser
     test <@ value = des @>
