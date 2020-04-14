@@ -28,6 +28,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsCodec.SystemTextJson", "s
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsCodec.SystemTextJson.Tests", "tests\FsCodec.SystemTextJson.Tests\FsCodec.SystemTextJson.Tests.fsproj", "{5C57C6D6-59AB-426F-9999-FDB90864545E}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsCodec.Box", "src\FsCodec.Box\FsCodec.Box.fsproj", "{93AF284E-BD31-456E-96AC-162C746F9479}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -110,6 +112,18 @@ Global
 		{5C57C6D6-59AB-426F-9999-FDB90864545E}.Release|x64.Build.0 = Release|Any CPU
 		{5C57C6D6-59AB-426F-9999-FDB90864545E}.Release|x86.ActiveCfg = Release|Any CPU
 		{5C57C6D6-59AB-426F-9999-FDB90864545E}.Release|x86.Build.0 = Release|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Debug|x64.Build.0 = Debug|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Debug|x86.Build.0 = Debug|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Release|x64.ActiveCfg = Release|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Release|x64.Build.0 = Release|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Release|x86.ActiveCfg = Release|Any CPU
+		{93AF284E-BD31-456E-96AC-162C746F9479}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

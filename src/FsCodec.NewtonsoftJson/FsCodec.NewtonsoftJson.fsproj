@@ -15,7 +15,6 @@
     <Compile Include="OptionConverter.fs" />
     <Compile Include="Settings.fs" />
     <Compile Include="Codec.fs" />
-    <Compile Include="BoxCodec.fs" />
     <Compile Include="Serdes.fs" />
     <Compile Include="VerbatimUtf8Converter.fs" />
   </ItemGroup>
