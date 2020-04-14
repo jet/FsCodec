@@ -72,10 +72,9 @@ let [<Fact>] options () =
     let des = Serdes.Deserialize ser
     test <@ value = des @>
 
-// OOTB System.Text.Json over-escapes HTML-sensitive characters; the default profile for FsCodec does not do this
 let [<Fact>] ``no over-escaping`` () =
-    let value = { a = 1; b = Some "\"" }
+    let value = { a = 1; b = Some "\"+" }
     let ser = Serdes.Serialize value
-    test <@ ser = """{"a":1,"b":"\""}""" @>
+    test <@ ser = """{"a":1,"b":"\"+"}""" @>
     let des = Serdes.Deserialize ser
     test <@ value = des @>
