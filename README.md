@@ -24,7 +24,6 @@ The components within this repository are delivered as multi-targeted Nuget pack
   Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
   
   1. [`UnionConverter` is WIP](https://github.com/jet/FsCodec/pull/43); model-binding related functionality that `System.Text.Json` does not provide equivalents will not be carried forward (e.g., `MissingMemberHandling`)
-  2. [`Some null` will map to `None`](https://github.com/jet/FsCodec/pull/39)
 
 # Features: `FsCodec`
 
@@ -60,9 +59,6 @@ The concrete implementations implement common type/member/function signatures an
 
 The respective concrete Codec packages include relevant `Converter`/`JsonConverter` in order to facilitate interoperable and versionable renderings:
   - `JsonOptionConverter` / [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`.
-  
-    _NOTE: `JsonOptionConverter`'s behavior differs from that of `FsCodec.NewtonsoftJson.OptionConverter`: `Some null` is treated as equivalent to that of rendering `None` (which makes the format roundtrippable, facilitating easier testing)_
-  
   - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
   - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within :pray: [@amjdd](https://github.com/amjjd); `System.Text.Json` reimplementation :pray: [@NickDarvey](https://github.com/NickDarvey)
   
@@ -156,7 +152,7 @@ The recommendations here apply particularly to Event Contracts - the data in you
 | `'t[]` | As per C# | Don't forget to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` |
 | `DateTimeOffset` | Roundtrips cleanly | The default `Settings.Create` requests `RoundtripKind` | `DateTimeOffset.Now` | `"2019-09-04T20:30:37.272403+01:00"` |
 | `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | OOTB Json.net roundtrips cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | `Nullable 14` | `14` |
-| `'t option` | `None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.net and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default<br/> NOTE `FsCodec.SystemTextJson` encodes `Some null` as `None` whereas `FsCodec.NewtonsoftJson` will render it as `null` | `Some 14` | `14` | 
+| `'t option` | `Some null`,`None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.net and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default<br/> NOTE `Some null` will produce `null`, but deserialize as `None` - i.e., it's not round-trippable | `Some 14` | `14` | 
 | `string` | As per C#; need to handle `null` | One can use a `string option` to map `null` and `Some null` to `None` | `"Abc"` | `"Abc"` |
 | types with unit of measure | Works well (doesnt encode the unit) | Unit of measure tags are only known to the compiler; Json.net does not process the tags and treats it as the underlying primitive type | `54<g>` | `54` | 
 | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to type-tag `string` and `DateTimeOffset` values using the units of measure compiler feature, which Json.net will render as if they were unadorned | `SkuId.parse "54-321"` | `"000-054-321"` |
