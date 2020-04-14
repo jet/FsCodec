@@ -18,7 +18,13 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - Uses the ubiquitous [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) library to serialize the event bodies.
   - Provides relevant Converters for common non-primitive types prevalent in F#
   - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape >= 8`, `Microsoft.IO.RecyclableMemoryStream >= 1.2.2`, `System.Buffers >= 4.5`
-- [_(planned)_ `FsCodec.SystemTextJson`](https://github.com/jet/FsCodec/issues/14): drop in replacement that allows one to retarget from `Newtonsoft.Json` to imminently ubiquitous .NET `System.Text.Json` serializer solely by changing the referenced namespace.
+- [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#14](https://github.com/jet/FsCodec/issues/14): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 4.7.0`, `TypeShape >= 8`
+
+  Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
+  
+  1. [`UnionConverter` is WIP](https://github.com/jet/FsCodec/pull/43); model-binding related functionality that `System.Text.Json` does not provide equivalents will not be carried forward (e.g., `MissingMemberHandling`)
+  2. [`Some null` will map to `None`](https://github.com/jet/FsCodec/pull/39)
 
 # Features: `FsCodec`
 
@@ -31,43 +37,76 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L44) is a low level helper to create an `IEventData` directly for purposes such as tests etc.
 - [`FsCodec.Core.TimelineEvent.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L58) is a low level helper to create an `ITimelineEvent` directly for purposes such as tests etc.
 
-# Examples: `FsCodec.NewtonsoftJson`
+# Features: `FsCodec.(Newtonsoft|SystemText)Json`
 
-There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx). It's highly recommended to experiment with conversions using FSI. (Also, PRs adding examples are much appreciated...)
+## Common API
 
-# Features: `FsCodec.NewtonsoftJson`
+The concrete implementations implement common type/member/function signatures and behavior that offer consistent behavior using either `Newtonsoft.Json` or `System.Text.Json`, emphasizing the following qualities:
 
-[`FsCodec.NewtonsoftJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IEventCodec` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` to serialize the bodies.
+- lean toward having straightforward encodings:
+  - tuples don't magically become arrays
+  - union bodies don't become arrays of mixed types (they become JSON Objects with named fields)
+- don't surprise .NET developers used to JSON.NET or System.Text.Json
+- having an opinionated core set of behaviors, but don't conflict with the standard extensibility mechanisms afforded by the underlying serializer (one should be able to search up and apply answers from StackOverflow to questions regarding corner cases)
+- maintain a minimal set of built in converters - e.g. choices like not supporting F# `list` types
 
-## `Newtonsoft.Json.Converter`s
+  NOTE `System.Text.Json` does not support F# unions, options, lists or records out of the box. It's not intended to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time - if you have specific requirements, the powerful and complete [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library is likely your best option in this space.
 
-`FsCodec.NewtonsoftJson` includes relevant `Converters` in order to facilitate interoperable and versionable renderings:
-  - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`
+## `Codec`
+
+[`FsCodec.NewtonsoftJson/SystemTextJson.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Codec.fs) provides an implementation of `IEventCodec` as described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/). This yields a clean yet versionable way of managing the roundtripping events based on a contract inferred from an F# Discriminated Union Type using `Newtonsoft.Json >= 11.0.2` / `System.Text.Json` to serialize the bodies.
+
+## `Newtonsoft.Json.Converter`s / `System.Text.Json.Serialization.JsonConverter`s
+
+The respective concrete Codec packages include relevant `Converter`/`JsonConverter` in order to facilitate interoperable and versionable renderings:
+  - `JsonOptionConverter` / [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`.
+  
+    _NOTE: `JsonOptionConverter`'s behavior differs from that of `FsCodec.NewtonsoftJson.OptionConverter`: `Some null` is treated as equivalent to that of rendering `None` (which makes the format roundtrippable, facilitating easier testing)_
+  
   - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
-  - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within(`Newtonsoft.Json.Converters.DiscriminatedUnionConverter` encodes the fields as an array without names, which has some pros, but many obvious cons) :pray: [@amjdd](https://github.com/amjjd)
-  - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code)  
-
+  - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within :pray: [@amjdd](https://github.com/amjjd); `System.Text.Json` reimplementation :pray: [@NickDarvey](https://github.com/NickDarvey)
+  
+    NOTE: The encoding differs from that provided by `NewtonsoftJson`'s default converter: `Newtonsoft.Json.Converters.DiscriminatedUnionConverter`, which encodes the fields as an array without names, which has some pros, but many obvious cons
+    
+    NOTE `System.Text.Json` does not support F# unions out of the box. It's not intended to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time - if you have specific requirements, the powerful and complete [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library is likely your best option in this space.
+    
 ## Custom converter base classes
 
 - [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) - allows one to cleanly map a type's internal representation to something that Json.net can already cleanly handle :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis)
 - [`JsonPickler`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L15) - removes boilerplate from simple converters, used in implementation of `JsonIsomorphism` :pray: [@EirikTsarpalis](https://github.com/eiriktsarpalis) 
 
-## `Settings`
+## Converters - `FsCodec.NewtonsoftJson` only
+
+  - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code).
+  
+## `FsCodec.NewtonsoftJson.Settings`
 
 [`FsCodec.NewtonsoftJson.Settings`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Settings.fs#L8) provides a clean syntax for building a `Newtonsoft.Json.JsonSerializerSettings` with which to define a serialization contract profile for interoperability purposes. Methods:
 - `CreateDefault`: as per `Newtonsoft.Json` defaults with the following override:
   - `DateTimeZoneHandling = DateTimeZoneHandling.Utc` (default is `RoundtripKind`)
   - no custom `IContractResolver` (one is expected to use `camelCase` field names within records, for which this does not matter)
 - `Create`: as `CreateDefault` with the following difference:
-  - adds an `OptionConverter`; included in default `Settings` (see _Converters_, above and _Setttings_ below)
+  - adds an `OptionConverter` (see _Converters_, below)
+
+## `FsCodec.SystemTextJson.Options`
+
+[`FsCodec.SystemTextJson.Options`](https://github.com/jet/FsCodec/blob/stj/src/FsCodec.SystemTextJson/Options.fs#L8) provides a clean syntax for building a `System.Text.Json.Serialization.JsonSerializerOptions` as per `FsCodec.NewtonsoftJson.Settings`, above. Methods:
+- `CreateDefault`: equivalent to generating a `new JsonSerializerSettings()` without any overrides of any kind
+- `Create`: as `CreateDefault` with the following difference:
+  - adds a `JsonOptionConverter` and a `JsonRecordConverter`; included in default `Settings` (see _Converters_, below)
+  - Inhibits the HTML-safe escaping that `System.Text.Json` provides as a default by overriding `Encoder` with `System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping`
 
 ## `Serdes`
 
 [`FsCodec.NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert\.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings.Create` (above). Methods:
-- `Serialize<T>`: serializes an object per its type using the settings defined in `Settings.Create`
-- `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings.Create`
+- `Serialize<T>`: serializes an object per its type using the settings defined in `Settings/Options.Create`
+- `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings/Options.Create`
 
- <a name="contracts"></a>
+# Examples: `FsCodec.NewtonsoftJson`
+
+There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx). It's highly recommended to experiment with conversions using FSI. (Also, PRs adding examples are much appreciated...)
+
+<a name="contracts"></a>
 ### Examples of using `Settings` and `Serdes` to define a contract
 
 In a contract assembly used as a way to supply types as part of a client library, one way of encapsulating the conversion rules that need to be applied is as follows:
@@ -117,11 +156,11 @@ The recommendations here apply particularly to Event Contracts - the data in you
 | `'t[]` | As per C# | Don't forget to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` |
 | `DateTimeOffset` | Roundtrips cleanly | The default `Settings.Create` requests `RoundtripKind` | `DateTimeOffset.Now` | `"2019-09-04T20:30:37.272403+01:00"` |
 | `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | OOTB Json.net roundtrips cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | `Nullable 14` | `14` |
-| `'t option` | `None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.net does not roundtrip `option` types cleanly; `Settings.Create` and `NewtonsoftJson.Codec.Create` wire in an `OptionConverter` by default | `Some 14` | `14` | 
+| `'t option` | `None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.net and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default<br/> NOTE `FsCodec.SystemTextJson` encodes `Some null` as `None` whereas `FsCodec.NewtonsoftJson` will render it as `null` | `Some 14` | `14` | 
 | `string` | As per C#; need to handle `null` | One can use a `string option` to map `null` and `Some null` to `None` | `"Abc"` | `"Abc"` |
 | types with unit of measure | Works well (doesnt encode the unit) | Unit of measure tags are only known to the compiler; Json.net does not process the tags and treats it as the underlying primitive type | `54<g>` | `54` | 
 | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to type-tag `string` and `DateTimeOffset` values using the units of measure compiler feature, which Json.net will render as if they were unadorned | `SkuId.parse "54-321"` | `"000-054-321"` |
-| records | Just work | FYI records are not supported OOTB yet in `System.Text.Json` | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` |
+| records | Just work | For `System.Text.Json`, there's a `JsonRecordConverter` in the standard `Options`, as records are not supported out of the box | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` |
 | Nullary unions (Enum-like DU's without bodies) | Tag `type` with `TypeSafeEnumConverter` | Works well - guarantees a valid mapping, as opposed to using a `System.Enum` and `StringEnumConverter`, which can map invalid values and/or silently map to `0` etc | `State.NotFound` | `"NotFound"` |
 | Discriminated Unions (where one or more cases has a body) | Tag `type` with `UnionConverter` | This format can be readily consumed in Java, JavaScript and Swift. Nonetheless, exhaust all other avenues before considering encoding a union in JSON. The `"case"` label id can be overridden. | `Decision.Accepted { result = "54" }` | `{"case": "Accepted","result":"54"}` |
 
