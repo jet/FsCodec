@@ -46,7 +46,7 @@ module private Union =
     /// Paralells F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
-        || t.IsValueType
+        //|| t.IsValueType
         || t.IsArray
         || (t.IsGenericType
            && (typedefof<Option<_>> = t.GetGenericTypeDefinition()
@@ -60,7 +60,8 @@ module private Union =
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to let json.net step in to convert argument types
-    let mapTargetCaseArgs (element : JsonElement) options : PropertyInfo[] -> obj [] = function
+    let mapTargetCaseArgs (element : JsonElement) options (props : PropertyInfo[]) : obj [] =
+        match props with
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
             [| JsonSerializer.DeserializeElement (element, singleCaseArg.PropertyType, options) |]
         | multipleFieldsInCustomCaseType ->

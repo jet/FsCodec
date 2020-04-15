@@ -1,5 +1,13 @@
 ﻿module FsCodec.SystemTextJson.Tests.UnionConverterTests
 
+// Disables "FS0052: The value has been copied to ensure the original is not mutated
+// by thisoperation or because the copy is implicit when returning a struct from a
+// member and another member is then accessed" which is caused by the chaining of
+// method calls of the JsonElement struct. Avoids having to write code like:
+// https://stackoverflow.com/a/33325042/1259408
+#nowarn "0052"
+
+
 open FsCheck
 open FsCodec.SystemTextJson
 open Swensen.Unquote.Assertions
@@ -312,26 +320,29 @@ module ``Unmatched case handling`` =
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
         |> raisesWith <@ act() @>
 
-    //[<NoComparison>] // Forced by usage of JObject
-    //[<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
-    //type DuWithCatchAllWithFields =
-    //| Known
-    //| Catchall of Newtonsoft.Json.Linq.JObject
+    [<NoComparison>] // Forced by usage of JObject
+    [<JsonConverter(typeof<UnionConverter>)>]
+    [<JsonUnionConverterOptions("case", CatchAll = "Catchall")>]
+    type DuWithCatchAllWithFields =
+    | Known
+    | Catchall of JsonElement
 
-    //[<Fact>]
-    //let ``UnionConverter can feed unknown values into a JObject for logging or post processing`` () =
-    //    let deserialize json = JsonConvert.DeserializeObject<DuWithCatchAllWithFields>(json, settings)
-    //    let jo =
-    //        trap <@ match deserialize """{"case":"CaseUnknown","a":"s","b":1,"c":true}""" with
-    //                | Catchall jo -> jo
-    //                | x -> failwithf "unexpected %A" x @>
+    [<Fact>]
+    let ``UnionConverter can feed unknown values into a JsonElement for logging or post processing`` () =
+        let json = """{"case":"CaseUnknown","a":"s","b":1,"c":true}"""
+        let jo =
+            trap <@ match JsonSerializer.Deserialize<DuWithCatchAllWithFields> json with
+                    | Catchall jo -> jo
+                    | x -> failwithf "unexpected %A" x @>
 
-    //    test <@ string jo.["a"]="s"
-    //            && jo.["b"].Type=Newtonsoft.Json.Linq.JTokenType.Integer
-    //            && jo.["c"].Type=Newtonsoft.Json.Linq.JTokenType.Boolean
-    //            && string jo.["case"]="CaseUnknown" @>
-    //    let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}".Replace("\r\n",Environment.NewLine)
-    //    test <@ expected = string jo @>
+        // These can't be inside test <@ @> because of https://github.com/dotnet/fsharp/issues/6293
+        jo.GetProperty("a").GetString()     =! "s"
+        jo.GetProperty("b").ValueKind       =! JsonValueKind.Number
+        jo.GetProperty("c").ValueKind       =! JsonValueKind.True
+        jo.GetProperty("case").GetString()  =! "CaseUnknown"
+
+        test <@ json = string jo @>
+
 
 module ``Custom discriminator`` =
 
