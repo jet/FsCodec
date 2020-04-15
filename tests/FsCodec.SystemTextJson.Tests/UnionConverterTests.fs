@@ -395,3 +395,49 @@ module ``Custom discriminator`` =
         let a = JsonSerializer.Deserialize<DuWithConverterAndOptionsAttribute>(aJson)
 
         test <@ DuWithConverterAndOptionsAttribute.Case1 = a @>
+
+module ``Struct discriminated unions`` =
+    [<Struct>]
+    [<JsonConverter(typeof<UnionConverter>)>]
+    type TestStructDu =
+    | CaseA of a: TestRecordPayload
+    | CaseB
+    | CaseC of string
+    | CaseD of d: string
+    | CaseE of e: string * int
+    | CaseF of f: string * fb: int
+    | CaseG of g: TrickyRecordPayload
+    | CaseH of h: TestRecordPayload
+    | CaseI of i: TestRecordPayload * ib: string
+
+    let defaultOptions = Options.Create(camelCase = false, ignoreNulls = true)
+    let inline serialize x = JsonSerializer.Serialize(x, defaultOptions)
+
+    [<Fact>]
+    let ``produces expected output`` () =
+        let a = CaseA {test = "hi"}
+        test <@ """{"case":"CaseA","test":"hi"}""" = serialize a @>
+    
+        let b = CaseB
+        test <@ """{"case":"CaseB"}""" = serialize b @>
+    
+        let c = CaseC "hi"
+        test <@ """{"case":"CaseC","Item":"hi"}""" = serialize c @>
+    
+        let d = CaseD "hi"
+        test <@ """{"case":"CaseD","d":"hi"}""" = serialize d @>
+    
+        let e = CaseE ("hi", 0)
+        test <@ """{"case":"CaseE","e":"hi","Item2":0}""" = serialize e @>
+    
+        let f = CaseF ("hi", 0)
+        test <@ """{"case":"CaseF","f":"hi","fb":0}""" = serialize f @>
+    
+        let g = CaseG {Item = "hi"}
+        test <@ """{"case":"CaseG","Item":"hi"}""" = serialize g @>
+
+        let h = CaseH {test = "hi"}
+        test <@ """{"case":"CaseH","test":"hi"}""" = serialize h @>
+    
+        let i = CaseI ({test = "hi"}, "bye")
+        test <@ """{"case":"CaseI","i":{"test":"hi"},"ib":"bye"}""" = serialize i @>
