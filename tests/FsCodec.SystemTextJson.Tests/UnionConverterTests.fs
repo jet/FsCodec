@@ -143,53 +143,6 @@ let ``deserializes properly`` () =
     test<@ CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |] =
     deserialize """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}"""@>
 
-//module MissingFieldsHandling =
-
-//    let rejectMissingSettings =
-//        [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error)
-//            Settings.CreateDefault(errorOnMissing=true)
-//            Settings.Create(errorOnMissing=true)]
-
-//    [<Fact>]
-//    let ``lets converters reject missing values by feeding them a null`` () =
-//        raisesWith <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseY","a":"Fast"}""") @>
-//            (fun e -> <@ "Unexpected token when reading TypeSafeEnum: Null" = e.Message @>)
-//        raises<ArgumentNullException> <@ JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseX"}""") @>
-
-//    [<Fact>]
-//    let ``types with converters that would reject missing values can be guarded by wrapping in an option`` () =
-//        test <@ CaseZ (Fast,None) = JsonConvert.DeserializeObject<TestDU>("""{"case":"CaseZ","a":"Fast"}""") @>
-
-//    [<Fact>]
-//    let ``rejects missing fields bound to non-optional value types when requested`` () =
-//        for s in rejectMissingSettings do
-//            let deserializeWithMissingMembersAsError json = JsonConvert.DeserializeObject<TestDU>(json, s)
-//            raisesWith <@ deserializeWithMissingMembersAsError """{"case":"CaseE","Item3":"hi","Item4":0}"""  @>
-//                (fun (e : JsonSerializationException) ->
-//                    <@  e.Message.StartsWith "Error converting value {null} to type 'System.Int32'. Path ''"
-//                        && e.InnerException.GetType() = typeof<InvalidCastException>
-//                        && e.InnerException.Message.Contains "Null object cannot be converted to a value type." @>)
-
-//    type TestRecordWithArray = { sku : string; [<JsonRequired>]skus: string[] }
-
-//    [<Fact>]
-//    let ``currently can't guard against null Arrays, but that's not a default so we live with it`` () =
-//        raisesWith<JsonSerializationException> <@ JsonConvert.DeserializeObject<TestRecordWithArray>("""{"sku": null }""") @>
-//            (fun e -> <@ e.Message.StartsWith "Required property 'skus' not found in JSON. Path ''" @>)
-//        let missingTheArray = sprintf """{"case":"CaseX","a":"%O"}""" Guid.Empty
-//        test <@ CaseX (CartId Guid.Empty,null) = JsonConvert.DeserializeObject<TestDU>(missingTheArray) @>
-
-//    [<Fact>]
-//    let ``handles missing fields bound to Nullable or optional types`` () =
-//        let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
-//        test <@ CaseJ (Nullable<int>()) = deserialize """{"case":"CaseJ"}""" @>
-//        test <@ CaseK (1, (Nullable<int>())) = deserialize """{"case":"CaseK","a":1}""" @>
-//        test <@ CaseL ((Nullable<int>()), (Nullable<int>())) = deserialize """{"case":"CaseL"}""" @>
-
-//        test <@ CaseM None = deserialize """{"case":"CaseM"}""" @>
-//        test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
-//        test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
-
 let (|Q|) (s: string) = JsonSerializer.Serialize(s, defaultOptions)
 
 // Renderings when NullValueHandling=Include, which is the default for Json.net, and used by the recommended Settings.CreateCorrect profile
