@@ -1,7 +1,6 @@
 module FsCodec.SystemTextJson.Tests.PicklerTests
 
 open FsCodec.SystemTextJson
-open FsCodec.SystemTextJson.Converters
 open Swensen.Unquote
 open System
 open System.Text.Json

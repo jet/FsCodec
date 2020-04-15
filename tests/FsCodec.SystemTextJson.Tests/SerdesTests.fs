@@ -24,7 +24,7 @@ module StjCharacterization =
                 | Choice2Of2 m -> m.Contains "Deserialization of reference types without parameterless constructor is not supported. Type 'FsCodec.SystemTextJson.Tests.SerdesTests+Record'" @>
 
     let [<Fact>] ``OOTB STJ options`` () =
-        let ootbOptionsWithRecordConverter = Options.CreateDefault(converters = [|Converters.JsonRecordConverter()|])
+        let ootbOptionsWithRecordConverter = Options.CreateDefault(converters = [|JsonRecordConverter()|])
         let value = { a = 1; b = Some "str" }
         let ser =  Serdes.Serialize(value, ootbOptions)
         test <@ ser = """{"a":1,"b":{"Value":"str"}}""" @>
@@ -40,8 +40,8 @@ module StjCharacterization =
     // - and is not in alignment with the FsCodec.NewtonsoftJson default options
     // see https://github.com/dotnet/runtime/issues/28567#issuecomment-53581752 for lowdown
     let asRequiredForExamples : System.Text.Json.Serialization.JsonConverter [] =
-        [| Converters.JsonOptionConverter()
-           Converters.JsonRecordConverter() |]
+        [| JsonOptionConverter()
+           JsonRecordConverter() |]
     type OverescapedOptions() as this =
         inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
 

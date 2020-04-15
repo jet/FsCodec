@@ -1,4 +1,4 @@
-﻿namespace FsCodec.SystemTextJson.Converters
+﻿namespace FsCodec.SystemTextJson
 
 open FSharp.Reflection
 open System

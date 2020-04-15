@@ -8,8 +8,8 @@ open System.Text.Json.Serialization
 type Options private () =
 
     static let defaultConverters : JsonConverter[] =
-        [|  Converters.JsonOptionConverter()
-            Converters.JsonRecordConverter() |]
+        [|  JsonOptionConverter()
+            JsonRecordConverter() |]
 
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault
