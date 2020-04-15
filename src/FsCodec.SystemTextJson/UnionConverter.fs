@@ -7,8 +7,20 @@ open System
 open System.Reflection
 open System.Text.Json
 
+/// <summary>Use this attribute in combination with a JsonConverter/UnionConverter attribute to specify
+/// your own name for a discriminator and/or a catch-all case for a specific discriminated union.
+/// If this attribute is set, its values take precedence over the values set on the converter itself.
+/// E.g. <c>[<JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("type")>]</c></summary>
+/// <remarks>Not inherited because JsonConverters don't get inherited right now.
+/// https://github.com/dotnet/runtime/issues/30427#issuecomment-610080138</remarks>
+[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false, Inherited = false)>] 
+type JsonUnionConverterOptionsAttribute(discriminator : string) =
+    inherit Attribute()
+    member _.Discriminator = discriminator
+    member val CatchAll: string = null with get, set
+
 [<NoComparison; NoEquality>]
-type private Union =
+type internal Union =
     {
         cases: UnionCaseInfo[]
         tagReader: obj -> int
@@ -59,19 +71,11 @@ module private Union =
                 | true, el when el.ValueKind = JsonValueKind.Null -> null
                 | true, el -> JsonSerializer.DeserializeElement (el, fi.PropertyType, options) |]
 
-/// Serializes a discriminated union case with a single field that is a
-/// record by flattening the record fields to the same level as the discriminator
-type UnionConverter<'T> private (discriminator : string, ?catchAllCase) =
+type internal UnionConverter<'T> (union : Union, discriminator : string, catchAllCase : string option) =
     inherit Serialization.JsonConverter<'T>()
-
-    new() = UnionConverter("case")
-    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
-
-    override __.CanConvert (t : Type) = Union.tryGetUnion t |> Option.isSome
 
     override __.Write(writer, value, options) =
         let value = box value
-        let union = Union.tryGetUnion (value.GetType()) |> Option.get // TOASK: Do we wanna keep the try?
         let tag = union.tagReader value
         let case = union.cases.[tag]
         let fieldValues = union.fieldReader.[tag] value
@@ -109,7 +113,6 @@ type UnionConverter<'T> private (discriminator : string, ?catchAllCase) =
         use document = JsonDocument.ParseValue &reader
         let element = document.RootElement
 
-        let union = Union.tryGetUnion t |> Option.get // TOASK: Do we wanna keep the try?
         let targetCaseIndex =
             let inputCaseNameValue = element.GetProperty discriminator |> string
             let findCaseNamed x = union.cases |> Array.tryFindIndex (fun case -> case.Name = x)
@@ -127,3 +130,30 @@ type UnionConverter<'T> private (discriminator : string, ?catchAllCase) =
 
         let targetCaseFields, targetCaseCtor = union.cases.[targetCaseIndex].GetFields(), union.caseConstructor.[targetCaseIndex]
         targetCaseCtor (Union.mapTargetCaseArgs element options targetCaseFields) :?> 'T
+
+/// Serializes a discriminated union case with a single field that is a
+/// record by flattening the record fields to the same level as the discriminator
+type UnionConverter (defaultDiscriminator : string, defaultCatchAllCase : string option) =
+    inherit Serialization.JsonConverterFactory()
+
+    static let converterType = typedefof<UnionConverter<_>>
+
+    new() = UnionConverter("case", null)
+    new(discriminator: string, catchAllCase: string) = // Compatibility with Newtonsoft UnionConverter constructor
+        UnionConverter(discriminator, match catchAllCase with null -> None | x -> Some x)
+
+    override _.CanConvert(t) = Union.tryGetUnion t |> Option.isSome
+
+    override _.CreateConverter(t, _) =
+        let options         = t.GetCustomAttributes(typeof<JsonUnionConverterOptionsAttribute>, false)
+                            |> Array.tryHead // AttributeUsage(AllowMultiple = false)
+                            |> Option.map (fun a -> a :?> JsonUnionConverterOptionsAttribute)
+        let discriminator = options |> Option.map (fun o -> o.Discriminator)
+                            |> Option.defaultValue defaultDiscriminator
+        let catchAll      = options |> Option.map (fun o -> match o.CatchAll with null -> None | x -> Some x)
+                            |> Option.defaultValue defaultCatchAllCase
+        let union         = t |> Union.tryGetUnion |> Option.get
+
+        let converter = converterType.MakeGenericType([|t|])
+
+        downcast Activator.CreateInstance(converter, union, discriminator, catchAll)

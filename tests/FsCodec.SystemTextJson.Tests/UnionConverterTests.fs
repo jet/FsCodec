@@ -30,7 +30,7 @@ type Mode =
     | Slow
 
 [<NoComparison>] // NB this is not a general restriction; it's forced by use of Nullable<T> in some of the cases in this specific one
-[<JsonConverter(typeof<UnionConverter<TestDU>>)>]
+[<JsonConverter(typeof<UnionConverter>)>]
 type TestDU =
     | CaseA of TestRecordPayload
     | CaseB
@@ -315,24 +315,45 @@ module ``Unmatched case handling`` =
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
 
-    type DuWithCatchAll =
+    [<RequireQualifiedAccess; JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("case", CatchAll = "Catchall")>]
+    type DuWithCatchAllWithAttributes =
     | Known
     | Catchall
 
     [<Fact>]
-    let ``UnionConverter supports a nominated catchall`` () =
-        let options = Options.Create(UnionConverter<DuWithCatchAll> ("case", "Catchall"))
+    let ``UnionConverter supports a nominated catchall via attributes`` () =
         let aJson = """{"case":"CaseUnknown"}"""
-        let a = JsonSerializer.Deserialize<DuWithCatchAll>(aJson, options)
+        let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson)
 
-        test <@ Catchall = a @>
+        test <@ DuWithCatchAllWithAttributes.Catchall = a @>
+
+    [<RequireQualifiedAccess>]
+    type DuWithCatchAllWithoutAttributes =
+    | Known
+    | Catchall
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated catchall via options`` () =
+        let options = Options.Create(UnionConverter ("case", "Catchall"))
+        let aJson = """{"case":"CaseUnknown"}"""
+        let a = JsonSerializer.Deserialize<DuWithCatchAllWithoutAttributes>(aJson, options)
+
+        test <@ DuWithCatchAllWithoutAttributes.Catchall = a @>
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated catchall with attributes overriding options`` () =
+        let options = Options.Create(UnionConverter ("case", None))
+        let aJson = """{"case":"CaseUnknown"}"""
+        let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson, options)
+
+        test <@ DuWithCatchAllWithAttributes.Catchall = a @>
 
     type DuWithMissingCatchAll =
     | Known
 
     [<Fact>]
     let ``UnionConverter explains if nominated catchAll not found`` () =
-        let options = Options.Create(UnionConverter<DuWithMissingCatchAll> ("case", "CatchAllThatCantBeFound"))
+        let options = Options.Create(UnionConverter ("case", "CatchAllThatCantBeFound"))
         let aJson = """{"case":"CaseUnknown"}"""
         let act () = JsonSerializer.Deserialize<DuWithMissingCatchAll>(aJson, options)
 
@@ -359,3 +380,55 @@ module ``Unmatched case handling`` =
     //            && string jo.["case"]="CaseUnknown" @>
     //    let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}".Replace("\r\n",Environment.NewLine)
     //    test <@ expected = string jo @>
+
+module ``Custom discriminator`` =
+
+    type DuWithoutAttributes =
+    | Case1
+
+    [<JsonUnionConverterOptions("kind")>]
+    type DuWithOptionsAttribute =
+    | Case1
+
+    [<JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("kind")>]
+    type DuWithConverterAndOptionsAttribute =
+    | Case1
+
+    [<Fact>]
+    let ``UnionConverter supports a default discriminator which is precisely 'case'`` () =
+        let options = Options.Create(UnionConverter ())
+        let aJson = """{"case":"Case1"}"""
+        let a = JsonSerializer.Deserialize<DuWithoutAttributes>(aJson, options)
+
+        test <@ DuWithoutAttributes.Case1 = a @>
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated discriminator via converter constructor`` () =
+        let options = Options.Create(UnionConverter ("type", None))
+        let aJson = """{"type":"Case1"}"""
+        let a = JsonSerializer.Deserialize<DuWithoutAttributes>(aJson, options)
+
+        test <@ DuWithoutAttributes.Case1 = a @>
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated discriminator via options attribute`` () =
+        let options = Options.Create(UnionConverter ())
+        let aJson = """{"kind":"Case1"}"""
+        let a = JsonSerializer.Deserialize<DuWithOptionsAttribute>(aJson, options)
+
+        test <@ DuWithOptionsAttribute.Case1 = a @>
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated discriminator with options attribute overriding converter constructor`` () =
+        let options = Options.Create(UnionConverter ("notkind", None))
+        let aJson = """{"kind":"Case1"}"""
+        let a = JsonSerializer.Deserialize<DuWithOptionsAttribute>(aJson, options)
+
+        test <@ DuWithOptionsAttribute.Case1 = a @>
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated discriminator via options attribute with converter attribute`` () =
+        let aJson = """{"kind":"Case1"}"""
+        let a = JsonSerializer.Deserialize<DuWithConverterAndOptionsAttribute>(aJson)
+
+        test <@ DuWithConverterAndOptionsAttribute.Case1 = a @>
