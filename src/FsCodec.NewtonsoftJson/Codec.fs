@@ -88,8 +88,8 @@ type Codec private () =
             member __.Encode(context, event) =
                 let (c, meta : 'Meta option, eventId, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
-                let metaUtf8 = meta |> Option.map bytesEncoder.Encode<'Meta>
-                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, defaultArg metaUtf8 null, eventId, correlationId, causationId, ?timestamp = timestamp)
+                let metaUtf8 = match meta with Some x -> bytesEncoder.Encode<'Meta> x | None -> null
+                FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, metaUtf8, eventId, correlationId, causationId, ?timestamp = timestamp)
 
             member __.TryDecode encoded =
                 match dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } with
