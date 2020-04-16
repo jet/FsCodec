@@ -40,10 +40,13 @@ type InteropExtensions =
                 native.TryDecode mapped }
 
     static member private MapFrom(x : byte[]) : JsonElement =
+        if x = null then JsonElement() else
+
         let span = System.ReadOnlySpan.op_Implicit x
         JsonSerializer.Deserialize(span)
     static member private MapTo(x: JsonElement) : byte[] =
-        JsonSerializer.SerializeToUtf8Bytes(x, InteropExtensions.noOverescapingOptions)
+        if x.ValueKind = JsonValueKind.Undefined then null
+        else JsonSerializer.SerializeToUtf8Bytes(x, InteropExtensions.noOverescapingOptions)
 
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native : FsCodec.IEventCodec<'Event, JsonElement, 'Context>)
