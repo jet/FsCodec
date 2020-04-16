@@ -37,7 +37,7 @@ type Mode =
     | Slow
 
 [<NoComparison>] // NB this is not a general restriction; it's forced by use of Nullable<T> in some of the cases in this specific one
-[<JsonConverter(typeof<UnionConverter>)>]
+[<JsonConverter(typeof<UnionConverter<TestDU>>)>]
 type TestDU =
     | CaseA of TestRecordPayload
     | CaseB
@@ -275,7 +275,7 @@ module ``Unmatched case handling`` =
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
 
-    [<RequireQualifiedAccess; JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("case", CatchAll = "Catchall")>]
+    [<RequireQualifiedAccess; JsonConverter(typeof<UnionConverter<DuWithCatchAllWithAttributes>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
     type DuWithCatchAllWithAttributes =
     | Known
     | Catchall
@@ -302,7 +302,7 @@ module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall with attributes overriding options`` () =
-        let options = Options.Create(UnionConverter ("case", None))
+        let options = Options.Create(UnionConverter ({ discriminator = "case"; catchAllCase = None }))
         let aJson = """{"case":"CaseUnknown"}"""
         let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson, options)
 
@@ -320,9 +320,9 @@ module ``Unmatched case handling`` =
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
         |> raisesWith <@ act() @>
 
-    [<NoComparison>] // Forced by usage of JObject
-    [<JsonConverter(typeof<UnionConverter>)>]
-    [<JsonUnionConverterOptions("case", CatchAll = "Catchall")>]
+    [<NoComparison>] // Forced by usage of JsonElement
+    [<JsonConverter(typeof<UnionConverter<DuWithCatchAllWithFields>>)>]
+    [<JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
     type DuWithCatchAllWithFields =
     | Known
     | Catchall of JsonElement
@@ -353,7 +353,7 @@ module ``Custom discriminator`` =
     type DuWithOptionsAttribute =
     | Case1
 
-    [<JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("kind")>]
+    [<JsonConverter(typeof<UnionConverter<_>>); JsonUnionConverterOptions("kind")>]
     type DuWithConverterAndOptionsAttribute =
     | Case1
 
@@ -367,7 +367,7 @@ module ``Custom discriminator`` =
 
     [<Fact>]
     let ``UnionConverter supports a nominated discriminator via converter constructor`` () =
-        let options = Options.Create(UnionConverter ("type", None))
+        let options = Options.Create(UnionConverter ({ discriminator = "type"; catchAllCase = None }))
         let aJson = """{"type":"Case1"}"""
         let a = JsonSerializer.Deserialize<DuWithoutAttributes>(aJson, options)
 
@@ -383,7 +383,7 @@ module ``Custom discriminator`` =
 
     [<Fact>]
     let ``UnionConverter supports a nominated discriminator with options attribute overriding converter constructor`` () =
-        let options = Options.Create(UnionConverter ("notkind", None))
+        let options = Options.Create(UnionConverter ({ discriminator = "notkind"; catchAllCase = None }))
         let aJson = """{"kind":"Case1"}"""
         let a = JsonSerializer.Deserialize<DuWithOptionsAttribute>(aJson, options)
 
@@ -398,7 +398,7 @@ module ``Custom discriminator`` =
 
 module ``Struct discriminated unions`` =
     [<Struct>]
-    [<JsonConverter(typeof<UnionConverter>)>]
+    [<JsonConverter(typeof<UnionConverter<TestStructDu>>)>]
     type TestStructDu =
     | CaseA of a: TestRecordPayload
     | CaseB
