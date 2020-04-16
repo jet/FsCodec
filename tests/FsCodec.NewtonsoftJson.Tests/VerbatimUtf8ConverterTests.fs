@@ -55,11 +55,11 @@ let defaultSettings = Settings.CreateDefault()
 #nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
 
 type VerbatimUtf8Tests() =
-    let eventCodec = Codec.Create()
+    let eventCodec = Codec.Create<Union>()
+    let indirectCodec = FsCodec.SystemTextJson.Codec.Create() |> FsCodec.SystemTextJson.InteropExtensions.ToByteArrayCodec
 
-    [<Fact>]
-    let ``encodes correctly`` () =
-        let encoded = eventCodec.Encode(None, A { embed = "\"" })
+    let [<Theory; InlineData true; InlineData false>] ``encodes correctly`` (direct) =
+        let encoded = (if direct then eventCodec else indirectCodec).Encode(None, A { embed = "\"" })
         let e : Batch =
             {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
                 e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
@@ -67,25 +67,30 @@ type VerbatimUtf8Tests() =
         test <@ res.Contains """"d":{"embed":"\""}""" @>
 
     let defaultEventCodec = Codec.Create<U>(defaultSettings)
+    let indirectCodec = FsCodec.SystemTextJson.Codec.Create() |> FsCodec.SystemTextJson.InteropExtensions.ToByteArrayCodec
 
-    let [<Property(MaxTest=100)>] ``round-trips diverse bodies correctly`` (x: U) =
-        let encoded = defaultEventCodec.Encode(None,x)
+    let [<Property>] ``round-trips diverse bodies correctly`` (x: U, encodeDirect, decodeDirect) =
+        let encoder = if encodeDirect then defaultEventCodec else indirectCodec
+        let decoder = if decodeDirect then defaultEventCodec else indirectCodec
+        let encoded = encoder.Encode(None,x)
         let e : Batch =
             {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
                 e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
         let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
-        let decoded = defaultEventCodec.TryDecode loaded |> Option.get
+        let decoded = decoder.TryDecode loaded |> Option.get
         x =! decoded
 
     // NB while this aspect works, we don't support it as it gets messy when you then use the VerbatimUtf8Converter
     // https://github.com/JamesNK/Newtonsoft.Json/issues/862 // doesnt apply to this case
-    let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
+    let [<Property>] ``Codec does not fall prey to Date-strings being mutilated`` (encodeDirect, decodeDirect) =
+        let encoder = if encodeDirect then defaultEventCodec else indirectCodec
+        let decoder = if decodeDirect then defaultEventCodec else indirectCodec
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
-        let encoded = defaultEventCodec.Encode(None,x)
+        let encoded = encoder.Encode(None,x)
         let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data, encoded.Meta, timestamp = encoded.Timestamp)
-        let decoded = defaultEventCodec.TryDecode adapted |> Option.get
+        let decoded = decoder.TryDecode adapted |> Option.get
         test <@ x = decoded @>
 
     //// NB while this aspect works, we don't support it as it gets messy when you then use the VerbatimUtf8Converter
