@@ -294,7 +294,7 @@ module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall via options`` () =
-        let options = Options.Create(UnionConverter ("case", "Catchall"))
+        let options = Options.Create(UnionConverter<DuWithCatchAllWithoutAttributes> ("case", "Catchall"))
         let aJson = """{"case":"CaseUnknown"}"""
         let a = JsonSerializer.Deserialize<DuWithCatchAllWithoutAttributes>(aJson, options)
 
@@ -302,7 +302,7 @@ module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall with attributes overriding options`` () =
-        let options = Options.Create(UnionConverter ({ discriminator = "case"; catchAllCase = None }))
+        let options = Options.Create(UnionConverter<DuWithCatchAllWithAttributes> ({ discriminator = "case"; catchAllCase = None }))
         let aJson = """{"case":"CaseUnknown"}"""
         let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson, options)
 
@@ -313,7 +313,7 @@ module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter explains if nominated catchAll not found`` () =
-        let options = Options.Create(UnionConverter ("case", "CatchAllThatCantBeFound"))
+        let options = Options.Create(UnionConverter<DuWithMissingCatchAll> ("case", "CatchAllThatCantBeFound"))
         let aJson = """{"case":"CaseUnknown"}"""
         let act () = JsonSerializer.Deserialize<DuWithMissingCatchAll>(aJson, options)
 
@@ -353,7 +353,7 @@ module ``Custom discriminator`` =
     type DuWithOptionsAttribute =
     | Case1
 
-    [<JsonConverter(typeof<UnionConverter<_>>); JsonUnionConverterOptions("kind")>]
+    [<JsonConverter(typeof<UnionConverter<DuWithConverterAndOptionsAttribute>>); JsonUnionConverterOptions("kind")>]
     type DuWithConverterAndOptionsAttribute =
     | Case1
 
