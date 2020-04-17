@@ -59,7 +59,7 @@ type VerbatimUtf8Tests() = // not a module or CI will fail for net461
 
     let eventCodec = Codec.Create<Union>()
 
-    let [<Fact>] ``encodes correctly`` (direct) =
+    let [<Fact>] ``encodes correctly`` () =
         let input = Union.A { embed = "\"" }
         let encoded = eventCodec.Encode(None, input)
         let e : Batch = mkBatch encoded
