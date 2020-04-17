@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/FsCodec.NewtonsoftJson/FsCodec.NewtonsoftJson.fsproj" />
-    <ProjectReference Include="..\..\src\FsCodec.SystemTextJson\FsCodec.SystemTextJson.fsproj" />
   </ItemGroup>
 
 </Project>

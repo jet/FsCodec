@@ -5,8 +5,6 @@ open System.Text.Json
 
 [<Extension>]
 type InteropExtensions =
-    static member private noOverescapingOptions =
-        System.Text.Json.JsonSerializerOptions(Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)
     static member private Adapt<'From, 'To, 'Event, 'Context>
         (   native : FsCodec.IEventCodec<'Event, 'From, 'Context>,
             up : 'From -> 'To,
@@ -40,13 +38,14 @@ type InteropExtensions =
                 native.TryDecode mapped }
 
     static member private MapFrom(x : byte[]) : JsonElement =
-        if x = null then JsonElement() else
-
-        let span = System.ReadOnlySpan.op_Implicit x
-        JsonSerializer.Deserialize(span)
+        if x = null then JsonElement()
+        else JsonSerializer.Deserialize(System.ReadOnlySpan.op_Implicit x)
     static member private MapTo(x: JsonElement) : byte[] =
         if x.ValueKind = JsonValueKind.Undefined then null
-        else JsonSerializer.SerializeToUtf8Bytes(x, InteropExtensions.noOverescapingOptions)
+        else JsonSerializer.SerializeToUtf8Bytes(x, InteropExtensions.NoOverEscapingOptions)
+    // Avoid introduction of HTML escaping for things like quotes etc (as standard Options.Create() profile does)
+    static member private NoOverEscapingOptions =
+        System.Text.Json.JsonSerializerOptions(Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)
 
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native : FsCodec.IEventCodec<'Event, JsonElement, 'Context>)

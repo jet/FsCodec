@@ -51,7 +51,9 @@ type Codec private () =
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, JsonElement>(
                 elementEncoder,
-                requireRecordFields = true, // See JsonConverterTests - round-tripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
+                // Round-tripping cases like null and/or empty strings etc involves edge cases that various stores
+                // and/or Interop.fs do not cover, so we disable this
+                requireRecordFields = true,
                 allowNullaryCases = not (defaultArg rejectNullaryCases false))
 
         { new FsCodec.IEventCodec<'Event, JsonElement, 'Context> with
