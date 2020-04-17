@@ -81,8 +81,8 @@ type Codec private () =
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, byte[]>(
                 bytesEncoder,
-                // For now, we block this off as
-                // a) it's a lot of yaks to shave
+                // For now, we hard wire in disabling of non-record bodies as:
+                // a) it's extra yaks to shave
                 // b) it's questionable whether allowing one to define event contracts that preclude adding extra fields is a useful idea in the first instance
                 // See VerbatimUtf8EncoderTests.fs and InteropTests.fs - there are edge cases when `d` fields have null / zero-length / missing values
                 requireRecordFields = true,

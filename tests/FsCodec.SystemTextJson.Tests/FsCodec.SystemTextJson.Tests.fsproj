@@ -17,9 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- For InteropTests.fs -->
-    <ProjectReference Include="../../src/FsCodec.NewtonsoftJson/FsCodec.NewtonsoftJson.fsproj" />
     <ProjectReference Include="../../src/FsCodec.SystemTextJson/FsCodec.SystemTextJson.fsproj" />
+    <!-- For InteropTests.fs -->
     <ProjectReference Include="../FsCodec.NewtonsoftJson.Tests/FsCodec.NewtonsoftJson.Tests.fsproj" />
   </ItemGroup>
 

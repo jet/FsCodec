@@ -1,3 +1,4 @@
+/// Covers interop with stores that manage event bodies as byte[]
 module FsCodec.SystemTextJson.Tests.InteropTests
 
 open FsCheck.Xunit

@@ -1,6 +1,6 @@
 module FsCodec.SystemTextJson.Tests.CodecTests
 
-open FsCodec.SystemTextJson // to enable adapters
+open FsCodec.SystemTextJson // bring in ToByteArrayCodec etc extension methods
 open System.Text.Json
 open FsCheck.Xunit
 open Swensen.Unquote
