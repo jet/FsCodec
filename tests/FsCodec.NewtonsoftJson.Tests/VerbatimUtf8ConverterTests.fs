@@ -55,7 +55,7 @@ let mkBatch (encoded : FsCodec.IEventData<byte[]>) : Batch =
 
 #nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
 
-type VerbatimUtf8Tests() = // not a module or CI will fail for net461
+module VerbatimUtf8Tests = // not a module or CI will fail for net461
 
     let eventCodec = Codec.Create<Union>()
 
