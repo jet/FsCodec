@@ -51,8 +51,8 @@ type Codec private () =
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, JsonElement>(
                 elementEncoder,
-                // Round-tripping cases like null and/or empty strings etc involves edge cases that various stores
-                // and/or Interop.fs do not cover, so we disable this
+                // Round-tripping cases like null and/or empty strings etc involves edge cases that stores,
+                // FsCodec.NewtonsoftJson.Codec, Interop.fs and InteropTests.fs do not cover, so we disable this
                 requireRecordFields = true,
                 allowNullaryCases = not (defaultArg rejectNullaryCases false))
 
