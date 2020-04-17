@@ -3,8 +3,8 @@ module FsCodec.SystemTextJson.Tests.InteropTests
 
 open FsCheck.Xunit
 open Newtonsoft.Json
-open System
 open Swensen.Unquote
+open System
 open Xunit
 
 type Batch = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.Batch
