@@ -105,11 +105,11 @@ type UnionConverter<'T> (converterOptions) =
     new(discriminator: string, catchAllCase: string) = // Compatibility with Newtonsoft UnionConverter constructor
         UnionConverter<'T>({ discriminator = discriminator; catchAllCase = Option.ofObj catchAllCase})
 
-    override __.CanConvert(t) = Union.tryGetUnion t |> Option.isSome
+    override __.CanConvert(_) = Union.tryGetUnion (typeof<'T>) |> Option.isSome
 
     override __.Write(writer, value, options) =
         let value = box value
-        let union = Union.tryGetUnion (value.GetType()) |> Option.get
+        let union = Union.tryGetUnion (typeof<'T>) |> Option.get
         let unionOptions = getOptions union
         let tag = union.tagReader value
         let case = union.cases.[tag]
@@ -146,7 +146,7 @@ type UnionConverter<'T> (converterOptions) =
     override __.Read(reader, t : Type, options) =
         reader.ValidateTokenType(JsonTokenType.StartObject)
         use document = JsonDocument.ParseValue &reader
-        let union = Union.tryGetUnion t |> Option.get
+        let union = Union.tryGetUnion (typeof<'T>) |> Option.get
         let unionOptions = getOptions union
         let element = document.RootElement
 
