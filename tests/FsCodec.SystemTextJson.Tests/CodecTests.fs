@@ -1,5 +1,6 @@
 module FsCodec.SystemTextJson.Tests.CodecTests
 
+open FsCodec.SystemTextJson // bring in ToByteArrayCodec etc extension methods
 open System.Text.Json
 open FsCheck.Xunit
 open Swensen.Unquote
@@ -18,6 +19,7 @@ let elementEncoder : TypeShape.UnionContract.IEncoder<System.Text.Json.JsonEleme
     FsCodec.SystemTextJson.Core.JsonElementEncoder(ignoreNullOptions) :> _
 
 let eventCodec = FsCodec.SystemTextJson.Codec.Create<Union>(ignoreNullOptions)
+let doubleHopCodec = eventCodec.ToByteArrayCodec().ToJsonElementCodec()
 
 [<NoComparison>]
 type Envelope = { d : JsonElement }
@@ -61,3 +63,7 @@ let [<Property>] roundtrips value =
         | BO ({ opt = Some null } as v) -> BO { v with opt = None }
         | x -> x
     test <@ expected = decoded @>
+
+    // Also validate the adapters work when put in series (NewtonsoftJson tests are responsible for covering the individual hops)
+    let decodedDoubleHop = doubleHopCodec.TryDecode wrapped |> Option.get
+    test <@ expected = decodedDoubleHop @>

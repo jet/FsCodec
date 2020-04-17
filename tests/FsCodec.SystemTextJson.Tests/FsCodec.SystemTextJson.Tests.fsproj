@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/FsCodec.SystemTextJson/FsCodec.SystemTextJson.fsproj" />
+    <!-- For InteropTests.fs -->
+    <ProjectReference Include="../FsCodec.NewtonsoftJson.Tests/FsCodec.NewtonsoftJson.Tests.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +29,7 @@
     <Compile Include="UmxInteropTests.fs" />
     <Compile Include="TypeSafeEnumConverterTests.fs" />
     <None Include="Examples.fsx" />
+    <Compile Include="InteropTests.fs" />
   </ItemGroup>
 
 </Project>

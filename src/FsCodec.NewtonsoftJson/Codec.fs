@@ -81,7 +81,11 @@ type Codec private () =
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, byte[]>(
                 bytesEncoder,
-                requireRecordFields = true, // See JsonConverterTests - round-tripping UTF-8 correctly with Json.net is painful so for now we lock up the dragons
+                // For now, we hard wire in disabling of non-record bodies as:
+                // a) it's extra yaks to shave
+                // b) it's questionable whether allowing one to define event contracts that preclude adding extra fields is a useful idea in the first instance
+                // See VerbatimUtf8EncoderTests.fs and InteropTests.fs - there are edge cases when `d` fields have null / zero-length / missing values
+                requireRecordFields = true,
                 allowNullaryCases = not (defaultArg rejectNullaryCases false))
 
         { new FsCodec.IEventCodec<'Event, byte[], 'Context> with
