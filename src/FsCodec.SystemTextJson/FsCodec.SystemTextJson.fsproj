@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <Compile Include="JsonSerializerElementExtensions.fs" />
-    <Compile Include="Utf8JsonReaderExtensions.fs" />
     <Compile Include="JsonOptionConverter.fs" />
     <Compile Include="JsonRecordConverter.fs" />
     <Compile Include="Pickler.fs" />

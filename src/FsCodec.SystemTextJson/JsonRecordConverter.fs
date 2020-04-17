@@ -1,12 +1,21 @@
 ﻿namespace FsCodec.SystemTextJson.Converters
 
-open FsCodec.SystemTextJson.Core
 open FSharp.Reflection
 open System
 open System.Collections.Generic
 open System.Linq.Expressions
+open System.Runtime.CompilerServices
 open System.Text.Json
 open System.Text.Json.Serialization
+
+[<Extension>]
+type internal Utf8JsonReaderExtension =
+    [<Extension>]
+    static member ValidateTokenType(reader: Utf8JsonReader, expectedTokenType) =
+        if reader.TokenType <> expectedTokenType then
+            sprintf "Expected a %A token, but encountered a %A token when parsing JSON." expectedTokenType (reader.TokenType)
+            |> JsonException
+            |> raise
 
 type JsonRecordConverterActivator = delegate of JsonSerializerOptions -> JsonConverter
 
@@ -84,15 +93,8 @@ type JsonRecordConverter<'T> (options: JsonSerializerOptions) =
             })
 
     let fieldsByName =
-        fields
-        |> Array.map (fun f -> f.name, f)
-#if NETSTANDARD2_1
-        |> Array.map KeyValuePair.Create
-        |> (fun kvp -> Dictionary(kvp, StringComparer.OrdinalIgnoreCase))
-#else
-        |> Array.map KeyValuePair
-        |> (fun kvp -> kvp.ToDictionary((fun item -> item.Key), (fun item -> item.Value), StringComparer.OrdinalIgnoreCase))
-#endif
+        let pairs = seq { for f in fields -> KeyValuePair.Create(f.name, f) }
+        Dictionary(pairs, StringComparer.OrdinalIgnoreCase)
 
     let tryGetFieldByName name =
         match fieldsByName.TryGetValue(name) with
