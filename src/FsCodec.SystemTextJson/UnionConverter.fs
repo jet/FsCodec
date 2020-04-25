@@ -79,7 +79,7 @@ module private Union =
         && not (typeHasJsonConverterAttribute propertyType)
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
-    /// and/or whether we need to let json.net step in to convert argument types
+    /// and/or whether we need to defer to System.Text.Json
     let mapTargetCaseArgs (element : JsonElement) options (props : PropertyInfo[]) : obj [] =
         match props with
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->

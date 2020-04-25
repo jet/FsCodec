@@ -40,8 +40,7 @@ module StjCharacterization =
     // - and is not in alignment with the FsCodec.NewtonsoftJson default options
     // see https://github.com/dotnet/runtime/issues/28567#issuecomment-53581752 for lowdown
     let asRequiredForExamples : System.Text.Json.Serialization.JsonConverter [] =
-        [| JsonOptionConverter()
-           JsonRecordConverter() |]
+        [| JsonOptionConverter(); JsonRecordConverter() |]
     type OverescapedOptions() as this =
         inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
 

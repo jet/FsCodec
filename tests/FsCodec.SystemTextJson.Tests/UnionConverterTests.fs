@@ -153,7 +153,7 @@ let ``deserializes properly`` () =
 
 let (|Q|) (s: string) = JsonSerializer.Serialize(s, defaultOptions)
 
-// Renderings when NullValueHandling=Include, which is the default for Json.net, and used by the recommended Settings.CreateCorrect profile
+// Renderings when NullValueHandling=Include, which is used by the recommended Settings.Create profile
 let render ignoreNulls = function
     | CaseA { test = null } when ignoreNulls -> """{"case":"CaseA"}"""
     | CaseA { test = Q x} -> sprintf """{"case":"CaseA","test":%s}""" x
