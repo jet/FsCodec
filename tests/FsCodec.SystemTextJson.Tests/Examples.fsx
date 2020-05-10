@@ -31,8 +31,7 @@ module Contract2 =
     type TypeThatRequiresMyCustomConverter = { mess : int }
     type MyCustomConverter() = inherit JsonPickler<string>() override __.Read(_,_) = "" override __.Write(_,_,_) = ()
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
-    /// Options to be used within this contract
-    // note JsonOptionConverter and JsonRecordConverter are also included by default
+    /// Options to be used within this contract; note JsonOptionConverter is also included by default
     let options = FsCodec.SystemTextJson.Options.Create(converters = [| MyCustomConverter() |])
     let serialize (x : Item) = FsCodec.SystemTextJson.Serdes.Serialize(x, options)
     let deserialize (json : string) : Item = FsCodec.SystemTextJson.Serdes.Deserialize(json, options)
