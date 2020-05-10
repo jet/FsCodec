@@ -13,6 +13,17 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="2.1.0"></a>
+## [2.1.0] - 2020-05-10
+
+### Added
+
+- `FsCodec.SystemTextJson` - Feature-compatible port of `FsCodec.NewtonsoftJson` based on `System.Text.Json` v `>= 5.0.0-preview.3` [#38](https://github.com/jet/FsCodec/pull/38) :pray: [@ylibrach](https://github.com/ylibrach)
+
+### Changed
+
+- `FsCodec.Box` - new Package (existing Impl moved from `FsCodec.NewtonsoftJson`) [#38](https://github.com/jet/FsCodec/pull/38)
+
 <a name="2.0.1"></a>
 ## [2.0.1] - 2020-02-26
 
@@ -143,7 +154,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.0.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.1.0...HEAD
+[2.1.0]: https://github.com/jet/FsCodec/compare/2.0.1...2.1.0
 [2.0.1]: https://github.com/jet/FsCodec/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/jet/FsCodec/compare/2.0.0-rc3...2.0.0
 [2.0.0-rc3]: https://github.com/jet/FsCodec/compare/2.0.0-rc2...2.0.0-rc3
