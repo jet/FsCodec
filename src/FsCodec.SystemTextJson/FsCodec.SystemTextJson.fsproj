@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <WarningLevel>5</WarningLevel>
     <IsTestProject>false</IsTestProject>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -9,26 +9,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="JsonSerializerElementExtensions.fs" />
+    <Compile Include="JsonOptionConverter.fs" />
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
     <Compile Include="TypeSafeEnumConverter.fs" />
-    <Compile Include="OptionConverter.fs" />
-    <Compile Include="Settings.fs" />
+    <Compile Include="Options.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
-    <Compile Include="VerbatimUtf8Converter.fs" />
+    <Compile Include="Interop.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     <PackageReference Include="MinVer" Version="2.0.0" PrivateAssets="All" />
 
-    <PackageReference Include="FSharp.Core" Version="3.1.2.5" Condition=" '$(TargetFramework)' == 'net461' " />
-    <PackageReference Include="FSharp.Core" Version="4.3.4" Condition=" '$(TargetFramework)' == 'netstandard2.0' " />
+    <PackageReference Include="FSharp.Core" Version="4.3.4" />
 
-    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="1.2.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="System.Buffers" Version="4.5.0" />
+    <PackageReference Include="System.Text.Json" Version="5.0.0-preview.3.20214.6" />
     <PackageReference Include="TypeShape" Version="8.0.0" />
   </ItemGroup>
 

@@ -49,37 +49,39 @@ type [<NoEquality; NoComparison; JsonObject(ItemRequired=Required.Always)>]
         i: int64
         n: int64
         e: Event[] }
-
-let defaultSettings = Settings.CreateDefault()
+let mkBatch (encoded : FsCodec.IEventData<byte[]>) : Batch =
+    {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
+        e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
 
 #nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
 
-type VerbatimUtf8Tests() =
-    let eventCodec = Codec.Create()
+module VerbatimUtf8Tests = // not a module or CI will fail for net461
 
-    [<Fact>]
-    let ``encodes correctly`` () =
-        let encoded = eventCodec.Encode(None, A { embed = "\"" })
-        let e : Batch =
-            {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
-                e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
+    let eventCodec = Codec.Create<Union>()
+
+    let [<Fact>] ``encodes correctly`` () =
+        let input = Union.A { embed = "\"" }
+        let encoded = eventCodec.Encode(None, input)
+        let e : Batch = mkBatch encoded
         let res = JsonConvert.SerializeObject(e)
         test <@ res.Contains """"d":{"embed":"\""}""" @>
+        let des = JsonConvert.DeserializeObject<Batch>(res)
+        let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
+        let decoded = eventCodec.TryDecode loaded |> Option.get
+        input =! decoded
 
+    let defaultSettings = Settings.CreateDefault()
     let defaultEventCodec = Codec.Create<U>(defaultSettings)
 
-    let [<Property(MaxTest=100)>] ``round-trips diverse bodies correctly`` (x: U) =
+    let [<Property>] ``round-trips diverse bodies correctly`` (x: U) =
         let encoded = defaultEventCodec.Encode(None,x)
-        let e : Batch =
-            {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
-                e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
+        let e : Batch = mkBatch encoded
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
         let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
         let decoded = defaultEventCodec.TryDecode loaded |> Option.get
         x =! decoded
 
-    // NB while this aspect works, we don't support it as it gets messy when you then use the VerbatimUtf8Converter
     // https://github.com/JamesNK/Newtonsoft.Json/issues/862 // doesnt apply to this case
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
@@ -97,6 +99,7 @@ type VerbatimUtf8Tests() =
     //    test <@ x = decoded @>
 
 module VerbatimUtf8NullHandling =
+
     type [<NoEquality; NoComparison>] EventHolderWithAndWithoutRequired =
         {   /// Event body, as UTF-8 encoded JSON ready to be injected directly into the Json being rendered
             [<JsonConverter(typeof<VerbatimUtf8JsonConverter>)>]

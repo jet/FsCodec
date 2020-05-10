@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <WarningLevel>5</WarningLevel>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+      
+    <PackageReference Include="FsCheck.Xunit" Version="2.14.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.0.0" />
+    <PackageReference Include="Unquote" Version="5.0.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/FsCodec.SystemTextJson/FsCodec.SystemTextJson.fsproj" />
+    <!-- For InteropTests.fs -->
+    <ProjectReference Include="../FsCodec.NewtonsoftJson.Tests/FsCodec.NewtonsoftJson.Tests.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="PicklerTests.fs" />
+    <Compile Include="CodecTests.fs" />
+    <Compile Include="SerdesTests.fs" />
+    <Compile Include="UmxInteropTests.fs" />
+    <Compile Include="TypeSafeEnumConverterTests.fs" />
+    <None Include="Examples.fsx" />
+    <Compile Include="InteropTests.fs" />
+  </ItemGroup>
+
+</Project>
