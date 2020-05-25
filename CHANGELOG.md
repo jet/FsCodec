@@ -13,6 +13,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="2.1.1"></a>
+## [2.1.1] - 2020-05-25
+
 - `UnionConverter`: Handle nested unions [#52](https://github.com/jet/FsCodec/pull/52)
 - `UnionConverter`: Support overriding discriminator without needing to nominate a `catchAllCase` [#51](https://github.com/jet/FsCodec/pull/51)
 
@@ -157,7 +160,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.1.0...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.1.1...HEAD
+[2.1.1]: https://github.com/jet/FsCodec/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/jet/FsCodec/compare/2.0.1...2.1.0
 [2.0.1]: https://github.com/jet/FsCodec/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/jet/FsCodec/compare/2.0.0-rc3...2.0.0
