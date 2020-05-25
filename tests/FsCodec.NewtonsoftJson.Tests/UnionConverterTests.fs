@@ -445,3 +445,8 @@ module Nested =
         let ser = Serdes.Serialize v
         """{"case":"C","Item":{"case2":"EO","Item":null}}""" =! ser
         test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.C UUA.S
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"S"}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
