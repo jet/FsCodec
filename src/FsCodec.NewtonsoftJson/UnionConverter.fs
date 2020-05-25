@@ -41,6 +41,7 @@ module private Union =
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
     let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
+    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute t)
 
     let propTypeRequiresConstruction (propertyType : Type) =
         not (isInlinedIntoUnionItem propertyType)
@@ -91,7 +92,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         writer.WriteValue(case.Name)
 
         match fieldInfos with
-        | [| fi |] when not (Union.typeHasJsonConverterAttribute fi.PropertyType) ->
+        | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
             match fieldValues.[0] with
             | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
