@@ -31,7 +31,7 @@ module private Union =
 
     let getUnion = memoize createUnion
 
-    /// Paralells F# behavior wrt how it generates a DU's underlying .NET Type
+    /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
         || t.IsValueType
@@ -41,6 +41,7 @@ module private Union =
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
     let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
+    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute t)
 
     let propTypeRequiresConstruction (propertyType : Type) =
         not (isInlinedIntoUnionItem propertyType)
@@ -91,7 +92,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         writer.WriteValue(case.Name)
 
         match fieldInfos with
-        | [| fi |] ->
+        | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
             match fieldValues.[0] with
             | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
