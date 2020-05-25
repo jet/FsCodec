@@ -376,28 +376,35 @@ module Nested =
 
     [<JsonConverter(typeof<UnionConverter>)>]
     type U =
-        | A of {| a : int; b : NU |}
         | B of NU
         | C of UUA
         | D of UU
         | E of E
         | EA of E[]
+        | R of {| a : int; b : NU |}
+        | S
     and [<JsonConverter(typeof<UnionConverter>)>]
         NU =
         | A of string
         | B of int
+        | R of {| a : int; b : NU |}
+        | S
     and [<JsonConverter(typeof<UnionConverter>)>]
         UU =
         | A of string
         | B of int
         | E of E
         | EO of E option
+        | R of {| a: int; b: string |}
+        | S
     and [<JsonConverter(typeof<UnionConverter>, "case2")>]
         UUA =
         | A of string
         | B of int
         | E of E
         | EO of E option
+        | R of {| a: int; b: string |}
+        | S
     and [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
         E =
         | V1
