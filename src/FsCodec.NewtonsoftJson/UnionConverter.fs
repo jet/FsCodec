@@ -1,7 +1,5 @@
 ﻿namespace FsCodec.NewtonsoftJson
 
-open System.ComponentModel
-open System.Runtime.InteropServices
 open FSharp.Reflection
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
@@ -75,8 +73,8 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
     inherit JsonConverter()
 
     new() = UnionConverter("case", ?catchAllCase=None)
-    new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase = None)
-    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
+    new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase=None)
+    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase=match catchAllCase with null -> None | x -> Some x)
 
     override __.CanConvert (t : Type) = Union.isUnion t
 
