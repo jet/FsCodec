@@ -297,6 +297,26 @@ let ``Implementation ensures no internal errors escape (which would render a Web
     test <@ (CaseD "hi") = d @>
     test <@ false = gotError @>
 
+module CustomDiscriminator =
+
+    [<JsonConverter(typeof<UnionConverter>, "esac")>]
+    type DuWithCustomDiscriminator =
+        | Known
+        | Catchall
+
+    [<Fact>]
+    let ``UnionConverter handles custom discriminator`` () =
+        let json = """{"esac":"Known"}"""
+        test <@ DuWithCustomDiscriminator.Known = JsonConvert.DeserializeObject<_> json @>
+
+    [<Fact>]
+    let ``UnionConverter can complain about missing case with custom discriminator without catchall`` () =
+        let aJson = """{"esac":"CaseUnknown"}"""
+        let act () = JsonConvert.DeserializeObject<DuWithCustomDiscriminator>(aJson, settings)
+
+        fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
+        |> raisesWith <@ act() @>
+
 module ``Unmatched case handling`` =
 
     [<Fact>]
