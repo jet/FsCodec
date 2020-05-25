@@ -371,3 +371,63 @@ module ``Unmatched case handling`` =
                 && string jo.["case"]="CaseUnknown" @>
         let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}".Replace("\r\n",Environment.NewLine)
         test <@ expected = string jo @>
+
+module Nested =
+
+    [<JsonConverter(typeof<UnionConverter>)>]
+    type U =
+        | A of {| a : int; b : NU |}
+        | B of NU
+        | C of NU2
+        | E of E
+        | EA of E[]
+    and [<JsonConverter(typeof<UnionConverter>)>]
+        NU =
+        | A of string
+        | B of int
+    and [<JsonConverter(typeof<UnionConverter>, "case2")>]
+        NU2 =
+        | A of string
+        | B of int
+        | E of E
+        | EO of E option
+    and [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+        E =
+        | V1
+        | V2
+
+    let [<FsCheck.Xunit.Property>] ``can nest`` (value : U) =
+        let ser = Serdes.Serialize value
+        test <@ value = Serdes.Deserialize ser @>
+
+    let [<Fact>] ``nesting Unions represents child as item`` () =
+        let v : U = U.C(NU2.B 42)
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"B","Item":42}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+    let [<Fact>] ``TypeSafeEnum converts direct`` () =
+        let v : U = U.C (NU2.E E.V1)
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"E","Item":"V1"}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.E E.V2
+        let ser = Serdes.Serialize v
+        """{"case":"E","Item":"V2"}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.EA [|E.V2; E.V2|]
+        let ser = Serdes.Serialize v
+        """{"case":"EA","Item":["V2","V2"]}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.C (NU2.EO (Some E.V1))
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"EO","Item":"V1"}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.C (NU2.EO None)
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"EO","Item":null}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>

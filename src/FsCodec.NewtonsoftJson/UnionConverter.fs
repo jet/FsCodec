@@ -91,7 +91,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         writer.WriteValue(case.Name)
 
         match fieldInfos with
-        | [| fi |] ->
+        | [| fi |] when not (Union.typeHasJsonConverterAttribute fi.PropertyType) ->
             match fieldValues.[0] with
             | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
