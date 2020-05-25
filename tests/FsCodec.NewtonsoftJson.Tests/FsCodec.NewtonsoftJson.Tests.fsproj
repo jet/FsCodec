@@ -11,6 +11,7 @@
     <Compile Include="PicklerTests.fs" />
     <Compile Include="UnionConverterTests.fs" />
     <Compile Include="VerbatimUtf8ConverterTests.fs" />
+    <Compile Include="SomeNullHandlingTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

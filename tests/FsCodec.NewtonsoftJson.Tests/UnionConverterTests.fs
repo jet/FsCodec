@@ -10,14 +10,12 @@ open global.Xunit
 
 // TODO support [<Struct>]
 type TestRecordPayload =
-    {
-        test: string
+    {   test: string
     }
 
 // TODO support [<Struct>]
 type TrickyRecordPayload =
-    {
-        Item: string
+    {   Item: string
     }
 
 [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
@@ -272,14 +270,14 @@ let roundtripProperty ignoreNulls (profile : JsonSerializerSettings) value =
     deserialized =! value
 
 let includeNullsProfile = Settings.CreateDefault(OptionConverter())
-[<DomainPropertyAttribute(MaxTest=1000)>]
+[<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, includeNullsProfile
     profile.NullValueHandling =! NullValueHandling.Include
     roundtripProperty ignoreNulls profile x
 
 let defaultProfile = Settings.Create()
-[<DomainPropertyAttribute(MaxTest=1000)>]
+[<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, defaultProfile
     profile.NullValueHandling =! NullValueHandling.Include
@@ -311,8 +309,8 @@ module ``Unmatched case handling`` =
 
     [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
     type DuWithCatchAll =
-    | Known
-    | Catchall
+        | Known
+        | Catchall
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall`` () =
@@ -323,7 +321,7 @@ module ``Unmatched case handling`` =
 
     [<JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
     type DuWithMissingCatchAll =
-    | Known
+        | Known
 
     [<Fact>]
     let ``UnionConverter explains if nominated catchAll not found`` () =
@@ -336,8 +334,8 @@ module ``Unmatched case handling`` =
     [<NoComparison>] // Forced by usage of JObject
     [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
     type DuWithCatchAllWithFields =
-    | Known
-    | Catchall of Newtonsoft.Json.Linq.JObject
+        | Known
+        | Catchall of Newtonsoft.Json.Linq.JObject
 
     [<Fact>]
     let ``UnionConverter can feed unknown values into a JObject for logging or post processing`` () =
