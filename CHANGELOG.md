@@ -13,7 +13,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
-- `UnionConverter`: Support overriding discriminator without needing to nominate a `catchAllCase`
+- `UnionConverter`: Support overriding discriminator without needing to nominate a `catchAllCase` [#51](https://github.com/jet/FsCodec/pull/51)
 
 <a name="2.1.0"></a>
 ## [2.1.0] - 2020-05-10
