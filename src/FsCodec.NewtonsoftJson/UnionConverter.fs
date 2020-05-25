@@ -31,7 +31,7 @@ module private Union =
 
     let getUnion = memoize createUnion
 
-    /// Paralells F# behavior wrt how it generates a DU's underlying .NET Type
+    /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
         || t.IsValueType

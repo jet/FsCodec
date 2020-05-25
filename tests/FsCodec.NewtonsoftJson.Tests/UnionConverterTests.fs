@@ -450,3 +450,39 @@ module Nested =
         let ser = Serdes.Serialize v
         """{"case":"C","Item":{"case2":"S"}}""" =! ser
         test <@ v = Serdes.Deserialize ser @>
+
+/// And for everything else, JsonIsomorphism allows plenty ways of customizing the encoding and/or decoding
+module IsomorphismUnionEncoder =
+
+    type [<JsonConverter(typeof<TopConverter>)>]
+        Top =
+        | S
+        | N of Nested
+    and Nested =
+        | A
+        | B of int
+    and TopConverter() =
+        inherit JsonIsomorphism<Top, Flat<int>>()
+        override __.Pickle value =
+            match value with
+            | S -> { disc = TS; v = None }
+            | N A -> { disc = TA; v = None }
+            | N (B v) -> { disc = TB; v = Some v }
+        override __.UnPickle flat =
+            match flat with
+            | { disc = TS } -> S
+            | { disc = TA } -> N A
+            | { disc = TB; v = v} -> N (B (Option.get v))
+    and Flat<'T> = { disc : JiType; v : 'T option }
+    and [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+        JiType = TS | TA | TB
+
+    let [<Fact>] ``Can control the encoding to the nth degree`` () =
+        let v : Top = N (B 42)
+        let ser = Serdes.Serialize v
+        """{"disc":"TB","v":42}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+    let [<FsCheck.Xunit.Property>] ``can roundtrip`` (value : Top) =
+        let ser = Serdes.Serialize value
+        test <@ value = Serdes.Deserialize ser @>
