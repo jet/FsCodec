@@ -381,9 +381,11 @@ The de-facto standard Event Store [EventStore.org](https://eventstore.org) and i
 
 Where:
 
-- `{CategoryName}` represents a high level contract/grouping; all stream names starting with `Category-`
-- `-` (hyphen/minus) represents the by-convention canonical stream name separator
-- `{Identifier}` represents the identifier of the aggregate [root] for which we're maintaining the data
+- `{CategoryName}` represents a high level contract/grouping; all stream names starting with `Category-` are the same category
+- `-` (hyphen/minus) represents the by-convention standard separator between category and identifier
+- `{Identifier}` represents the identity of the Aggregate / Aggregate Root instance for which we're storing the events within this stream. It should not embed `-` characters (but see below re usage of `_` to manage a composite id). Note `StreamName` will actively reject such values by throwing exceptions when fields erroneously have embedded `-` or `_` values (see xmldoc on the relevant functions and/or [look at the code](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs)).
+
+Its important to note that composing a stream name directly from values in the Domain that might include characters such as `-` (which by default drives `$ec` indexing in EventStoreDB) and/or arbitrary Unicode chars (which may not work well for other backing stores e.g. if CosmosDB were to restrict the character set that may be used for a Partition Key) is not a good idea in general (you'll also want to ensure its appropriately cleansed, validated and/or canonicalized to cover SQL Injection and/or XSS concerns). In short, no, you shouldn't just stuff an email address into the `{Identifier}` portion.
 
 [`FsCodec.StreamName`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs): presents the following set of helpers that are useful for splitting and filtering Stream Names by Categories and/or Identifiers. Similar helpers would of course make sense in other languages e.g. C#:
 
