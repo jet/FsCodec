@@ -30,7 +30,8 @@ let [<Fact>] ``Can roundtrip single aggregateIds with embedded dashes and unders
     test <@ let (StreamName.CategoryAndIds (scat, aggIds)) = sn
             scat = cat && ["a-b";"c-d"] = List.ofArray aggIds @>
 
-let [<Fact>] ``StreamName.parse throws given 0 separators`` () =
-    raisesWith<System.ArgumentException>
-        <@ StreamName.parse "Cat" @>
-        (fun e -> <@ e.Message = "streamName (Parameter 'Stream Name 'Cat' must contain a '-' separator')" @>)
+let [<Fact>] ``StreamName parse throws given 0 separators`` () =
+    raisesWith <@ StreamName.parse "Cat" @>
+        (fun (e : System.ArgumentException) -> <@
+            e.ParamName = "streamName"
+            && e.Message.StartsWith "Stream Name 'Cat' must contain a '-' separator" @>)

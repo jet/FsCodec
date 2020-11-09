@@ -13,6 +13,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+- Clarify `StreamName.parse` exception message [#58](https://github.com/jet/FsCodec/pull/58) :pray: [@dharmaturtle](https://github.com/dharmaturtle)
+
 <a name="2.1.1"></a>
 ## [2.1.1] - 2020-05-25
 

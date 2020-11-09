@@ -44,7 +44,7 @@ module StreamName =
     /// Throws <code>InvalidArgumentException</code> if it does not adhere to that form
     let parse (rawStreamName : string) : StreamName =
         if rawStreamName.IndexOf('-') = -1 then
-            invalidArg (sprintf "Stream Name '%s' must contain a '-' separator" rawStreamName) "streamName"
+            invalidArg "streamName" (sprintf "Stream Name '%s' must contain a '-' separator" rawStreamName)
         UMX.tag rawStreamName
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
