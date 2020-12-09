@@ -1,4 +1,4 @@
-﻿module FsCodec.SystemTextJson.Tests.Samples
+﻿module FsCodec.SystemTextJson.Tests.Fixtures
 
 open FsCodec.SystemTextJson
 open System

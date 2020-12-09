@@ -7,7 +7,7 @@ open System
 open System.Text.Json
 open System.Text.Json.Serialization
 open global.Xunit
-open FsCodec.SystemTextJson.Tests.Samples
+open FsCodec.SystemTextJson.Tests.Fixtures
 
 type TestRecordPayload =
     {
