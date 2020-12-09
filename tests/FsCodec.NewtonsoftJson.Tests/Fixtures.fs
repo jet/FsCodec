@@ -1,7 +1,15 @@
+#if SYSTEM_TEXT_JSON
+module FsCodec.SystemTextJson.Tests.Fixtures
+
+open FsCodec.SystemTextJson // JsonIsomorphism
+open System.Text.Json.Serialization // JsonConverter
+#else
 module FsCodec.NewtonsoftJson.Tests.Fixtures
 
-open FsCodec.NewtonsoftJson
-open Newtonsoft.Json
+open FsCodec.NewtonsoftJson // JsonIsomorphism
+open Newtonsoft.Json // JsonConverter
+#endif
+
 open System
 open System.Runtime.Serialization
 
@@ -57,4 +65,3 @@ and private CartIdJsonConverter() =
     override __.Pickle value = value.Value
     /// Input must be a Guid.Parseable value
     override __.UnPickle input = CartId.Parse input
-

@@ -12,7 +12,6 @@
     <Compile Include="UnionConverterTests.fs" />
     <Compile Include="VerbatimUtf8ConverterTests.fs" />
     <Compile Include="SomeNullHandlingTests.fs" />
-    <None Include="Examples.fsx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +26,10 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/FsCodec.NewtonsoftJson/FsCodec.NewtonsoftJson.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Examples.fsx" />
   </ItemGroup>
 
 </Project>

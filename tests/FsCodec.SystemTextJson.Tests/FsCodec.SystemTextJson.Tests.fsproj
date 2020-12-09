@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <WarningLevel>5</WarningLevel>
     <IsPackable>false</IsPackable>
+    <DefineConstants>SYSTEM_TEXT_JSON</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +30,9 @@
     <Compile Include="SerdesTests.fs" />
     <Compile Include="UmxInteropTests.fs" />
     <Compile Include="TypeSafeEnumConverterTests.fs" />
-    <Compile Include="Fixtures.fs" />
+    <Compile Include="..\FsCodec.NewtonsoftJson.Tests\Fixtures.fs">
+      <Link>Fixtures.fs</Link>
+    </Compile>
     <Compile Include="UnionConverterTests.fs" />
     <Compile Include="InteropTests.fs" />
   </ItemGroup>

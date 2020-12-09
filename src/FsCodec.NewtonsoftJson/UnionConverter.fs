@@ -15,8 +15,8 @@ type private Union =
         caseConstructor: (obj[] -> obj)[]
     }
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module private Union =
+
     let isUnion = memoize (fun t -> FSharpType.IsUnion(t, true))
     let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
 
@@ -28,7 +28,6 @@ module private Union =
             fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
             caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
         }
-
     let getUnion = memoize createUnion
 
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
