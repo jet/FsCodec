@@ -1,31 +1,19 @@
 ﻿module FsCodec.SystemTextJson.Tests.UnionConverterTests
 
-// Disables "FS0052: The value has been copied to ensure the original is not mutated
-// by thisoperation or because the copy is implicit when returning a struct from a
-// member and another member is then accessed" which is caused by the chaining of
-// method calls of the JsonElement struct. Avoids having to write code like:
-// https://stackoverflow.com/a/33325042/1259408
-#nowarn "0052"
-
-
 open FsCheck
 open FsCodec.SystemTextJson
 open Swensen.Unquote.Assertions
 open System
-open System.IO
 open System.Text.Json
 open System.Text.Json.Serialization
 open global.Xunit
+open FsCodec.SystemTextJson.Tests.Samples
 
-open Samples
-
-// TODO support [<Struct>]
 type TestRecordPayload =
     {
         test: string
     }
 
-// TODO support [<Struct>]
 type TrickyRecordPayload =
     {
         Item: string
@@ -238,47 +226,35 @@ let roundtripProperty ignoreNulls (profile : JsonSerializerOptions) value =
     deserialized =! value
 
 let includeNullsProfile = Options.Create(ignoreNulls = false)
-[<DomainPropertyAttribute(MaxTest=1000)>]
+[<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, includeNullsProfile
     profile.IgnoreNullValues =! false
     roundtripProperty ignoreNulls profile x
 
 let defaultProfile = Options.Create ()
-[<DomainPropertyAttribute(MaxTest=1000)>]
+[<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, defaultProfile
     profile.IgnoreNullValues =! false
     roundtripProperty ignoreNulls profile x
 
-//[<Fact>]
-//let ``Implementation ensures no internal errors escape (which would render a WebApi ModelState.Invalid)`` () =
-//    let s = JsonSerializer.CreateDefault()
-//    let mutable gotError = false
-//    s.Error.Add(fun _ -> gotError <- true)
-
-//    let dJson = """{"case":"CaseD","a":"hi"}"""
-//    use dReader = new StringReader(dJson)
-//    use dJsonReader = new JsonTextReader(dReader)
-//    let d = s.Deserialize<TestDU>(dJsonReader)
-
-//    test <@ (CaseD "hi") = d @>
-//    test <@ false = gotError @>
-
 module ``Unmatched case handling`` =
+
     [<Fact>]
     let ``UnionConverter by default throws on unknown cases`` () =
-        let options = Options.Create(UnionConverter ())
+        let options = Options.Create(UnionConverter())
         let aJson = """{"case":"CaseUnknown"}"""
         let act () = JsonSerializer.Deserialize<TestDU>(aJson, options)
 
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
 
-    [<RequireQualifiedAccess; JsonConverter(typeof<UnionConverter<DuWithCatchAllWithAttributes>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
+    [<RequireQualifiedAccess;
+      JsonConverter(typeof<UnionConverter<DuWithCatchAllWithAttributes>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
     type DuWithCatchAllWithAttributes =
-    | Known
-    | Catchall
+        | Known
+        | Catchall
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall via attributes`` () =
@@ -289,8 +265,8 @@ module ``Unmatched case handling`` =
 
     [<RequireQualifiedAccess>]
     type DuWithCatchAllWithoutAttributes =
-    | Known
-    | Catchall
+        | Known
+        | Catchall
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall via options`` () =
@@ -302,18 +278,18 @@ module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall with attributes overriding options`` () =
-        let options = Options.Create(UnionConverter<DuWithCatchAllWithAttributes> ({ discriminator = "case"; catchAllCase = None }))
+        let options = Options.Create(UnionConverter<DuWithCatchAllWithAttributes>({ discriminator = "case"; catchAllCase = None }))
         let aJson = """{"case":"CaseUnknown"}"""
         let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson, options)
 
         test <@ DuWithCatchAllWithAttributes.Catchall = a @>
 
     type DuWithMissingCatchAll =
-    | Known
+        | Known
 
     [<Fact>]
     let ``UnionConverter explains if nominated catchAll not found`` () =
-        let options = Options.Create(UnionConverter<DuWithMissingCatchAll> ("case", "CatchAllThatCantBeFound"))
+        let options = Options.Create(UnionConverter<DuWithMissingCatchAll>("case", "CatchAllThatCantBeFound"))
         let aJson = """{"case":"CaseUnknown"}"""
         let act () = JsonSerializer.Deserialize<DuWithMissingCatchAll>(aJson, options)
 
@@ -321,11 +297,10 @@ module ``Unmatched case handling`` =
         |> raisesWith <@ act() @>
 
     [<NoComparison>] // Forced by usage of JsonElement
-    [<JsonConverter(typeof<UnionConverter<DuWithCatchAllWithFields>>)>]
-    [<JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
+    [<JsonConverter(typeof<UnionConverter<DuWithCatchAllWithFields>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
     type DuWithCatchAllWithFields =
-    | Known
-    | Catchall of JsonElement
+        | Known
+        | Catchall of JsonElement
 
     [<Fact>]
     let ``UnionConverter can feed unknown values into a JsonElement for logging or post processing`` () =
@@ -336,58 +311,20 @@ module ``Unmatched case handling`` =
                     | x -> failwithf "unexpected %A" x @>
 
         // These can't be inside test <@ @> because of https://github.com/dotnet/fsharp/issues/6293
-        jo.GetProperty("a").GetString()     =! "s"
-        jo.GetProperty("b").ValueKind       =! JsonValueKind.Number
-        jo.GetProperty("c").ValueKind       =! JsonValueKind.True
-        jo.GetProperty("case").GetString()  =! "CaseUnknown"
+        let p = jo.GetProperty("a")     in p.GetString() =! "s"
+        let p = jo.GetProperty("b")     in p.ValueKind   =! JsonValueKind.Number
+        let p = jo.GetProperty("c")     in p.ValueKind   =! JsonValueKind.True
+        let p = jo.GetProperty("case")  in p.GetString() =! "CaseUnknown"
 
         test <@ json = string jo @>
 
 
 module ``Custom discriminator`` =
 
-    type DuWithoutAttributes =
-    | Case1
-
-    [<JsonUnionConverterOptions("kind")>]
-    type DuWithOptionsAttribute =
-    | Case1
-
-    [<JsonConverter(typeof<UnionConverter<DuWithConverterAndOptionsAttribute>>); JsonUnionConverterOptions("kind")>]
+    [<JsonConverter(typeof<UnionConverter<DuWithConverterAndOptionsAttribute>>);
+      JsonUnionConverterOptions("kind")>]
     type DuWithConverterAndOptionsAttribute =
     | Case1
-
-    [<Fact>]
-    let ``UnionConverter supports a default discriminator which is precisely 'case'`` () =
-        let options = Options.Create(UnionConverter ())
-        let aJson = """{"case":"Case1"}"""
-        let a = JsonSerializer.Deserialize<DuWithoutAttributes>(aJson, options)
-
-        test <@ DuWithoutAttributes.Case1 = a @>
-
-    [<Fact>]
-    let ``UnionConverter supports a nominated discriminator via converter constructor`` () =
-        let options = Options.Create(UnionConverter ({ discriminator = "type"; catchAllCase = None }))
-        let aJson = """{"type":"Case1"}"""
-        let a = JsonSerializer.Deserialize<DuWithoutAttributes>(aJson, options)
-
-        test <@ DuWithoutAttributes.Case1 = a @>
-
-    [<Fact>]
-    let ``UnionConverter supports a nominated discriminator via options attribute`` () =
-        let options = Options.Create(UnionConverter ())
-        let aJson = """{"kind":"Case1"}"""
-        let a = JsonSerializer.Deserialize<DuWithOptionsAttribute>(aJson, options)
-
-        test <@ DuWithOptionsAttribute.Case1 = a @>
-
-    [<Fact>]
-    let ``UnionConverter supports a nominated discriminator with options attribute overriding converter constructor`` () =
-        let options = Options.Create(UnionConverter ({ discriminator = "notkind"; catchAllCase = None }))
-        let aJson = """{"kind":"Case1"}"""
-        let a = JsonSerializer.Deserialize<DuWithOptionsAttribute>(aJson, options)
-
-        test <@ DuWithOptionsAttribute.Case1 = a @>
 
     [<Fact>]
     let ``UnionConverter supports a nominated discriminator via options attribute with converter attribute`` () =
@@ -397,47 +334,60 @@ module ``Custom discriminator`` =
         test <@ DuWithConverterAndOptionsAttribute.Case1 = a @>
 
 module ``Struct discriminated unions`` =
+
+    [<Struct>]
+    type TestRecordPayloadStruct = { test: string }
+
     [<Struct>]
     [<JsonConverter(typeof<UnionConverter<TestStructDu>>)>]
     type TestStructDu =
-    | CaseA of a: TestRecordPayload
-    | CaseB
-    | CaseC of string
-    | CaseD of d: string
-    | CaseE of e: string * int
-    | CaseF of f: string * fb: int
-    | CaseG of g: TrickyRecordPayload
-    | CaseH of h: TestRecordPayload
-    | CaseI of i: TestRecordPayload * ib: string
+        | CaseA of a : TestRecordPayload
+        | CaseAV of av : TestRecordPayloadStruct
+        | CaseB
+        | CaseC of string
+        | CaseD of d : string
+        | CaseE of e : string * int
+        | CaseF of f : string * fb : int
+        | CaseG of g : TrickyRecordPayload
+        | CaseH of h : TestRecordPayload
+        | CaseHV of hv : TestRecordPayloadStruct
+        | CaseI of i : TestRecordPayload * ib : string
+        | CaseIV of iv : TestRecordPayloadStruct * ibv : string
 
-    let defaultOptions = Options.Create(camelCase = false, ignoreNulls = true)
-    let inline serialize x = JsonSerializer.Serialize(x, defaultOptions)
+    let inline serialize x = JsonSerializer.Serialize(x)
 
     [<Fact>]
     let ``produces expected output`` () =
-        let a = CaseA {test = "hi"}
+        let a = CaseA { test = "hi" }
         test <@ """{"case":"CaseA","test":"hi"}""" = serialize a @>
-    
+        let a = CaseAV { test = "hi" }
+        test <@ """{"case":"CaseAV","test":"hi"}""" = serialize a @>
+
         let b = CaseB
         test <@ """{"case":"CaseB"}""" = serialize b @>
-    
+
         let c = CaseC "hi"
         test <@ """{"case":"CaseC","Item":"hi"}""" = serialize c @>
-    
+
         let d = CaseD "hi"
         test <@ """{"case":"CaseD","d":"hi"}""" = serialize d @>
-    
+
         let e = CaseE ("hi", 0)
         test <@ """{"case":"CaseE","e":"hi","Item2":0}""" = serialize e @>
-    
+
         let f = CaseF ("hi", 0)
         test <@ """{"case":"CaseF","f":"hi","fb":0}""" = serialize f @>
-    
-        let g = CaseG {Item = "hi"}
+
+        let g = CaseG { Item = "hi" }
         test <@ """{"case":"CaseG","Item":"hi"}""" = serialize g @>
 
-        let h = CaseH {test = "hi"}
+        let h = CaseH { test = "hi" }
         test <@ """{"case":"CaseH","test":"hi"}""" = serialize h @>
-    
-        let i = CaseI ({test = "hi"}, "bye")
+        let h = CaseHV { test = "hi" }
+        test <@ """{"case":"CaseHV","test":"hi"}""" = serialize h @>
+
+        let i = CaseI ( {test = "hi" }, "bye")
         test <@ """{"case":"CaseI","i":{"test":"hi"},"ib":"bye"}""" = serialize i @>
+
+        let i = CaseIV ( {test = "hi" }, "bye")
+        test <@ """{"case":"CaseIV","iv":{"test":"hi"},"ibv":"bye"}""" = serialize i @>
