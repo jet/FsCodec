@@ -25,7 +25,7 @@ module StreamName =
     /// category is separated from id by `-`
     let create (category : string) aggregateId : StreamName =
         if category.IndexOf '-' <> -1 then invalidArg "category" "may not contain embedded '-' symbols"
-        UMX.tag<streamName> (sprintf "%s-%s" category aggregateId)
+        UMX.tag (sprintf "%s-%s" category aggregateId)
 
     /// Composes a StreamName from a category and > 1 name elements.
     /// category is separated from the aggregateId by '-'; elements are separated from each other by '_'
@@ -44,7 +44,7 @@ module StreamName =
     /// Throws <code>InvalidArgumentException</code> if it does not adhere to that form
     let parse (rawStreamName : string) : StreamName =
         if rawStreamName.IndexOf('-') = -1 then
-            invalidArg (sprintf "Stream Name '%s' did not contain exactly one '-' separator" rawStreamName) "streamName"
+            invalidArg "streamName" (sprintf "Stream Name '%s' must contain a '-' separator" rawStreamName)
         UMX.tag rawStreamName
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)

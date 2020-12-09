@@ -1,6 +1,7 @@
 module FsCodec.SystemTextJson.Tests.PicklerTests
 
 open FsCodec.SystemTextJson
+open FsCodec.SystemTextJson.Converters
 open Swensen.Unquote
 open System
 open System.Text.Json
@@ -26,7 +27,7 @@ type WithEmbeddedGuid = { a: string; [<Serialization.JsonConverter(typeof<GuidCo
 
 type Configs() as this =
     inherit TheoryData<JsonSerializerOptions>()
-    do  this.Add(Options.CreateDefault(JsonRecordConverter())) // validate it works with minimal converters
+    do  this.Add(Options.CreateDefault()) // validate it works with minimal converters
         this.Add(Options.Create()) // Flush out clashes with standard converter set
         this.Add(Options.Create(GuidConverter())) // and a global registration does not conflict
 
@@ -49,7 +50,7 @@ let [<Fact>] ``Global GuidConverter roundtrips`` () =
     let resNoDashes = Serdes.Serialize(value, optionsWithConverter)
 
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = defaultHandlingHasDashes
-                && "\"00000000000000000000000000000000\"" = resNoDashes @>
+            && "\"00000000000000000000000000000000\"" = resNoDashes @>
 
     // Non-dashed is not accepted by default handling in STJ (Newtonsoft does accept it)
     raises<exn> <@ Serdes.Deserialize<Guid> resNoDashes @>

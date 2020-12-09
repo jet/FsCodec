@@ -1,6 +1,5 @@
 ﻿namespace FsCodec.SystemTextJson
 
-open FsCodec.SystemTextJson
 open System
 open System.Collections.Generic
 open System.Text.Json

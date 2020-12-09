@@ -21,7 +21,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - Provides relevant Converters for common non-primitive types prevalent in F#
   - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape >= 8`, `Microsoft.IO.RecyclableMemoryStream >= 1.2.2`, `System.Buffers >= 4.5`
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
-  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 4.7.0`, `TypeShape >= 8`
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 5.0.0-preview.3`, `TypeShape >= 8`
 
   Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
   
@@ -70,13 +70,12 @@ While this may not seem like a sufficiently large set of converters for a large 
 
 ### ... but don't forget `FSharp.SystemTextJson`
 
-NOTE `System.Text.Json`, esp in the .NET Core 3 era is very spartan, especially wrt F# support: it doesnt support unions, options, lists or records out of the box. Its hoped that over time the base support in there will improve and the shimming FsCodec does (e.g. `JsonRecordConverter`) can be reduced. It's worth calling out explicitly that there are no plans to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time - if you have specific exotic corner cases and determine you need something more specifically tailored, the Converters abstraction affords you ability to mix and match from the [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library - it provides a much broader and complete (and well tested) set of converters with a broader remit than what FsCodec is trying to maintain as its sweet spot.
+`System.Text.Json` v `4.x` did not even support F# records that are not marked `[<CLIMutable>]` out-of-the-box (it was similarly spartan wrt C# types, requiring a default constructor on `class`es). The `>= 5.0` that `FsCodec.System.Text.Json` requires does support records, but it doesnt support Discriminated Unions, `option`s, `list`s, `Set` or `Map` out of the box. It's worth calling out explicitly that there are no plans to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time ([the advice for `FsCodec.NewtonsoftJson` has always been to avoid stuff outside of records, `option`s and `array`s](#recommendations)) - if you have specific exotic corner cases and determine you need something more specifically tailored, the Converters abstraction affords you ability to mix and match from the [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library - it provides a much broader and complete (and well tested) set of converters with a broader remit than what FsCodec is trying to maintain as its sweet spot.
   
 ### Core converters
 
 The respective concrete Codec packages include relevant `Converter`/`JsonConverter` in order to facilitate interoperable and versionable renderings:
   - `JsonOptionConverter` / [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`; included in the standard `Settings.Create`/`Options.Create` profile. `System.Text.Json` reimplementation :pray: [@ylibrach](https://github.com/ylibrach)
-  - [`JsonRecordConverter`](https://github.com/jet/FsCodec/blob/stj/src/FsCodec.SystemTextJson/JsonRecordConverter.fs#L18) represents F# records as a JSON Object; included in the standard `Options.Create` profile [as [`System.Text.Json` does not support F# records out of the box](https://github.com/dotnet/runtime/issues/29812)]. :pray: [@ylibrach](https://github.com/ylibrach)
   - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
   - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within :pray: [@amjdd](https://github.com/amjjd); `System.Text.Json` reimplementation :pray: [@NickDarvey](https://github.com/NickDarvey)
   
@@ -107,7 +106,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 [`FsCodec.SystemTextJson.Options`](https://github.com/jet/FsCodec/blob/stj/src/FsCodec.SystemTextJson/Options.fs#L8) provides a clean syntax for building a `System.Text.Json.Serialization.JsonSerializerOptions` as per `FsCodec.NewtonsoftJson.Settings`, above. Methods:
 - `CreateDefault`: equivalent to generating a `new JsonSerializerSettings()` without any overrides of any kind
 - `Create`: as `CreateDefault` with the following difference:
-  - adds a `JsonOptionConverter` and a `JsonRecordConverter`; included in default `Settings` (see _Converters_, below)
+  - adds a `JsonOptionConverter`; included in default `Settings` (see _Converters_, below)
   - Inhibits the HTML-safe escaping that `System.Text.Json` provides as a default by overriding `Encoder` with `System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping`
 
 ## `Serdes`
@@ -159,7 +158,7 @@ module Contract =
  <a name="recommendations"></a>
 ### Recommended round-trippable constructs
 
-`Newtonsoft.Json`, thanks to its broad usage thoughout .NET systems has well known (with some idiosyncratic quirks) behaviors for most common types one might use for C# DTOs.
+`Newtonsoft.Json`, thanks to its broad usage throughout .NET systems has well known (with some idiosyncratic quirks) behaviors for most common types one might use for C# DTOs.
 
 Normal primitive F#/.NET such as `bool`, `byte`, `int16`, `int`, `int64`, `float32` (`Single`), `float` (`Double`), `decimal` work as expected.
 
@@ -176,7 +175,7 @@ The recommendations here apply particularly to Event Contracts - the data in you
 | `string` | As per C#; need to handle `null` | One can use a `string option` to map `null` and `Some null` to `None` | `"Abc"` | `"Abc"` |
 | types with unit of measure | Works well (doesnt encode the unit) | Unit of measure tags are only known to the compiler; Json.NET does not process the tags and treats it as the underlying primitive type | `54<g>` | `54` | 
 | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to type-tag `string` and `DateTimeOffset` values using the units of measure compiler feature, which Json.NET will render as if they were unadorned | `SkuId.parse "54-321"` | `"000-054-321"` |
-| records | Just work | For `System.Text.Json`, there's a `JsonRecordConverter` in the standard `Options`, as records are not supported out of the box | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` |
+| records | Just work | For `System.Text.Json` v `4.x`, usage of `[<CLIMutable>]` or a custom `JsonRecordConverter` was once required | `{\| a = 1; b = Some "x" \|}` | `"{"a":1,"b":"x"}"` |
 | Nullary unions (Enum-like DU's without bodies) | Tag `type` with `TypeSafeEnumConverter` | Works well - guarantees a valid mapping, as opposed to using a `System.Enum` and `StringEnumConverter`, which can map invalid values and/or silently map to `0` etc | `State.NotFound` | `"NotFound"` |
 | Discriminated Unions (where one or more cases has a body) | Tag `type` with `UnionConverter` | This format can be readily consumed in Java, JavaScript and Swift. Nonetheless, exhaust all other avenues before considering encoding a union in JSON. The `"case"` label id can be overridden. | `Decision.Accepted { result = "54" }` | `{"case": "Accepted","result":"54"}` |
 
@@ -187,10 +186,10 @@ The mechanisms in the previous section have proven themselves sufficient for div
 | Type kind | TL;DR | Example input | Example output | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | `'t list` | __Don't use__; use `'t[]` | `[ 1; 2; 3]` | `[1,2,3]` | While the happy path works, `null` or  missing field maps to a `null` object rather than `[]` [which is completely wrong from an F# perspective] |
-| `DateTime` | __Don't use__; use `DateTimeOffset` | | | Roundtripping can be messy, wrong or lossy; `DateTimeOffset` covers same use cases |
+| `DateTime` | __Don't use__; use `DateTimeOffset` | | | Round-tripping can be messy, wrong or lossy; `DateTimeOffset` covers same use cases |
 | `Guid` or [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `Guid` | __don't use__; wrap as a reference `type` and use a `JsonIsomorphism`, or represent as a tagged `string` | `Guid.NewGuid()` | `"ba7024c7-6795-413f-9f11-d3b7b1a1fe7a"` | If you wrap the value in a type, you can have that roundtrip with a specific format via a Converter implemented as a `JsonIsomorphism`. Alternately, represent in your contract as a [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged-string. |
-| maps/`Dictionary` etc. | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.NET has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer |
-| tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts ofany kind is simply Not A Good Idea |
+| maps/`Dictionary` etc. | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.NET has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer<br/>For `System.Text.Json`, use an `IDictionary<'K, 'V>` or `Dictionary<'K, 'V>` |
+| tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts of any kind is simply Not A Good Idea |
 
  <a name="JsonIsomorphism"></a>
 ## Custom converters using `JsonIsomorphism`
@@ -382,9 +381,13 @@ The de-facto standard Event Store [EventStore.org](https://eventstore.org) and i
 
 Where:
 
-- `{CategoryName}` represents a high level contract/grouping; all stream names starting with `Category-`
-- `-` (hyphen/minus) represents the by-convention canonical stream name separator
-- `{Identifier}` represents the identifier of the aggregate [root] for which we're maintaining the data
+- `{CategoryName}` represents a high level contract/grouping; all stream names starting with `Category-` are the same category. Must not contain any `-` characters.
+- `-` (hyphen/minus) represents the by-convention standard separator between category and identifier
+- `{Identifier}` represents the identity of the Aggregate / Aggregate Root instance for which we're storing the events within this stream. The `_` character is used to separate composite ids; see [the code](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs).
+
+The `StreamName` module will reject invalid values by throwing exceptions when fields have erroneously embedded `-` or `_` values.
+
+It's important to apply some consideration in mapping from values in your domain to a `StreamName`. Domain values might include characters such as `-` (which may cause issues with EventStoreDb's [`$by_category`](https://developers.eventstore.com/server/5.0.8/server/projections/system-projections.html#by-category) projections) and/or arbitrary Unicode chars (which may not work well for other backing stores e.g. if CosmosDB were to restrict the character set that may be used for a Partition Key). You'll also want to ensure it's appropriately cleansed, validated and/or canonicalized to cover SQL Injection and/or XSS concerns. In short, no, you shouldn't just stuff an email address into the `{Identifier}` portion.
 
 [`FsCodec.StreamName`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs): presents the following set of helpers that are useful for splitting and filtering Stream Names by Categories and/or Identifiers. Similar helpers would of course make sense in other languages e.g. C#:
 

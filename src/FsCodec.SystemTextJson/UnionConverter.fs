@@ -1,6 +1,6 @@
 ﻿namespace FsCodec.SystemTextJson
 
-open FsCodec.SystemTextJson
+//open FsCodec.SystemTextJson
 open FsCodec.SystemTextJson.Core
 open FSharp.Reflection
 open System
@@ -17,12 +17,12 @@ type IUnionConverterOptions =
 /// Example: <c>[<JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("type")>]</c></summary>
 /// <remarks>Not inherited because JsonConverters don't get inherited right now.
 /// https://github.com/dotnet/runtime/issues/30427#issuecomment-610080138</remarks>
-[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false, Inherited = false)>] 
+[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false, Inherited = false)>]
 type JsonUnionConverterOptionsAttribute(discriminator : string) =
     inherit Attribute()
-        member val CatchAllCase: string = null with get, set
+        member val CatchAllCase : string = null with get, set
     interface IUnionConverterOptions with
-        member _.Discriminator = discriminator 
+        member _.Discriminator = discriminator
         member x.CatchAllCase = Option.ofObj x.CatchAllCase
 
 type UnionConverterOptions =
@@ -35,7 +35,7 @@ type UnionConverterOptions =
         member x.CatchAllCase = x.catchAllCase
 
 [<NoComparison; NoEquality>]
-type internal Union =
+type private Union =
     {
         cases: UnionCaseInfo[]
         tagReader: obj -> int
@@ -83,14 +83,22 @@ module private Union =
     let mapTargetCaseArgs (element : JsonElement) options (props : PropertyInfo[]) : obj [] =
         match props with
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
-            [| JsonSerializer.DeserializeElement (element, singleCaseArg.PropertyType, options) |]
+            [| JsonSerializer.DeserializeElement(element, singleCaseArg.PropertyType, options) |]
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
                 match element.TryGetProperty fi.Name with
                 | false, _ when fi.PropertyType.IsValueType -> Activator.CreateInstance fi.PropertyType
                 | false, _ -> null
                 | true, el when el.ValueKind = JsonValueKind.Null -> null
-                | true, el -> JsonSerializer.DeserializeElement (el, fi.PropertyType, options) |]
+                | true, el -> JsonSerializer.DeserializeElement(el, fi.PropertyType, options) |]
+
+type Utf8JsonReaderExtensions() =
+
+    static member ValidateTokenType(reader: Utf8JsonReader, expectedTokenType) =
+        if reader.TokenType <> expectedTokenType then
+            sprintf "Expected a %A token, but encountered a %A token when parsing JSON." expectedTokenType (reader.TokenType)
+            |> JsonException
+            |> raise
 
 type UnionConverter<'T> (converterOptions) =
     inherit Serialization.JsonConverter<'T>()
@@ -144,7 +152,7 @@ type UnionConverter<'T> (converterOptions) =
         writer.WriteEndObject()
 
     override __.Read(reader, t : Type, options) =
-        reader.ValidateTokenType(JsonTokenType.StartObject)
+        Utf8JsonReaderExtensions.ValidateTokenType(reader, JsonTokenType.StartObject)
         use document = JsonDocument.ParseValue &reader
         let union = Union.tryGetUnion (typeof<'T>) |> Option.get
         let unionOptions = getOptions union

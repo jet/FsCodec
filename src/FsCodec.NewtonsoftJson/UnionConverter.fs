@@ -31,7 +31,7 @@ module private Union =
 
     let getUnion = memoize createUnion
 
-    /// Paralells F# behavior wrt how it generates a DU's underlying .NET Type
+    /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
         || t.IsValueType
@@ -41,6 +41,7 @@ module private Union =
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
     let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
+    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute t)
 
     let propTypeRequiresConstruction (propertyType : Type) =
         not (isInlinedIntoUnionItem propertyType)
@@ -72,8 +73,9 @@ module private Union =
 type UnionConverter private (discriminator : string, ?catchAllCase) =
     inherit JsonConverter()
 
-    new() = UnionConverter("case")
-    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
+    new() = UnionConverter("case", ?catchAllCase=None)
+    new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase=None)
+    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase=match catchAllCase with null -> None | x -> Some x)
 
     override __.CanConvert (t : Type) = Union.isUnion t
 
@@ -90,7 +92,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         writer.WriteValue(case.Name)
 
         match fieldInfos with
-        | [| fi |] ->
+        | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
             match fieldValues.[0] with
             | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->

@@ -7,15 +7,6 @@ open System.Text.Json
 
 [<AutoOpen>]
 module internal JsonSerializerExtensions =
-#if NETSTANDARD2_0
-    let private write (element : JsonElement )=
-        let bufferWriter = ArrayBufferWriter<byte>()
-        (
-            use jsonWriter = new Utf8JsonWriter(bufferWriter)
-            element.WriteTo(jsonWriter)
-        )
-        bufferWriter.WrittenSpan
-#endif
 
     type JsonSerializer with
         static member SerializeToElement(value: 'T, [<Optional; DefaultParameterValue(null)>] ?options: JsonSerializerOptions) =
@@ -24,9 +15,15 @@ module internal JsonSerializerExtensions =
 
         static member DeserializeElement<'T>(element: JsonElement, [<Optional; DefaultParameterValue(null)>] ?options: JsonSerializerOptions) =
 #if NETSTANDARD2_0
-            JsonSerializer.Deserialize<'T>(write element, defaultArg options null)
+            let json = element.GetRawText()
+            JsonSerializer.Deserialize<'T>(json, defaultArg options null)
 #else
-            JsonSerializer.Deserialize<'T>(element.GetRawText(), defaultArg options null)
+            let bufferWriter = ArrayBufferWriter<byte>()
+            (
+                use jsonWriter = new Utf8JsonWriter(bufferWriter)
+                element.WriteTo(jsonWriter)
+            )
+            JsonSerializer.Deserialize<'T>(bufferWriter.WrittenSpan, defaultArg options null)
 #endif
 
         static member DeserializeElement(element : JsonElement, t : Type, [<Optional; DefaultParameterValue(null)>] ?options: JsonSerializerOptions) =
