@@ -46,7 +46,7 @@ module StjCharacterization =
     // - it's not particularly relevant for event encodings
     // - and is not in alignment with the FsCodec.NewtonsoftJson default options
     // see https://github.com/dotnet/runtime/issues/28567#issuecomment-53581752 for lowdown
-    let asRequiredForExamples : System.Text.Json.Serialization.JsonConverter [] = [| Converters.JsonOptionConverter() |]
+    let asRequiredForExamples : System.Text.Json.Serialization.JsonConverter [] = [| JsonOptionConverter() |]
     type OverescapedOptions() as this =
         inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
 
