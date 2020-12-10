@@ -19,7 +19,7 @@ module TypeSafeEnum =
         u.cases
         |> Array.tryFindIndex (fun c -> predicate c.Name)
         |> Option.map (fun tag -> u.caseConstructor.[tag] [||])
-            // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
+        // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
     let tryParse<'T> (str : string) = tryParseT typeof<'T> ((=) str) |> Option.map (fun e -> e :?> 'T)
 
     let parseT (t : Type) (str : string)  =
