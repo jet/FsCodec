@@ -8,17 +8,17 @@ open System.Text.Json
 module TypeSafeEnum =
 
     let private _isTypeSafeEnum (t : Type) =
-        Union.tryGetUnion t
-        |> Option.exists (fun u -> u.cases |> Seq.forall (fun case -> case.GetFields().Length = 0))
+        Union.isUnion t
+        && (Union.getUnion t).cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
     let isTypeSafeEnum : Type -> bool = memoize _isTypeSafeEnum
 
     let tryParseT (t : Type) predicate =
-        match Union.tryGetUnion t with
-        | None   -> invalidArg "t" "Type must be a FSharpUnion."
-        | Some u ->
-            u.cases
-            |> Array.tryFindIndex (fun c -> predicate c.Name)
-            |> Option.map (fun tag -> u.caseConstructor.[tag] [||])
+        if not (Union.isUnion t) then invalidArg "t" "Type must be a FSharpUnion." else
+
+        let u = Union.getUnion t
+        u.cases
+        |> Array.tryFindIndex (fun c -> predicate c.Name)
+        |> Option.map (fun tag -> u.caseConstructor.[tag] [||])
             // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
     let tryParse<'T> (str : string) = tryParseT typeof<'T> ((=) str) |> Option.map (fun e -> e :?> 'T)
 
@@ -31,7 +31,9 @@ module TypeSafeEnum =
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
     let toString<'t> (x : 't) =
-        let union = Union.tryGetUnion (typeof<'t>) |> Option.get
+        if not (Union.isUnion typeof<'t>) then invalidArg "t" "Type must be a FSharpUnion." else
+
+        let union = Union.getUnion (typeof<'t>)
         let tag = union.tagReader (box x)
         // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
         union.cases.[tag].Name

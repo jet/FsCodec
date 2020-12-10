@@ -1,6 +1,5 @@
 ﻿namespace FsCodec.SystemTextJson
 
-//open FsCodec.SystemTextJson
 open FsCodec.SystemTextJson.Core
 open FSharp.Reflection
 open System
@@ -37,33 +36,32 @@ type UnionConverterOptions =
 [<NoComparison; NoEquality>]
 type private Union =
     {
-        cases: UnionCaseInfo[]
-        tagReader: obj -> int
-        fieldReader: (obj -> obj[])[]
-        caseConstructor: (obj[] -> obj)[]
-        options: IUnionConverterOptions option
+        cases : UnionCaseInfo[]
+        tagReader : obj -> int
+        fieldReader : (obj -> obj[])[]
+        caseConstructor : (obj[] -> obj)[]
+        options : IUnionConverterOptions option
     }
 
 module private Union =
-    let private _tryGetUnion t =
-        if not (FSharpType.IsUnion(t, true)) then
-            None
-        else
-            let cases = FSharpType.GetUnionCases(t, true)
-            {
-                cases = cases
-                tagReader = FSharpValue.PreComputeUnionTagReader(t, true)
-                fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
-                caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
-                options =
-                    t.GetCustomAttributes(typeof<JsonUnionConverterOptionsAttribute>, false)
-                    |> Array.tryHead // AttributeUsage(AllowMultiple = false)
-                    |> Option.map (fun a -> a :?> IUnionConverterOptions)
-            } |> Some
-    let tryGetUnion : Type -> Union option = memoize _tryGetUnion
 
+    let isUnion = memoize (fun t -> FSharpType.IsUnion(t, true))
+    let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
+    let createUnion t =
+        let cases = getUnionCases t
+        {
+            cases = cases
+            tagReader = FSharpValue.PreComputeUnionTagReader(t, true)
+            fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
+            caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
+            options =
+                t.GetCustomAttributes(typeof<JsonUnionConverterOptionsAttribute>, false)
+                |> Array.tryHead // AttributeUsage(AllowMultiple = false)
+                |> Option.map (fun a -> a :?> IUnionConverterOptions)
+        }
+    let getUnion = memoize createUnion
 
-    /// Paralells F# behavior wrt how it generates a DU's underlying .NET Type
+    /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
         //|| t.IsValueType
@@ -92,32 +90,18 @@ module private Union =
                 | true, el when el.ValueKind = JsonValueKind.Null -> null
                 | true, el -> JsonSerializer.DeserializeElement(el, fi.PropertyType, options) |]
 
-type Utf8JsonReaderExtensions() =
-
-    static member ValidateTokenType(reader: Utf8JsonReader, expectedTokenType) =
-        if reader.TokenType <> expectedTokenType then
-            sprintf "Expected a %A token, but encountered a %A token when parsing JSON." expectedTokenType (reader.TokenType)
-            |> JsonException
-            |> raise
-
-type UnionConverter<'T> (converterOptions) =
+type UnionConverter<'T>() =
     inherit Serialization.JsonConverter<'T>()
 
-    static let defaultConverterOptions = { discriminator = "case"; catchAllCase = None }
+    static let defaultConverterOptions = { discriminator = "case"; catchAllCase = None } :> IUnionConverterOptions
 
-    let getOptions union =
-        converterOptions :> IUnionConverterOptions
-        |> defaultArg union.options
+    let getOptions union = defaultArg union.options defaultConverterOptions
 
-    new() = UnionConverter<'T>(defaultConverterOptions)
-    new(discriminator: string, catchAllCase: string) = // Compatibility with Newtonsoft UnionConverter constructor
-        UnionConverter<'T>({ discriminator = discriminator; catchAllCase = Option.ofObj catchAllCase})
-
-    override __.CanConvert(_) = Union.tryGetUnion (typeof<'T>) |> Option.isSome
+    override __.CanConvert(t : Type) = t = typeof<'T> && Union.isUnion t
 
     override __.Write(writer, value, options) =
         let value = box value
-        let union = Union.tryGetUnion (typeof<'T>) |> Option.get
+        let union = Union.getUnion (typeof<'T>)
         let unionOptions = getOptions union
         let tag = union.tagReader value
         let case = union.cases.[tag]
@@ -152,9 +136,10 @@ type UnionConverter<'T> (converterOptions) =
         writer.WriteEndObject()
 
     override __.Read(reader, t : Type, options) =
-        Utf8JsonReaderExtensions.ValidateTokenType(reader, JsonTokenType.StartObject)
+        if reader.TokenType <> JsonTokenType.StartObject then
+            sprintf "Unexpected token when reading Union: %O" reader.TokenType |> JsonException |> raise
         use document = JsonDocument.ParseValue &reader
-        let union = Union.tryGetUnion (typeof<'T>) |> Option.get
+        let union = Union.getUnion (typeof<'T>)
         let unionOptions = getOptions union
         let element = document.RootElement
 

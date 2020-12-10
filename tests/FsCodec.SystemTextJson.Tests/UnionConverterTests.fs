@@ -7,6 +7,7 @@ open System
 open System.Text.Json
 open System.Text.Json.Serialization
 open global.Xunit
+
 open FsCodec.SystemTextJson.Tests.Fixtures
 
 type TestRecordPayload =
@@ -243,9 +244,8 @@ module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter by default throws on unknown cases`` () =
-        let options = Options.Create(UnionConverter())
         let aJson = """{"case":"CaseUnknown"}"""
-        let act () = JsonSerializer.Deserialize<TestDU>(aJson, options)
+        let act () = JsonSerializer.Deserialize<TestDU>(aJson)
 
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
@@ -268,30 +268,15 @@ module ``Unmatched case handling`` =
         | Known
         | Catchall
 
-    [<Fact>]
-    let ``UnionConverter supports a nominated catchall via options`` () =
-        let options = Options.Create(UnionConverter<DuWithCatchAllWithoutAttributes> ("case", "Catchall"))
-        let aJson = """{"case":"CaseUnknown"}"""
-        let a = JsonSerializer.Deserialize<DuWithCatchAllWithoutAttributes>(aJson, options)
-
-        test <@ DuWithCatchAllWithoutAttributes.Catchall = a @>
-
-    [<Fact>]
-    let ``UnionConverter supports a nominated catchall with attributes overriding options`` () =
-        let options = Options.Create(UnionConverter<DuWithCatchAllWithAttributes>({ discriminator = "case"; catchAllCase = None }))
-        let aJson = """{"case":"CaseUnknown"}"""
-        let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson, options)
-
-        test <@ DuWithCatchAllWithAttributes.Catchall = a @>
-
+    [<RequireQualifiedAccess;
+      JsonConverter(typeof<UnionConverter<DuWithMissingCatchAll>>); JsonUnionConverterOptions("case", CatchAllCase = "CatchAllThatCantBeFound")>]
     type DuWithMissingCatchAll =
         | Known
 
     [<Fact>]
     let ``UnionConverter explains if nominated catchAll not found`` () =
-        let options = Options.Create(UnionConverter<DuWithMissingCatchAll>("case", "CatchAllThatCantBeFound"))
         let aJson = """{"case":"CaseUnknown"}"""
-        let act () = JsonSerializer.Deserialize<DuWithMissingCatchAll>(aJson, options)
+        let act () = JsonSerializer.Deserialize<DuWithMissingCatchAll>(aJson)
 
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
         |> raisesWith <@ act() @>
