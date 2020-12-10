@@ -20,7 +20,7 @@ module private Union =
     let isUnion = memoize (fun t -> FSharpType.IsUnion(t, true))
     let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
 
-    let createUnion t =
+    let private createUnion t =
         let cases = getUnionCases t
         {
             cases = cases

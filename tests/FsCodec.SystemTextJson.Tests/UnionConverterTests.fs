@@ -251,22 +251,17 @@ module ``Unmatched case handling`` =
         |> raisesWith <@ act() @>
 
     [<RequireQualifiedAccess;
-      JsonConverter(typeof<UnionConverter<DuWithCatchAllWithAttributes>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
-    type DuWithCatchAllWithAttributes =
+      JsonConverter(typeof<UnionConverter<DuWithCatchAll>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
+    type DuWithCatchAll =
         | Known
         | Catchall
 
     [<Fact>]
     let ``UnionConverter supports a nominated catchall via attributes`` () =
         let aJson = """{"case":"CaseUnknown"}"""
-        let a = JsonSerializer.Deserialize<DuWithCatchAllWithAttributes>(aJson)
+        let a = JsonSerializer.Deserialize<DuWithCatchAll>(aJson)
 
-        test <@ DuWithCatchAllWithAttributes.Catchall = a @>
-
-    [<RequireQualifiedAccess>]
-    type DuWithCatchAllWithoutAttributes =
-        | Known
-        | Catchall
+        test <@ DuWithCatchAll.Catchall = a @>
 
     [<RequireQualifiedAccess;
       JsonConverter(typeof<UnionConverter<DuWithMissingCatchAll>>); JsonUnionConverterOptions("case", CatchAllCase = "CatchAllThatCantBeFound")>]
@@ -376,3 +371,122 @@ module ``Struct discriminated unions`` =
 
         let i = CaseIV ( {test = "hi" }, "bye")
         test <@ """{"case":"CaseIV","iv":{"test":"hi"},"ibv":"bye"}""" = serialize i @>
+
+module Nested =
+
+    [<JsonConverter(typeof<UnionConverter<U>>)>]
+    type U =
+        | B of NU
+        | C of UUA
+        | D of UU
+        | E of E
+        | EA of E[]
+        | R of {| a : int; b : NU |}
+        | S
+    and [<JsonConverter(typeof<UnionConverter<NU>>)>]
+        NU =
+        | A of string
+        | B of int
+        | R of {| a : int; b : NU |}
+        | S
+    and [<JsonConverter(typeof<UnionConverter<UU>>)>]
+        UU =
+        | A of string
+        | B of int
+        | E of E
+        | EO of E option
+        | R of {| a: int; b: string |}
+        | S
+    and [<JsonConverter(typeof<UnionConverter<UUA>>); JsonUnionConverterOptions("case2")>]
+        UUA =
+        | A of string
+        | B of int
+        | E of E
+        | EO of E option
+        | R of {| a: int; b: string |}
+        | S
+    and [<JsonConverter(typeof<TypeSafeEnumConverter<E>>)>]
+        E =
+        | V1
+        | V2
+
+    let ro = Options.Create()
+    do ro.IgnoreReadOnlyFields <- true
+    do ro.IgnoreReadOnlyProperties <- true
+
+    let [<FsCheck.Xunit.Property>] ``can nest`` (value : U) =
+        let ser = Serdes.Serialize(value, ro)
+        test <@ value = Serdes.Deserialize(ser, ro) @>
+
+    let [<Fact>] ``nesting Unions represents child as item`` () =
+        let v : U = U.C (UUA.B 42)
+        let ser = Serdes.Serialize(v, ro)
+        """{"case":"C","Item":{"case2":"B","Item":42}}""" =! ser
+        test <@ v = Serdes.Deserialize(ser, ro) @>
+
+    let [<Fact>] ``TypeSafeEnum converts direct`` () =
+        let v : U = U.C (UUA.E E.V1)
+        let ser = Serdes.Serialize(v, ro)
+        """{"case":"C","Item":{"case2":"E","Item":"V1"}}""" =! ser
+        test <@ v = Serdes.Deserialize(ser, ro) @>
+
+        let v : U = U.E E.V2
+        let ser = Serdes.Serialize v
+        """{"case":"E","Item":"V2"}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.EA [|E.V2; E.V2|]
+        let ser = Serdes.Serialize v
+        """{"case":"EA","Item":["V2","V2"]}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.C (UUA.EO (Some E.V1))
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"EO","Item":"V1"}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.C (UUA.EO None)
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"EO","Item":null}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+        let v : U = U.C UUA.S
+        let ser = Serdes.Serialize v
+        """{"case":"C","Item":{"case2":"S"}}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+/// And for everything else, JsonIsomorphism allows plenty ways of customizing the encoding and/or decoding
+module IsomorphismUnionEncoder =
+
+    type [<JsonConverter(typeof<TopConverter>)>]
+        Top =
+        | S
+        | N of Nested
+    and Nested =
+        | A
+        | B of int
+    and TopConverter() =
+        inherit JsonIsomorphism<Top, Flat<int>>()
+        override __.Pickle value =
+            match value with
+            | S -> { disc = TS; v = None }
+            | N A -> { disc = TA; v = None }
+            | N (B v) -> { disc = TB; v = Some v }
+        override __.UnPickle flat =
+            match flat with
+            | { disc = TS } -> S
+            | { disc = TA } -> N A
+            | { disc = TB; v = v} -> N (B (Option.get v))
+    and Flat<'T> = { disc : JiType; v : 'T option }
+    and [<JsonConverter(typeof<TypeSafeEnumConverter<JiType>>)>]
+        JiType = TS | TA | TB
+
+    let [<Fact>] ``Can control the encoding to the nth degree`` () =
+        let v : Top = N (B 42)
+        let ser = Serdes.Serialize v
+        """{"disc":"TB","v":42}""" =! ser
+        test <@ v = Serdes.Deserialize ser @>
+
+    let [<FsCheck.Xunit.Property>] ``can roundtrip`` (value : Top) =
+        let ser = Serdes.Serialize value
+        test <@ value = Serdes.Deserialize ser @>

@@ -65,13 +65,14 @@ module private Union =
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
-        //|| t.IsValueType
+        || (t.IsValueType && t <> typeof<JsonElement>)
         || t.IsArray
         || (t.IsGenericType
            && (typedefof<Option<_>> = t.GetGenericTypeDefinition()
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
-    let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<Serialization.JsonConverterAttribute>, false))
+    let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<Serialization.JsonConverterAttribute>(*, false*)))
+    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute t)
 
     let propTypeRequiresConstruction (propertyType : Type) =
         not (isInlinedIntoUnionItem propertyType)
@@ -115,7 +116,7 @@ type UnionConverter<'T>() =
         writer.WriteStringValue(case.Name)
 
         match fieldInfos with
-        | [| fi |] ->
+        | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
             match fieldValues.[0] with
             | null when options.IgnoreNullValues -> ()
             | fv ->

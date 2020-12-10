@@ -328,6 +328,7 @@ module ``Unmatched case handling`` =
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
 
+    [<RequireQualifiedAccess>]
     [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
     type DuWithCatchAll =
         | Known
@@ -338,7 +339,7 @@ module ``Unmatched case handling`` =
         let aJson = """{"case":"CaseUnknown"}"""
         let a = JsonConvert.DeserializeObject<DuWithCatchAll>(aJson, settings)
 
-        test <@ Catchall = a @>
+        test <@ DuWithCatchAll.Catchall = a @>
 
     [<JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
     type DuWithMissingCatchAll =
