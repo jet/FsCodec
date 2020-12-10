@@ -8,6 +8,8 @@ open System
 open System.IO
 open global.Xunit
 
+open Fixtures
+
 // TODO support [<Struct>]
 type TestRecordPayload =
     {   test: string
