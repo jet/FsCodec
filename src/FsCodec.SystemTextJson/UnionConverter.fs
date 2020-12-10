@@ -6,22 +6,23 @@ open System
 [<NoComparison; NoEquality>]
 type private Union =
     {
-        cases: UnionCaseInfo[]
-        tagReader: obj -> int
-        fieldReader: (obj -> obj[])[]
-        caseConstructor: (obj[] -> obj)[]
+        cases : UnionCaseInfo[]
+        tagReader : obj -> int
+        fieldReader : (obj -> obj[])[]
+        caseConstructor : (obj[] -> obj)[]
     }
 
 module private Union =
-    let private _tryGetUnion t =
-        if not (FSharpType.IsUnion(t, true)) then
-            None
-        else
-            let cases = FSharpType.GetUnionCases(t, true)
-            {
-                cases = cases
-                tagReader = FSharpValue.PreComputeUnionTagReader(t, true)
-                fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
-                caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
-            } |> Some
-    let tryGetUnion : Type -> Union option = memoize _tryGetUnion
+
+    let isUnion : Type -> bool = memoize (fun t -> FSharpType.IsUnion(t, true))
+    let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
+
+    let private createUnion t =
+        let cases = getUnionCases t
+        {
+            cases = cases
+            tagReader = FSharpValue.PreComputeUnionTagReader(t, true)
+            fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
+            caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
+        }
+    let getUnion : Type -> Union = memoize createUnion

@@ -7,6 +7,7 @@ open System.Text.Json
 
 [<AutoOpen>]
 module internal JsonSerializerExtensions =
+
     type JsonSerializer with
         static member SerializeToElement(value: 'T, [<Optional; DefaultParameterValue(null)>] ?options: JsonSerializerOptions) =
             let span = ReadOnlySpan.op_Implicit(JsonSerializer.SerializeToUtf8Bytes(value, defaultArg options null))

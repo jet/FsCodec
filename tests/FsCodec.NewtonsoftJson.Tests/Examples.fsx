@@ -6,7 +6,7 @@
 #if VISUALSTUDIO
 #r "netstandard"
 #endif
-#I "bin/Debug/net461"
+#I "bin/Debug/netcoreapp3.1"
 #r "Newtonsoft.Json.dll"
 #r "Serilog.dll"
 #r "Serilog.Sinks.Console.dll"
