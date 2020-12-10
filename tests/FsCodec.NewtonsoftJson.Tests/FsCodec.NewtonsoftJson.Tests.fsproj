@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="Examples.fsx" />
+    <Compile Include="Fixtures.fs" />
     <Compile Include="PicklerTests.fs" />
     <Compile Include="Fixtures.fs" />
     <Compile Include="UnionConverterTests.fs" />
@@ -26,10 +28,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/FsCodec.NewtonsoftJson/FsCodec.NewtonsoftJson.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Examples.fsx" />
   </ItemGroup>
 
 </Project>

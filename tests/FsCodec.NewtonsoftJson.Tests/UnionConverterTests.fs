@@ -9,6 +9,8 @@ open System.IO
 open global.Xunit
 open Fixtures
 
+open Fixtures
+
 // TODO support [<Struct>]
 type TestRecordPayload =
     {   test: string

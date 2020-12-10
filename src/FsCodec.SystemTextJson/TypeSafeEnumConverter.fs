@@ -31,12 +31,12 @@ module TypeSafeEnum =
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
     let toString<'t> (x : 't) =
-        if not (Union.isUnion typeof<'t>) then invalidArg "t" "Type must be a FSharpUnion." else
+        if not (Union.isUnion (typeof<'t>)) then invalidArg "'t" "Type must be a FSharpUnion." else
 
-        let union = Union.getUnion (typeof<'t>)
-        let tag = union.tagReader (box x)
+        let u = Union.getUnion (typeof<'t>)
+        let tag = u.tagReader (box x)
         // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
-        union.cases.[tag].Name
+        u.cases.[tag].Name
 
 /// Maps strings to/from Union cases; refuses to convert for values not in the Union
 type TypeSafeEnumConverter<'T>() =

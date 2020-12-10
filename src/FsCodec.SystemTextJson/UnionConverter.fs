@@ -45,9 +45,10 @@ type private Union =
 
 module private Union =
 
-    let isUnion = memoize (fun t -> FSharpType.IsUnion(t, true))
+    let isUnion : Type -> bool = memoize (fun t -> FSharpType.IsUnion(t, true))
     let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
-    let createUnion t =
+
+    let private createUnion t =
         let cases = getUnionCases t
         {
             cases = cases
@@ -59,7 +60,7 @@ module private Union =
                 |> Array.tryHead // AttributeUsage(AllowMultiple = false)
                 |> Option.map (fun a -> a :?> IUnionConverterOptions)
         }
-    let getUnion = memoize createUnion
+    let getUnion : Type -> Union = memoize createUnion
 
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
