@@ -1,18 +1,17 @@
 ﻿#if SYSTEM_TEXT_JSON
 module FsCodec.SystemTextJson.Tests.UnionConverterTests
-#else
-module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
-#endif
 
-open FsCheck
-#if SYSTEM_TEXT_JSON
 open FsCodec.SystemTextJson
 open System.Text.Json
 open System.Text.Json.Serialization
 #else
+module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
+
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 #endif
+
+open FsCheck
 open Swensen.Unquote.Assertions
 open System
 open System.IO
@@ -170,7 +169,7 @@ let ``deserializes properly`` () =
 #if SYSTEM_TEXT_JSON
     let requiredSettingsToHandleOptionalFields = Options.Create()
 #else
-    // This is equivalent to Settings.Create(), but we want absolutely the minimum settings
+    // This is equivalent to Settings.Create(), but we want absolutely minimal adjustment from the out-of-the-box Newtonsoft settings
     let requiredSettingsToHandleOptionalFields = Settings.CreateDefault(OptionConverter())
 #endif
     let deserializeCustom s = deserializeWith<TestDU> requiredSettingsToHandleOptionalFields s
