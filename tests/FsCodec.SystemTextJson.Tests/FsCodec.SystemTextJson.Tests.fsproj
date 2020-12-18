@@ -32,7 +32,9 @@
     <Compile Include="..\FsCodec.NewtonsoftJson.Tests\Fixtures.fs">
       <Link>Fixtures.fs</Link>
     </Compile>
-    <Compile Include="UnionConverterTests.fs" />
+    <Compile Include="..\FsCodec.NewtonsoftJson.Tests\UnionConverterTests.fs">
+      <Link>UnionConverterTests.fs</Link>
+    </Compile>
     <Compile Include="InteropTests.fs" />
   </ItemGroup>
 

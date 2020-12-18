@@ -1,31 +1,49 @@
-﻿module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
+﻿#if SYSTEM_TEXT_JSON
+module FsCodec.SystemTextJson.Tests.UnionConverterTests
+#else
+module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
+#endif
 
 open FsCheck
+#if SYSTEM_TEXT_JSON
+open FsCodec.SystemTextJson
+open System.Text.Json
+open System.Text.Json.Serialization
+#else
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
+#endif
 open Swensen.Unquote.Assertions
 open System
 open System.IO
 open global.Xunit
 open Fixtures
 
-// TODO support [<Struct>]
 type TestRecordPayload =
-    {   test: string
+    {
+        test: string
     }
 
-// TODO support [<Struct>]
 type TrickyRecordPayload =
-    {   Item: string
+    {
+        Item: string
     }
 
+#if SYSTEM_TEXT_JSON
+[<JsonConverter(typeof<TypeSafeEnumConverter<Mode>>)>]
+#else
 [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+#endif
 type Mode =
     | Fast
     | Slow
 
 [<NoComparison>] // NB this is not a general restriction; it's forced by use of Nullable<T> in some of the cases in this specific one
+#if SYSTEM_TEXT_JSON
+[<JsonConverter(typeof<UnionConverter<TestDU>>)>]
+#else
 [<JsonConverter(typeof<UnionConverter>)>]
+#endif
 type TestDU =
     | CaseA of TestRecordPayload
     | CaseB
@@ -58,11 +76,32 @@ type TestDU =
 
 // no camel case, because I want to test "Item" as a record property
 // Centred on ignoreNulls for backcompat; round-tripping test covers the case where they get rendered too
+
+#if SYSTEM_TEXT_JSON
+let serializeWith<'t> profile value = JsonSerializer.Serialize(value, profile)
+let defaultOptions = Options.Create(camelCase = false, ignoreNulls = true)
+let serializeDefault<'t> value = serializeWith<'t> defaultOptions value
+
+let deserializeWith<'t> profile (serialized : string) = JsonSerializer.Deserialize<'t>(serialized, profile)
+let inline deserializeDefault<'t> serialized = deserializeWith<'t> defaultOptions serialized
+
+let assertIgnoreNullsIs value (profile : JsonSerializerOptions) =
+    profile.IgnoreNullValues =! value
+#else
+let serializeWith<'t> (profile : JsonSerializerSettings) (value : 't) = JsonConvert.SerializeObject(value, profile)
 let settings = Settings.Create(camelCase = false, ignoreNulls = true)
+let serializeDefault<'t> value = serializeWith<'t> settings value
+
+let deserializeWith<'t> (profile : JsonSerializerSettings) serialized = JsonConvert.DeserializeObject<'t>(serialized, profile)
+let deserializeDefault<'t> serialized = deserializeWith<'t> settings serialized
+
+let assertIgnoreNullsIs value (profile : JsonSerializerSettings) =
+    profile.NullValueHandling =! if value then NullValueHandling.Ignore else NullValueHandling.Include
+#endif
 
 [<Fact>]
-let ``produces expected output`` () =
-    let serialize (x : obj) = JsonConvert.SerializeObject(box x, settings)
+let ``produces expected output`` ()=
+    let serialize value = serializeDefault<TestDU> value
     let a = CaseA {test = "hi"}
     test <@ """{"case":"CaseA","test":"hi"}""" = serialize a @>
 
@@ -99,7 +138,7 @@ let ``produces expected output`` () =
 
 [<Fact>]
 let ``deserializes properly`` () =
-    let deserialize json = JsonConvert.DeserializeObject<TestDU>(json, settings)
+    let deserialize json = deserializeDefault<TestDU> json
     test <@ CaseA {test = null} = deserialize """{"case":"CaseA"}""" @>
     test <@ CaseA {test = "hi"} = deserialize """{"case":"CaseA","test":"hi"}""" @>
     test <@ CaseA {test = "hi"} = deserialize """{"case":"CaseA","test":"hi","extraField":"hello"}""" @>
@@ -111,7 +150,9 @@ let ``deserializes properly`` () =
     test <@ CaseD "hi" = deserialize """{"case":"CaseD","a":"hi"}""" @>
 
     test <@ CaseE ("hi", 0) = deserialize """{"case":"CaseE","Item1":"hi","Item2":0}""" @>
+#if !SYSTEM_TEXT_JSON
     // NB this only passes by virtue of MissingMemberHandling=Ignore and NullValueHandling=Ignore in default settings
+#endif
     test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item3":"hi","Item4":0}""" @>
 
     test <@ CaseF ("hi", 0) = deserialize """{"case":"CaseF","a":"hi","b":0}""" @>
@@ -126,8 +167,13 @@ let ``deserializes properly`` () =
     test <@ CaseK (1, Nullable 2) = deserialize """{"case":"CaseK", "a":1, "b":2 }""" @>
     test <@ CaseL (Nullable 1, Nullable 2) = deserialize """{"case":"CaseL", "a": 1, "b": 2 }""" @>
 
-    let requiredSettingsToHandleOptionalFields = Settings.Create()
-    let deserializeCustom s = JsonConvert.DeserializeObject<TestDU>(s, requiredSettingsToHandleOptionalFields)
+#if SYSTEM_TEXT_JSON
+    let requiredSettingsToHandleOptionalFields = Options.Create()
+#else
+    // This is equivalent to Settings.Create(), but we want absolutely the minimum settings
+    let requiredSettingsToHandleOptionalFields = Settings.CreateDefault(OptionConverter())
+#endif
+    let deserializeCustom s = deserializeWith<TestDU> requiredSettingsToHandleOptionalFields s
     test <@ CaseM (Some 1) = deserializeCustom """{"case":"CaseM","a":1}""" @>
     test <@ CaseN (1, Some 2) = deserializeCustom """{"case":"CaseN", "a":1, "b":2 }""" @>
     test <@ CaseO (Some 1, Some 2) = deserializeCustom """{"case":"CaseO", "a": 1, "b": 2 }""" @>
@@ -137,6 +183,7 @@ let ``deserializes properly`` () =
     test<@ CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |] =
     deserialize """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}"""@>
 
+#if !SYSTEM_TEXT_JSON
 module MissingFieldsHandling =
 
     let rejectMissingSettings =
@@ -183,10 +230,15 @@ module MissingFieldsHandling =
         test <@ CaseM None = deserialize """{"case":"CaseM"}""" @>
         test <@ CaseN (1, None) = deserialize """{"case":"CaseN","a":1}""" @>
         test <@ CaseO (None, None) = deserialize """{"case":"CaseO"}""" @>
+#endif
 
+#if SYSTEM_TEXT_JSON
+let (|Q|) (s: string) = JsonSerializer.Serialize(s, defaultOptions)
+// Renderings when NullValueHandling=Include, which is used by the recommended Options.Create profile
+#else
 let (|Q|) (s: string) = Newtonsoft.Json.JsonConvert.SerializeObject s
-
 // Renderings when NullValueHandling=Include, which is the default for Json.net, and used by the recommended Settings.CreateCorrect profile
+#endif
 let render ignoreNulls = function
     | CaseA { test = null } when ignoreNulls -> """{"case":"CaseA"}"""
     | CaseA { test = Q x} -> sprintf """{"case":"CaseA","test":%s}""" x
@@ -264,26 +316,35 @@ type FsCheckGenerators =
 type DomainPropertyAttribute() =
     inherit FsCheck.Xunit.PropertyAttribute(QuietOnSuccess = true, Arbitrary=[| typeof<FsCheckGenerators> |])
 
-let roundtripProperty ignoreNulls (profile : JsonSerializerSettings) value =
-    let serialized = JsonConvert.SerializeObject(value, profile)
+let roundtripProperty ignoreNulls profile value =
+    let serialized = serializeWith profile value
     render ignoreNulls value =! serialized
-    let deserialized = JsonConvert.DeserializeObject<_>(serialized, profile)
+    let deserialized = deserializeWith profile serialized
     deserialized =! value
 
-let includeNullsProfile = Settings.CreateDefault(OptionConverter())
+#if SYSTEM_TEXT_JSON
+let includeNullsProfile = Options.Create(ignoreNulls = false)
+#else
+let includeNullsProfile = Settings.CreateDefault(OptionConverter() (*, ignoreNulls=false*))
+#endif
 [<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, includeNullsProfile
-    profile.NullValueHandling =! NullValueHandling.Include
+    assertIgnoreNullsIs false profile
     roundtripProperty ignoreNulls profile x
 
+#if SYSTEM_TEXT_JSON
+let defaultProfile = Options.Create()
+#else
 let defaultProfile = Settings.Create()
+#endif
 [<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, defaultProfile
-    profile.NullValueHandling =! NullValueHandling.Include
+    assertIgnoreNullsIs false profile
     roundtripProperty ignoreNulls profile x
 
+#if !SYSTEM_TEXT_JSON
 [<Fact>]
 let ``Implementation ensures no internal errors escape (which would render a WebApi ModelState.Invalid)`` () =
     let s = JsonSerializer.CreateDefault()
@@ -297,9 +358,23 @@ let ``Implementation ensures no internal errors escape (which would render a Web
 
     test <@ (CaseD "hi") = d @>
     test <@ false = gotError @>
+#endif
 
-module CustomDiscriminator =
+module ``Custom discriminator`` =
 
+#if SYSTEM_TEXT_JSON
+    [<JsonConverter(typeof<UnionConverter<DuWithConverterAndOptionsAttribute>>);
+      JsonUnionConverterOptions("kind")>]
+    type DuWithConverterAndOptionsAttribute =
+    | Case1
+
+    [<Fact>]
+    let ``UnionConverter supports a nominated discriminator via options attribute with converter attribute`` () =
+        let aJson = """{"kind":"Case1"}"""
+        let a = deserializeDefault<DuWithConverterAndOptionsAttribute> aJson
+
+        test <@ DuWithConverterAndOptionsAttribute.Case1 = a @>
+#else
     [<JsonConverter(typeof<UnionConverter>, "esac")>]
     type DuWithCustomDiscriminator =
         | Known
@@ -308,28 +383,33 @@ module CustomDiscriminator =
     [<Fact>]
     let ``UnionConverter handles custom discriminator`` () =
         let json = """{"esac":"Known"}"""
-        test <@ DuWithCustomDiscriminator.Known = JsonConvert.DeserializeObject<_> json @>
+        test <@ DuWithCustomDiscriminator.Known = deserializeDefault<DuWithCustomDiscriminator> json @>
 
     [<Fact>]
     let ``UnionConverter can complain about missing case with custom discriminator without catchall`` () =
         let aJson = """{"esac":"CaseUnknown"}"""
-        let act () = JsonConvert.DeserializeObject<DuWithCustomDiscriminator>(aJson, settings)
+        let act () = deserializeDefault<DuWithCustomDiscriminator> aJson
 
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
+#endif
 
 module ``Unmatched case handling`` =
 
     [<Fact>]
     let ``UnionConverter by default throws on unknown cases`` () =
         let aJson = """{"case":"CaseUnknown"}"""
-        let act () = JsonConvert.DeserializeObject<TestDU>(aJson, settings)
+        let act () = deserializeDefault<TestDU> aJson
 
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "No case defined for 'CaseUnknown', and no catchAllCase nominated" @>
         |> raisesWith <@ act() @>
 
-    [<RequireQualifiedAccess>]
-    [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
+    [<RequireQualifiedAccess;
+#if SYSTEM_TEXT_JSON
+      JsonConverter(typeof<UnionConverter<DuWithCatchAll>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
+#else
+      JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
+#endif
     type DuWithCatchAll =
         | Known
         | Catchall
@@ -337,46 +417,133 @@ module ``Unmatched case handling`` =
     [<Fact>]
     let ``UnionConverter supports a nominated catchall`` () =
         let aJson = """{"case":"CaseUnknown"}"""
-        let a = JsonConvert.DeserializeObject<DuWithCatchAll>(aJson, settings)
+        let a = deserializeDefault<DuWithCatchAll> aJson
 
         test <@ DuWithCatchAll.Catchall = a @>
 
-    [<JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
+    [<RequireQualifiedAccess;
+#if SYSTEM_TEXT_JSON
+      JsonConverter(typeof<UnionConverter<DuWithMissingCatchAll>>); JsonUnionConverterOptions("case", CatchAllCase = "CatchAllThatCantBeFound")>]
+#else
+      JsonConverter(typeof<UnionConverter>, "case", "CatchAllThatCantBeFound")>]
+#endif
     type DuWithMissingCatchAll =
         | Known
 
     [<Fact>]
     let ``UnionConverter explains if nominated catchAll not found`` () =
         let aJson = """{"case":"CaseUnknown"}"""
-        let act () = JsonConvert.DeserializeObject<DuWithMissingCatchAll>(aJson, settings)
+        let act () = deserializeDefault<DuWithMissingCatchAll> aJson
 
         fun (e : System.InvalidOperationException) -> <@ -1 <> e.Message.IndexOf "nominated catchAllCase: 'CatchAllThatCantBeFound' not found" @>
         |> raisesWith <@ act() @>
 
-    [<NoComparison>] // Forced by usage of JObject
+    [<NoComparison>] // Forced by usage of JObject / JsonElement
+#if SYSTEM_TEXT_JSON
+    [<JsonConverter(typeof<UnionConverter<DuWithCatchAllWithFields>>); JsonUnionConverterOptions("case", CatchAllCase = "Catchall")>]
+#else
     [<JsonConverter(typeof<UnionConverter>, "case", "Catchall")>]
+#endif
     type DuWithCatchAllWithFields =
         | Known
+#if SYSTEM_TEXT_JSON
+        | Catchall of JsonElement
+#else
         | Catchall of Newtonsoft.Json.Linq.JObject
+#endif
 
     [<Fact>]
-    let ``UnionConverter can feed unknown values into a JObject for logging or post processing`` () =
-        let deserialize json = JsonConvert.DeserializeObject<DuWithCatchAllWithFields>(json, settings)
+    let ``UnionConverter can feed unknown values into a JObject/JsonElement for logging or post processing`` () =
+        let json = """{"case":"CaseUnknown","a":"s","b":1,"c":true}"""
         let jo =
-            trap <@ match deserialize """{"case":"CaseUnknown","a":"s","b":1,"c":true}""" with
+            trap <@ match deserializeDefault<DuWithCatchAllWithFields> json with
                     | Catchall jo -> jo
                     | x -> failwithf "unexpected %A" x @>
 
+#if SYSTEM_TEXT_JSON
+        // These can't be inside test <@ @> because of https://github.com/dotnet/fsharp/issues/6293
+        let p = jo.GetProperty("a")     in p.GetString() =! "s"
+        let p = jo.GetProperty("b")     in p.ValueKind   =! JsonValueKind.Number
+        let p = jo.GetProperty("c")     in p.ValueKind   =! JsonValueKind.True
+        let p = jo.GetProperty("case")  in p.GetString() =! "CaseUnknown"
+        test <@ json = string jo @>
+#else
         test <@ string jo.["a"]="s"
                 && jo.["b"].Type=Newtonsoft.Json.Linq.JTokenType.Integer
                 && jo.["c"].Type=Newtonsoft.Json.Linq.JTokenType.Boolean
                 && string jo.["case"]="CaseUnknown" @>
         let expected  = "{\r\n  \"case\": \"CaseUnknown\",\r\n  \"a\": \"s\",\r\n  \"b\": 1,\r\n  \"c\": true\r\n}".Replace("\r\n",Environment.NewLine)
         test <@ expected = string jo @>
+#endif
+
+#if SYSTEM_TEXT_JSON
+module ``Struct discriminated unions`` =
+
+    [<Struct>]
+    type TestRecordPayloadStruct = { test: string }
+
+    [<Struct>]
+    [<JsonConverter(typeof<UnionConverter<TestStructDu>>)>]
+    type TestStructDu =
+        | CaseA of a : TestRecordPayload
+        | CaseAV of av : TestRecordPayloadStruct
+        | CaseB
+        | CaseC of string
+        | CaseD of d : string
+        | CaseE of e : string * int
+        | CaseF of f : string * fb : int
+        | CaseG of g : TrickyRecordPayload
+        | CaseH of h : TestRecordPayload
+        | CaseHV of hv : TestRecordPayloadStruct
+        | CaseI of i : TestRecordPayload * ib : string
+        | CaseIV of iv : TestRecordPayloadStruct * ibv : string
+
+    let inline serialize x = JsonSerializer.Serialize(x)
+
+    [<Fact>]
+    let ``produces expected output`` () =
+        let a = CaseA { test = "hi" }
+        test <@ """{"case":"CaseA","test":"hi"}""" = serialize a @>
+        let a = CaseAV { test = "hi" }
+        test <@ """{"case":"CaseAV","test":"hi"}""" = serialize a @>
+
+        let b = CaseB
+        test <@ """{"case":"CaseB"}""" = serialize b @>
+
+        let c = CaseC "hi"
+        test <@ """{"case":"CaseC","Item":"hi"}""" = serialize c @>
+
+        let d = CaseD "hi"
+        test <@ """{"case":"CaseD","d":"hi"}""" = serialize d @>
+
+        let e = CaseE ("hi", 0)
+        test <@ """{"case":"CaseE","e":"hi","Item2":0}""" = serialize e @>
+
+        let f = CaseF ("hi", 0)
+        test <@ """{"case":"CaseF","f":"hi","fb":0}""" = serialize f @>
+
+        let g = CaseG { Item = "hi" }
+        test <@ """{"case":"CaseG","Item":"hi"}""" = serialize g @>
+
+        let h = CaseH { test = "hi" }
+        test <@ """{"case":"CaseH","test":"hi"}""" = serialize h @>
+        let h = CaseHV { test = "hi" }
+        test <@ """{"case":"CaseHV","test":"hi"}""" = serialize h @>
+
+        let i = CaseI ( {test = "hi" }, "bye")
+        test <@ """{"case":"CaseI","i":{"test":"hi"},"ib":"bye"}""" = serialize i @>
+
+        let i = CaseIV ( {test = "hi" }, "bye")
+        test <@ """{"case":"CaseIV","iv":{"test":"hi"},"ibv":"bye"}""" = serialize i @>
+#endif
 
 module Nested =
 
+#if SYSTEM_TEXT_JSON
+    [<JsonConverter(typeof<UnionConverter<U>>)>]
+#else
     [<JsonConverter(typeof<UnionConverter>)>]
+#endif
     type U =
         | B of NU
         | C of UUA
@@ -385,13 +552,21 @@ module Nested =
         | EA of E[]
         | R of {| a : int; b : NU |}
         | S
+#if SYSTEM_TEXT_JSON
+    and [<JsonConverter(typeof<UnionConverter<NU>>)>]
+#else
     and [<JsonConverter(typeof<UnionConverter>)>]
+#endif
         NU =
         | A of string
         | B of int
         | R of {| a : int; b : NU |}
         | S
+#if SYSTEM_TEXT_JSON
+    and [<JsonConverter(typeof<UnionConverter<UU>>)>]
+#else
     and [<JsonConverter(typeof<UnionConverter>)>]
+#endif
         UU =
         | A of string
         | B of int
@@ -399,7 +574,11 @@ module Nested =
         | EO of E option
         | R of {| a: int; b: string |}
         | S
+#if SYSTEM_TEXT_JSON
+    and [<JsonConverter(typeof<UnionConverter<UUA>>); JsonUnionConverterOptions("case2")>]
+#else
     and [<JsonConverter(typeof<UnionConverter>, "case2")>]
+#endif
         UUA =
         | A of string
         | B of int
@@ -407,7 +586,11 @@ module Nested =
         | EO of E option
         | R of {| a: int; b: string |}
         | S
+#if SYSTEM_TEXT_JSON
+    and [<JsonConverter(typeof<TypeSafeEnumConverter<E>>)>]
+#else
     and [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+#endif
         E =
         | V1
         | V2
@@ -476,7 +659,11 @@ module IsomorphismUnionEncoder =
             | { disc = TA } -> N A
             | { disc = TB; v = v} -> N (B (Option.get v))
     and Flat<'T> = { disc : JiType; v : 'T option }
+#if SYSTEM_TEXT_JSON
+    and [<JsonConverter(typeof<TypeSafeEnumConverter<JiType>>)>]
+#else
     and [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
+#endif
         JiType = TS | TA | TB
 
     let [<Fact>] ``Can control the encoding to the nth degree`` () =
