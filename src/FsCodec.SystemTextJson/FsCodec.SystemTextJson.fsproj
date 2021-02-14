@@ -27,7 +27,6 @@
     <PackageReference Include="FSharp.Core" Version="4.3.4" />
 
     <PackageReference Include="System.Text.Json" Version="5.0.0-preview.3.20214.6" />
-    <PackageReference Include="TypeShape" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

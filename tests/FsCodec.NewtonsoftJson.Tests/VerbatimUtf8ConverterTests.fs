@@ -24,8 +24,24 @@ type U =
     //| DT of DateTime // Have not analyzed but seems to be same issue as DTO
     | EDto of EmbeddedDateTimeOffset
     | ES of EmbeddedString
-    //| I of int // works but removed as no other useful top level values work
+    | Guid of Guid
     | N
+
+    // primitives
+    | Boolean   of bool
+    | Byte      of byte
+    | SByte     of sbyte
+    | Int16     of int16
+    | UInt16    of uint16
+    | Int32     of int32
+    | UInt32    of uint32
+    | Int64     of int64
+    | UInt64    of uint64
+    //| IntPtr  of IntPtr  // unsupported
+    //| UIntPtr of UIntPtr // unsupported
+    | Char      of char
+    | Double    of double
+    | Single    of single
     interface TypeShape.UnionContract.IUnionContract
 
 type [<NoEquality; NoComparison; JsonObject(ItemRequired=Required.Always)>]
@@ -57,7 +73,7 @@ let mkBatch (encoded : FsCodec.IEventData<byte[]>) : Batch =
 
 module VerbatimUtf8Tests = // not a module or CI will fail for net461
 
-    let eventCodec = Codec.Create<Union>()
+    let eventCodec = Codec.Create<Union>(requireRecordFields=false)
 
     let [<Fact>] ``encodes correctly`` () =
         let input = Union.A { embed = "\"" }
@@ -71,7 +87,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
         input =! decoded
 
     let defaultSettings = Settings.CreateDefault()
-    let defaultEventCodec = Codec.Create<U>(defaultSettings)
+    let defaultEventCodec = Codec.Create<U>(defaultSettings, requireRecordFields=false)
 
     let [<Property>] ``round-trips diverse bodies correctly`` (x: U) =
         let encoded = defaultEventCodec.Encode(None,x)
@@ -80,7 +96,12 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
         let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
         let decoded = defaultEventCodec.TryDecode loaded |> Option.get
-        x =! decoded
+        match x, decoded with
+        | U.Double x, U.Double d when Double.IsNaN x && Double.IsNaN d -> ()
+        | U.Single x, U.Single d when Single.IsNaN x && Single.IsNaN d -> ()
+        | U.Double x, U.Double d -> Assert.Equal(       x,        d, 10)
+        | U.Single x, U.Single d -> Assert.Equal(double x, double d, 10)
+        | _ -> x =! decoded
 
     // https://github.com/JamesNK/Newtonsoft.Json/issues/862 // doesnt apply to this case
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =

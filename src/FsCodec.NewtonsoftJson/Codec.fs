@@ -44,10 +44,27 @@ module Core =
                 // TOCONSIDER as noted in the comments on RecyclableMemoryStream.ToArray, ideally we'd be continuing the rental and passing out a Span
                 ms.ToArray()
 
-            member __.Decode(json : byte[]) =
+            member __.Decode(json : byte[]) : 'a =
                 use ms = Utf8BytesEncoder.wrapAsStream json
                 use jsonReader = Utf8BytesEncoder.makeJsonReader ms
-                serializer.Deserialize<'T>(jsonReader)
+                let returnType = typeof<'a>
+                if returnType = typeof<Guid> then
+                    json
+                    |> System.Text.Encoding.ASCII.GetString
+                    |> Guid.Parse
+                    |> unbox
+                elif returnType = typeof<bool> then
+                    json
+                    |> System.Text.Encoding.ASCII.GetString
+                    |> Boolean.Parse
+                    |> unbox
+                elif returnType = typeof<char> then
+                    json
+                    |> System.Text.Encoding.UTF8.GetChars
+                    |> Seq.head
+                    |> unbox
+                else
+                    serializer.Deserialize<'a> jsonReader
 
 /// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores based using <c>Newtonsoft.Json</c> and the conventions implied by using
 /// <c>TypeShape.UnionContract.UnionContractEncoder</c> - if you need full control and/or have have your own codecs, see <c>FsCodec.Codec.Create</c> instead
@@ -73,19 +90,18 @@ type Codec private () =
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases,
+            [<Optional; DefaultParameterValue(null)>] ?requireRecordFields)
         : FsCodec.IEventCodec<'Event, byte[], 'Context> =
 
         let settings = match settings with Some x -> x | None -> defaultSettings.Value
-        let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = new Core.BytesEncoder(settings) :> _
+        let bytesEncoder : TypeShape.UnionContract.IEncoder<_> = Core.BytesEncoder(settings) :> _
+        let requireRecordFields = defaultArg requireRecordFields true
+        Internal.checkIfSupported<'Contract> requireRecordFields
         let dataCodec =
             TypeShape.UnionContract.UnionContractEncoder.Create<'Contract, byte[]>(
                 bytesEncoder,
-                // For now, we hard wire in disabling of non-record bodies as:
-                // a) it's extra yaks to shave
-                // b) it's questionable whether allowing one to define event contracts that preclude adding extra fields is a useful idea in the first instance
-                // See VerbatimUtf8EncoderTests.fs and InteropTests.fs - there are edge cases when `d` fields have null / zero-length / missing values
-                requireRecordFields = true,
+                requireRecordFields = requireRecordFields,
                 allowNullaryCases = not (defaultArg rejectNullaryCases false))
 
         { new FsCodec.IEventCodec<'Event, byte[], 'Context> with
@@ -119,14 +135,16 @@ type Codec private () =
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases,
+            /// Enables unions to contain a Guid or most primitives. Defaults to <c>true</c>, i.e. preventing Guids and primitives
+            [<Optional; DefaultParameterValue(null)>] ?requireRecordFields)
         : FsCodec.IEventCodec<'Event, byte[], 'Context> =
 
         let down (context, union) =
             let c, m, t = down union
             let m', eventId, correlationId, causationId = mapCausation (context, m)
             c, m', eventId, correlationId, causationId, t
-        Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases, ?requireRecordFields = requireRecordFields)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
@@ -145,11 +163,13 @@ type Codec private () =
             /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases,
+            /// Enables unions to contain a Guid or most primitives. Defaults to <c>true</c>, i.e. preventing Guids and primitives
+            [<Optional; DefaultParameterValue(null)>] ?requireRecordFields)
         : FsCodec.IEventCodec<'Event, byte[], obj> =
 
         let mapCausation (_context : obj, m : 'Meta option) = m, Guid.NewGuid(), null, null
-        Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
+        Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases, ?requireRecordFields = requireRecordFields)
 
     /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -158,9 +178,11 @@ type Codec private () =
         (   // Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
-            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases,
+            /// Enables unions to contain a Guid or most primitives. Defaults to <c>true</c>, i.e. preventing Guids and primitives
+            [<Optional; DefaultParameterValue(null)>] ?requireRecordFields)
         : FsCodec.IEventCodec<'Union, byte[], obj> =
 
         let up : FsCodec.ITimelineEvent<_> * 'Union -> 'Union = snd
         let down (event : 'Union) = event, None, None
-        Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
+        Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases, ?requireRecordFields = requireRecordFields)

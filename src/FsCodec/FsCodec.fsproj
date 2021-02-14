@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Internal.fs" />
     <Compile Include="FsCodec.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="StreamName.fs" />
@@ -21,6 +22,13 @@
     <PackageReference Include="FSharp.Core" Version="3.1.2.5" Condition=" '$(TargetFramework)' == 'net461' " />
     <PackageReference Include="FSharp.Core" Version="4.3.4" Condition=" '$(TargetFramework)' == 'netstandard2.0' " />
     <PackageReference Include="FSharp.UMX" Version="1.0.0" />
+    <PackageReference Include="TypeShape" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>FsCodec.NewtonsoftJson</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
 </Project>

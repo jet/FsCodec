@@ -20,5 +20,7 @@ type VerbatimUtf8JsonConverter() =
 
     override __.ReadJson(reader : JsonReader, _ : Type, _ : obj, _ : JsonSerializer) =
         let token = JToken.Load reader
-        if token.Type = JTokenType.Null then null
-        else token |> string |> enc.GetBytes |> box
+        match token.Type with
+        | JTokenType.Null -> null
+        | JTokenType.Float -> reader.Value :?> double |> fun x -> x.ToString "r" |> enc.GetBytes |> box
+        | _ -> token |> string |> enc.GetBytes |> box
