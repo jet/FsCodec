@@ -19,7 +19,7 @@ type Serdes private () =
             /// Use indentation when serializing JSON. Defaults to false.
             [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
         let options = (if defaultArg indent false then indentOptions else defaultOptions).Value
-        Serdes.Serialize(value, options)
+        Serdes.Serialize<'T>(value, options)
 
     /// Serializes given value to a JSON string with custom options
     static member Serialize<'T>
@@ -27,7 +27,7 @@ type Serdes private () =
             value : 'T,
             /// Options to use (use other overload to use Options.Create() profile)
             options : JsonSerializerOptions) : string =
-        JsonSerializer.Serialize(value, options)
+        JsonSerializer.Serialize<'T>(value, options)
 
     /// Deserializes value of given type from JSON string.
     static member Deserialize<'T>
