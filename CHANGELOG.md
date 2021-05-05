@@ -9,6 +9,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `NewtonsoftJson.Serdes.DefaultSettings`: Exposes default settings (for use with ASP.NET Core `.AddNewtonsoftJson`) [#63](https://github.com/jet/FsCodec/pull/63)
+- `SystemTextJson.Serdes.DefaultOptions`: Exposes default options (for use with ASP.NET Core `.AddJsonOptions`) [#63](https://github.com/jet/FsCodec/pull/63)
+
 ### Changed
 ### Removed
 ### Fixed
