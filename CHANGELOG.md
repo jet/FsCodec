@@ -9,12 +9,18 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="2.2.0"></a>
+## [2.2.0] - 2021-05-05
+
+### Added
 
 - `NewtonsoftJson.Serdes.DefaultSettings`: Exposes default settings (for use with ASP.NET Core `.AddNewtonsoftJson`) [#63](https://github.com/jet/FsCodec/pull/63)
 - `SystemTextJson.Serdes.DefaultOptions`: Exposes default options (for use with ASP.NET Core `.AddJsonOptions`) [#63](https://github.com/jet/FsCodec/pull/63)
 
-### Changed
-### Removed
 ### Fixed
 
 - Clarify `StreamName.parse` exception message [#58](https://github.com/jet/FsCodec/pull/58) :pray: [@dharmaturtle](https://github.com/dharmaturtle)
@@ -167,7 +173,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.1.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.2.0...HEAD
+[2.2.0]: https://github.com/jet/FsCodec/compare/2.1.1...2.2.0
 [2.1.1]: https://github.com/jet/FsCodec/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/jet/FsCodec/compare/2.0.1...2.1.0
 [2.0.1]: https://github.com/jet/FsCodec/compare/2.0.0...2.0.1
