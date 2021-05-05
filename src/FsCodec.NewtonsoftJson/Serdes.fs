@@ -9,14 +9,17 @@ type Serdes private () =
     static let defaultSettings = lazy Settings.Create()
     static let indentSettings = lazy Settings.Create(indent = true)
 
+    /// Yields the settings used by <c>Serdes</c> when no <c>settings</c> are supplied.
+    static member DefaultSettings : JsonSerializerSettings = defaultSettings.Value
+
     /// Serializes given value to a JSON string.
     static member Serialize<'T>
         (   /// Value to serialize.
             value : 'T,
             /// Use indentation when serializing JSON. Defaults to false.
-            [<Optional; DefaultParameterValue null>] ?indent : bool) : string =
+            [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
         let settings = (if defaultArg indent false then indentSettings else defaultSettings).Value
-        JsonConvert.SerializeObject(value, settings)
+        Serdes.Serialize<'T>(value, settings)
 
     /// Serializes given value to a JSON string with custom settings
     static member Serialize<'T>

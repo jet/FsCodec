@@ -114,6 +114,46 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 [`FsCodec.NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings/Options.Create` (above). Methods:
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings/Options.Create`
+- `DefaultSettings` / `DefaultOptions`: Allows one to access a global static instance of the `JsonSerializerSettings`/`JsonSerializerOptions` used by the default profile.
+
+# Usage of Converters with ASP.NET Core
+
+ASP.NET Core's out-of-the-box behavior is to use `System.Text.Json`. One can explicitly opt to use the more ubiquitous `Newtonsoft.Json` via the `Microsoft.AspNetCore.Mvc.NewtonsoftJson` package's `AddNewtonsoftJson` by adjusting one's `.AddMvc)`.
+
+If you follow the policies covered in the rest of the documentation here, your DTO types (and/or types in your `module Events` that you surface while you are scaffolding and/or hacking without an anti-corruption layer) will fall into one of two classifications:
+
+1. Types that have an associated Converter explicitly annotated (e.g., DU types bear an associated `UnionConverter`, `TypeSafeEnumConverter` or `JsonIsomorphism`-based custom converter, custom types follow the conventions or define a `JsonIsomorphism`-based converter)
+2. Types that require a global converter to be registered. _While it may seem that the second set is open-ended and potentially vast, experience teaches that you want to keep it minimal._. This boils down to:
+  - records arrays and all other good choices for types Just Work already
+  - `Nullable<MyType>`: Handled out of the box by both NSJ and STJ - requires no converters, provides excellent interop with other CLR languages. Would recommend.
+  - `MyType option`: Covered by the global `OptionConverter`/`JsonOptionConverter` (see below for a clean way to add them to the default MVC view rendering configuration). Note that while this works well with ASP.NET Core, it may be problematic if you share contracts (yes, not saying you should) or rely on things like Swashbuckle which will need to be aware of the types when they reflect over them.
+
+**The bottom line is that using exotic types in DTOs is something to think very hard about before descending into. The next sections are thus only relevant if you decide to add that extra complexity to your system...**
+
+<a name="aspnetnsj"></a>
+## ASP.NET Core with `Newtonsoft.Json`
+Hence the following represents the recommended default policy:-
+
+    services.AddMvc(fun options -> ...
+    ).AddNewtonsoftJson(fun options ->
+        FsCodec.NewtonsoftJson.Serdes.DefaultSettings.Converters
+        |> Seq.iter options.SerializerSettings.Converters.Add
+    ) |> ignore	        
+
+This adds all the converters used by the default `Serdes` mechanism (currently only `FsCodec.NewtonsoftJson.OptionConverter()`), and add them to any imposed by other configuration logic.
+
+<a name="asnetpstj"></a>
+## ASP.NET Core with `System.Text.Json`
+
+The equivalent for the native `System.Text.Json` looks like this:
+
+    services.AddMvc(fun options -> ...
+    ).AddJsonOptions(fun options ->
+        FsCodec.SystemTextJson.Serdes.DefaultOptions.Converters
+        |> Seq.iter options.JsonSerializerOptions.Converters.Add
+    ) |> ignore
+
+_As of `System.Text.Json` v5, the only converter used under the hood at present is `FsCodec.SystemTextJson.JsonOptionConverter()`_.
 
 # Examples: `FsCodec.(Newtonsoft|SystemText)Json`
 
