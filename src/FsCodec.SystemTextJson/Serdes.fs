@@ -17,7 +17,7 @@ type Serdes private () =
         (   /// Value to serialize.
             value : 'T,
             /// Use indentation when serializing JSON. Defaults to false.
-            [<Optional; DefaultParameterValue null>] ?indent : bool) : string =
+            [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
         let options = (if defaultArg indent false then indentOptions else defaultOptions).Value
         Serdes.Serialize(value, options)
 
