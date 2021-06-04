@@ -2,9 +2,12 @@
 
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
+open TypeShape.UnionContract
 open Swensen.Unquote
 open System
 open Xunit
+
+open FsCodec.NewtonsoftJson.Tests.Fixtures
 
 // NB Feel free to ignore this opinion and copy the 4 lines into your own globals - the pinning test will remain here
 /// <summary>
@@ -39,3 +42,35 @@ let [<Fact>] ``Global GuidConverter`` () =
 
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = resDashes
             && "\"00000000000000000000000000000000\"" = resNoDashes @>
+
+module CartV1 =
+    type CreateCart = { Name: string }
+
+    type Events =
+        | Create of CreateCart
+        interface IUnionContract
+
+module CartV2 =
+    type CreateCart = { Name: string; CartId: CartId }
+    type Events =
+        | Create of CreateCart
+        interface IUnionContract
+
+let [<Fact>] ``Unexpected null property deserialize`` () =
+
+    let expectedV2: CartV2.CreateCart =  { Name = "cartName"; CartId = Guid.Empty |> CartId }
+    let createV1: CartV1.CreateCart =  { Name = "cartName" }
+
+    let createV1Result = JsonConvert.SerializeObject createV1
+
+    let cartOut = JsonConvert.DeserializeObject<CartV2.CreateCart>(createV1Result)
+
+    test <@ cartOut = expectedV2 @>
+
+    (*
+        cartOut = expectedV2
+        { Name = "cartName"
+          CartId = null } = { Name = "cartName"
+          CartId = 00000000000000000000000000000000}
+        false
+    *)
