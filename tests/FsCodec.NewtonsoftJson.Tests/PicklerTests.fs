@@ -56,7 +56,7 @@ module CartV2 =
         | Create of CreateCart
         interface IUnionContract
 
-let [<Fact>] ``Deserilize expected null into optional property`` () =
+let [<Fact>] ``Deserialize missing field a as optional property None value`` () =
     let expectedCreateCartV2: CartV2.CreateCart =  { Name = "cartName"; CartId = None }
     let createCartV1: CartV1.CreateCart =  { Name = "cartName" }
 
