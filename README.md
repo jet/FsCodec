@@ -519,7 +519,7 @@ module CartV2 =
 ```
 
 FsCodec.SystemTextJson looks to provide an analogous mechanism. In general, FsCodec is seeking to provide a pragmatic middle way of
-using NewtonsoftJson or SystemTextJson in F# without completely changing what one might expect to happen when using json.net in
+using NewtonsoftJson or SystemTextJson in F# without completely changing what one might expect to happen when using JSON.NET in
 order to provide an F# only experience.
 
 The aim is to provide helpers to smooth the way for using reflection based serialization in a way that would not surprise
