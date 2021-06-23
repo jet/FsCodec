@@ -508,7 +508,7 @@ module CartV1 =
     type CreateCart = { name: string }
 
     type Events =
-        | Create of CreateCart
+        | Created of CreateCart
         interface IUnionContract
 
 module CartV2 =
