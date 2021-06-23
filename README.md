@@ -505,7 +505,7 @@ deserialize into `null` which is an invalid state for the `CartV2.CreateCart` re
 
 ```
 module CartV1 =
-    type CreateCart = { Name: string }
+    type CreateCart = { name: string }
 
     type Events =
         | Create of CreateCart
