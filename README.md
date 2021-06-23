@@ -500,7 +500,7 @@ _Note however, that we don't have a clean way to trap the data and log it. See [
 
 ### Versioned events
 The below example demonstrates the addition of a `CartId` property in a newer version of `CreateCart`. It's worth noting that
-deserializing `CartV1.CreateCart` into `CartV2.CreateCart` requires `CartId` to be an optional propery or the property will
+deserializing `CartV1.CreateCart` into `CartV2.CreateCart` requires `CartId` to be an optional property or the property will
 deserialize into `null` which is an invalid state for the `CartV2.CreateCart` record in F#.
 
 ```
