@@ -51,26 +51,17 @@ module CartV1 =
         interface IUnionContract
 
 module CartV2 =
-    type CreateCart = { Name: string; CartId: CartId }
+    type CreateCart = { Name: string; CartId: CartId option }
     type Events =
         | Create of CreateCart
         interface IUnionContract
 
-let [<Fact>] ``Unexpected null property deserialize`` () =
+let [<Fact>] ``Deserilize expected null into optional property`` () =
+    let expectedCreateCartV2: CartV2.CreateCart =  { Name = "cartName"; CartId = None }
+    let createCartV1: CartV1.CreateCart =  { Name = "cartName" }
 
-    let expectedV2: CartV2.CreateCart =  { Name = "cartName"; CartId = Guid.Empty |> CartId }
-    let createV1: CartV1.CreateCart =  { Name = "cartName" }
+    let createCartV1JSON = JsonConvert.SerializeObject createCartV1
 
-    let createV1Result = JsonConvert.SerializeObject createV1
+    let createCartV2 = JsonConvert.DeserializeObject<CartV2.CreateCart>(createCartV1JSON)
 
-    let cartOut = JsonConvert.DeserializeObject<CartV2.CreateCart>(createV1Result)
-
-    test <@ cartOut = expectedV2 @>
-
-    (*
-        cartOut = expectedV2
-        { Name = "cartName"
-          CartId = null } = { Name = "cartName"
-          CartId = 00000000000000000000000000000000}
-        false
-    *)
+    test <@ createCartV2 = expectedCreateCartV2 @>
