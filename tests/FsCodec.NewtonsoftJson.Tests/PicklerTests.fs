@@ -2,7 +2,6 @@
 
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
-open TypeShape.UnionContract
 open Swensen.Unquote
 open System
 open Xunit
@@ -48,13 +47,13 @@ module CartV1 =
 
     type Events =
         | Create of CreateCart
-        interface IUnionContract
+        interface TypeShape.UnionContract.IUnionContract
 
 module CartV2 =
     type CreateCart = { Name: string; CartId: CartId option }
     type Events =
         | Create of CreateCart
-        interface IUnionContract
+        interface TypeShape.UnionContract.IUnionContract
 
 let [<Fact>] ``Deserialize missing field a as optional property None value`` () =
     let expectedCreateCartV2: CartV2.CreateCart =  { Name = "cartName"; CartId = None }
