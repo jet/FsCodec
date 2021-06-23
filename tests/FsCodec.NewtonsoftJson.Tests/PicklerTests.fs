@@ -6,6 +6,8 @@ open Swensen.Unquote
 open System
 open Xunit
 
+open FsCodec.NewtonsoftJson.Tests.Fixtures
+
 // NB Feel free to ignore this opinion and copy the 4 lines into your own globals - the pinning test will remain here
 /// <summary>
 ///     Renders all Guids without dashes.
@@ -39,3 +41,26 @@ let [<Fact>] ``Global GuidConverter`` () =
 
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = resDashes
             && "\"00000000000000000000000000000000\"" = resNoDashes @>
+
+module CartV1 =
+    type CreateCart = { Name: string }
+
+    type Events =
+        | Create of CreateCart
+        interface TypeShape.UnionContract.IUnionContract
+
+module CartV2 =
+    type CreateCart = { Name: string; CartId: CartId option }
+    type Events =
+        | Create of CreateCart
+        interface TypeShape.UnionContract.IUnionContract
+
+let [<Fact>] ``Deserialize missing field a as optional property None value`` () =
+    let expectedCreateCartV2: CartV2.CreateCart =  { Name = "cartName"; CartId = None }
+    let createCartV1: CartV1.CreateCart =  { Name = "cartName" }
+
+    let createCartV1JSON = JsonConvert.SerializeObject createCartV1
+
+    let createCartV2 = JsonConvert.DeserializeObject<CartV2.CreateCart>(createCartV1JSON)
+
+    test <@ expectedCreateCartV2 = createCartV2 @>

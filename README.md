@@ -538,6 +538,32 @@ There are two events that we were not able to decode, for varying reasons:
 
 _Note however, that we don't have a clean way to trap the data and log it. See [Logging unmatched events](#logging-unmatched-events) for an example of how one might log such unmatched events_
 
+### Handling introduction of new fields in JSON
+The below example demonstrates the addition of a `CartId` property in a newer version of `CreateCart`. It's worth noting that
+deserializing `CartV1.CreateCart` into `CartV2.CreateCart` requires `CartId` to be an optional property or the property will
+deserialize into `null` which is an invalid state for the `CartV2.CreateCart` record in F# (F# `type`s are assumed to never be `null`).
+
+```
+module CartV1 =
+    type CreateCart = { name: string }
+
+    type Events =
+        | Created of CreateCart
+        interface IUnionContract
+
+module CartV2 =
+    type CreateCart = { name: string; cartId: CartId option }
+    type Events =
+        | Created of CreateCart
+        interface IUnionContract
+```
+
+FsCodec.SystemTextJson looks to provide an analogous mechanism. In general, FsCodec is seeking to provide a pragmatic middle way of
+using NewtonsoftJson or SystemTextJson in F# without completely changing what one might expect to happen when using JSON.NET in
+order to provide an F# only experience.
+
+The aim is to provide helpers to smooth the way for using reflection based serialization in a way that would not surprise
+people coming from a C# background and/or in mixed C#/F# codebases.
 ## Adding Matchers to the Event Contract
 
 We can clarify the consuming code a little by adding further helper Active Patterns alongside the event contract :-
