@@ -64,4 +64,4 @@ let [<Fact>] ``Deserialize missing field a as optional property None value`` () 
 
     let createCartV2 = JsonConvert.DeserializeObject<CartV2.CreateCart>(createCartV1JSON)
 
-    test <@ createCartV2 = expectedCreateCartV2 @>
+    test <@ expectedCreateCartV2 = createCartV2 @>
