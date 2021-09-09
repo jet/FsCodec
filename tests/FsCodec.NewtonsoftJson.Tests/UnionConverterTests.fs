@@ -113,8 +113,10 @@ let ``deserializes properly`` () =
 
     test <@ CaseE ("hi", 0) = deserialize """{"case":"CaseE","Item1":"hi","Item2":0}""" @>
     // NB this only passes by virtue of MissingMemberHandling=Ignore and NullValueHandling=Ignore in default settings
-    let deserialize2 json = JsonConvert.DeserializeObject<TestDU>(json, FsCodec.NewtonsoftJson.Settings.CreateDefault())
-    let res = deserialize2 """{"case":"CaseE","Item3":"hi","Item4":0}"""
+    let s2 = FsCodec.NewtonsoftJson.Settings.CreateDefault()
+    s2.NullValueHandling <- NullValueHandling.Ignore
+    let deserialize2 json = JsonConvert.DeserializeObject<TestDU>(json, s2)
+    let res = deserialize2 """{"case":"CaseE","Item1":null,"Item2":0}"""
     test <@ CaseE (null, 0) = res @>
 
     test <@ CaseF ("hi", 0) = deserialize """{"case":"CaseF","a":"hi","b":0}""" @>
