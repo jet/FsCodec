@@ -9,14 +9,17 @@ type Serdes private () =
     static let defaultOptions = lazy Options.Create()
     static let indentOptions = lazy Options.Create(indent = true)
 
+    /// Yields the settings used by <c>Serdes</c> when no <c>options</c> are supplied.
+    static member DefaultOptions : JsonSerializerOptions = defaultOptions.Value
+
     /// Serializes given value to a JSON string.
     static member Serialize<'T>
         (   /// Value to serialize.
             value : 'T,
             /// Use indentation when serializing JSON. Defaults to false.
-            [<Optional; DefaultParameterValue null>] ?indent : bool) : string =
+            [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
         let options = (if defaultArg indent false then indentOptions else defaultOptions).Value
-        JsonSerializer.Serialize(value, options)
+        Serdes.Serialize<'T>(value, options)
 
     /// Serializes given value to a JSON string with custom options
     static member Serialize<'T>
@@ -24,7 +27,7 @@ type Serdes private () =
             value : 'T,
             /// Options to use (use other overload to use Options.Create() profile)
             options : JsonSerializerOptions) : string =
-        JsonSerializer.Serialize(value, options)
+        JsonSerializer.Serialize<'T>(value, options)
 
     /// Deserializes value of given type from JSON string.
     static member Deserialize<'T>

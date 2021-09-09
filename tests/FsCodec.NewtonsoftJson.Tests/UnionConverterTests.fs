@@ -152,8 +152,7 @@ let ``deserializes properly`` () =
 #if !SYSTEM_TEXT_JSON
     // NB this only passes by virtue of MissingMemberHandling=Ignore and NullValueHandling=Ignore in default settings
 #endif
-    test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item3":"hi","Item4":0}""" @>
-
+    test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item1":null,"Item2":0,"Item3":"hi","Item4":"0"}""" @>
     test <@ CaseF ("hi", 0) = deserialize """{"case":"CaseF","a":"hi","b":0}""" @>
 
     test <@ CaseG {Item = "hi"} = deserialize """{"case":"CaseG","Item":"hi"}""" @>

@@ -1,19 +1,8 @@
-//open FsCodec
-
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.NewtonsoftJson.Tests before attempting to send this to FSI with Alt-Enter
 
-#if VISUALSTUDIO
-#r "netstandard"
-#endif
-#I "bin/Debug/netcoreapp3.1"
-#r "Newtonsoft.Json.dll"
-#r "Serilog.dll"
-#r "Serilog.Sinks.Console.dll"
-#r "TypeShape.dll"
-#r "FsCodec.dll"
-#r "FsCodec.NewtonsoftJson.dll"
-#r "FSharp.UMX.dll"
+#r "nuget: FsCodec.NewtonsoftJson"
+#r "nuget: Serilog.Sinks.Console"
 
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
@@ -139,12 +128,12 @@ module ClientId =
 module Events =
 
     // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
-    let [<Literal>] CategoryId = "Favorites"
+    let [<Literal>] Category = "Favorites"
 
     /// Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the aggregateId if the Category does match
-    let (|MatchesCategory|_|) = function
-        | FsCodec.StreamName.CategoryAndId (CategoryId, ClientId.Parse clientId) -> Some clientId
+    let (|StreamName|_|) = function
+        | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
         | _ -> None
 
     type Added = { item : string }
@@ -155,12 +144,19 @@ module Events =
         interface TypeShape.UnionContract.IUnionContract
 
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
-    let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 
-    /// Yields decoded event and relevant strongly typed ids if the category of the Stream Name is correct
-    let (|Match|_|) (streamName, span) =
+    let (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+    /// Yields decoded event and relevant strongly typed id if the category of the Stream Name is correct
+    let (|Match|_|) (streamName, event) =
+        match streamName, event with
+        | StreamName clientId, TryDecode streamName e -> Some (clientId, e)
+        | _ -> None
+
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
+    /// Yields decoded events and relevant strongly typed id if the category of the StreamName is correct
+    let (|Parse|_|) (streamName, span) =
         match streamName, span with
-        | MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        | StreamName clientId, Decode streamName es -> Some (clientId, es)
         | _ -> None
 
 open FsCodec
@@ -180,7 +176,7 @@ let events = [
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | StreamName.CategoryAndId (Events.CategoryId, ClientId.Parse id), (Events.Decode stream e) ->
+        | StreamName.CategoryAndId (Events.Category, ClientId.Parse id), Events.TryDecode stream e ->
             printfn "Client %s, event %A" (ClientId.toString id) e
         | StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
@@ -225,28 +221,35 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
    Where relevant, a decoding process may want to extract such context alongside mapping the base information.
 *)
 
-module EventsWithMeta =
+module Reactions =
 
-    type EventWithMeta = int64 * DateTimeOffset * Events.Event
+    type Event = int64 * DateTimeOffset * Events.Event
 
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : EventWithMeta =
-            raw.Index, raw.Timestamp, contract
-        let down ((_index, timestamp, event) : EventWithMeta) =
-            event, None, Some timestamp
+        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
+        let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
 
-    let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    (* Helpers for parsing individual events *)
 
-    let (|Match|_|) (streamName, span) =
+    let (|TryDecode|_|) stream event : Event option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    let (|Match|_|) (streamName, event) =
+        match streamName, event with
+        | Events.StreamName clientId, TryDecode streamName event -> Some (clientId, event)
+        | _ -> None
+
+    (* Helpers for parsing spans of events (as presented by Propulsion) *)
+
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
+    let (|Parse|_|) (streamName, span) =
         match streamName, span with
-        | Events.MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        | Events.StreamName clientId, Decode streamName es -> Some (clientId, es)
         | _ -> None
 
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | EventsWithMeta.Match (clientId, (index, ts, e)) ->
+        | Reactions.Match (clientId, (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
         | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType

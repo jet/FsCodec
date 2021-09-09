@@ -7,7 +7,7 @@ Typically used in [applications](https://github.com/jet/dotnet-templates) levera
 
 ## Components
 
-The components within this repository are delivered as multi-targeted Nuget packages supporting `net461` (F# 3.1+) and `netstandard2.0` (F# 4.5+) profiles.
+The components within this repository are delivered as multi-targeted Nuget packages supporting `net461` (F# 3.1+) and `netstandard2.0`/`1` (F# 4.5+) profiles.
 
 - [![Codec NuGet](https://img.shields.io/nuget/v/FsCodec.svg)](https://www.nuget.org/packages/FsCodec/) `FsCodec` Defines interfaces with trivial implementation helpers.
   - No dependencies.
@@ -114,6 +114,46 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 [`FsCodec.NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings/Options.Create` (above). Methods:
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings/Options.Create`
+- `DefaultSettings` / `DefaultOptions`: Allows one to access a global static instance of the `JsonSerializerSettings`/`JsonSerializerOptions` used by the default profile.
+
+# Usage of Converters with ASP.NET Core
+
+ASP.NET Core's out-of-the-box behavior is to use `System.Text.Json`. One can explicitly opt to use the more ubiquitous `Newtonsoft.Json` via the `Microsoft.AspNetCore.Mvc.NewtonsoftJson` package's `AddNewtonsoftJson` by adjusting one's `.AddMvc)`.
+
+If you follow the policies covered in the rest of the documentation here, your DTO types (and/or types in your `module Events` that you surface while you are scaffolding and/or hacking without an anti-corruption layer) will fall into one of two classifications:
+
+1. Types that have an associated Converter explicitly annotated (e.g., DU types bear an associated `UnionConverter`, `TypeSafeEnumConverter` or `JsonIsomorphism`-based custom converter, custom types follow the conventions or define a `JsonIsomorphism`-based converter)
+2. Types that require a global converter to be registered. _While it may seem that the second set is open-ended and potentially vast, experience teaches that you want to keep it minimal._. This boils down to:
+  - records arrays and all other good choices for types Just Work already
+  - `Nullable<MyType>`: Handled out of the box by both NSJ and STJ - requires no converters, provides excellent interop with other CLR languages. Would recommend.
+  - `MyType option`: Covered by the global `OptionConverter`/`JsonOptionConverter` (see below for a clean way to add them to the default MVC view rendering configuration). Note that while this works well with ASP.NET Core, it may be problematic if you share contracts (yes, not saying you should) or rely on things like Swashbuckle which will need to be aware of the types when they reflect over them.
+
+**The bottom line is that using exotic types in DTOs is something to think very hard about before descending into. The next sections are thus only relevant if you decide to add that extra complexity to your system...**
+
+<a name="aspnetnsj"></a>
+## ASP.NET Core with `Newtonsoft.Json`
+Hence the following represents the recommended default policy:-
+
+    services.AddMvc(fun options -> ...
+    ).AddNewtonsoftJson(fun options ->
+        FsCodec.NewtonsoftJson.Serdes.DefaultSettings.Converters
+        |> Seq.iter options.SerializerSettings.Converters.Add
+    ) |> ignore	        
+
+This adds all the converters used by the default `Serdes` mechanism (currently only `FsCodec.NewtonsoftJson.OptionConverter`), and add them to any imposed by other configuration logic.
+
+<a name="aspnetstj"></a>
+## ASP.NET Core with `System.Text.Json`
+
+The equivalent for the native `System.Text.Json` looks like this:
+
+    services.AddMvc(fun options -> ...
+    ).AddJsonOptions(fun options ->
+        FsCodec.SystemTextJson.Serdes.DefaultOptions.Converters
+        |> Seq.iter options.JsonSerializerOptions.Converters.Add
+    ) |> ignore
+
+_As of `System.Text.Json` v5, the only converter used under the hood is `FsCodec.SystemTextJson.JsonOptionConverter`. [In v6, the `OptionConverter` goes](https://github.com/dotnet/runtime/pull/55108)._
 
 # Examples: `FsCodec.(Newtonsoft|SystemText)Json`
 
@@ -341,7 +381,7 @@ See [a scheme for the serializing Events modelled as an F# Discriminated Union](
 module Events =
 
     // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
-    let [<Literal>] CategoryId = "Favorites"
+    let [<Literal>] Category = "Favorites"
 
     type Added = { item : string }
     type Removed = { name: string }
@@ -353,7 +393,7 @@ module Events =
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
 
     // See "logging unmatched events" later in this section for information about this wrapping using an EventCodec helper
-    let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+    let (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 ```
 
 <a name="umx"></a>
@@ -472,7 +512,7 @@ and the helpers defined above, we can route and/or filter them as follows:
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | StreamName.Category (Events.CategoryId, ClientId.Parse id), (Events.Decode stream e) ->
+        | StreamName.Category (Events.Category, ClientId.Parse id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
         | StreamName.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
@@ -498,6 +538,32 @@ There are two events that we were not able to decode, for varying reasons:
 
 _Note however, that we don't have a clean way to trap the data and log it. See [Logging unmatched events](#logging-unmatched-events) for an example of how one might log such unmatched events_
 
+### Handling introduction of new fields in JSON
+The below example demonstrates the addition of a `CartId` property in a newer version of `CreateCart`. It's worth noting that
+deserializing `CartV1.CreateCart` into `CartV2.CreateCart` requires `CartId` to be an optional property or the property will
+deserialize into `null` which is an invalid state for the `CartV2.CreateCart` record in F# (F# `type`s are assumed to never be `null`).
+
+```
+module CartV1 =
+    type CreateCart = { name: string }
+
+    type Events =
+        | Created of CreateCart
+        interface IUnionContract
+
+module CartV2 =
+    type CreateCart = { name: string; cartId: CartId option }
+    type Events =
+        | Created of CreateCart
+        interface IUnionContract
+```
+
+FsCodec.SystemTextJson looks to provide an analogous mechanism. In general, FsCodec is seeking to provide a pragmatic middle way of
+using NewtonsoftJson or SystemTextJson in F# without completely changing what one might expect to happen when using JSON.NET in
+order to provide an F# only experience.
+
+The aim is to provide helpers to smooth the way for using reflection based serialization in a way that would not surprise
+people coming from a C# background and/or in mixed C#/F# codebases.
 ## Adding Matchers to the Event Contract
 
 We can clarify the consuming code a little by adding further helper Active Patterns alongside the event contract :-
@@ -509,16 +575,22 @@ module Events =
 
     // Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
     // Yields a strongly typed id from the aggregateId if the Category does match
-    let (|MatchesCategory|_|) = function
-        | FsCodec.StreamName.CategoryAndId (CategoryId, ClientId.Parse clientId) -> Some clientId
+    let (|StreamName|_|) = function
+        | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
         | _ -> None
 
     // ... (as above)
 
-    // Yields decoded event and relevant strongly typed ids if the category of the Stream Name is correct
-    let (|Match|_|) (streamName, span) =
+    // Yields decoded events and relevant strongly typed ids if the category of the Stream Name is correct
+    let (|Match|_|) (streamName, event) =
+        match streamName, event with
+        | MatchesCategory clientId, TryDecode streamName e -> Some (clientId, e)
+        | _ -> None
+        
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
+    let (|Parse|_|) (streamName, span) =
         match streamName, span with
-        | MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        | Events.MatchesCategory clientId, Decode streamName es -> Some (clientId, es)
         | _ -> None
 ```
 
@@ -582,20 +654,25 @@ For example, we may wish to log (or process as part of our domain logic) metadat
 A clean way to wrap such a set of transitions is as follows:
 
 ```fsharp
-module EventsWithMeta =
+module Reactions =
 
-    type EventWithMeta = int64 * DateTimeOffset * Events.Event
+    type Event = int64 * DateTimeOffset * Events.Event
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : EventWithMeta =
-            raw.Index, raw.Timestamp, contract
-        let down ((_index, timestamp, event) : EventWithMeta) =
-            event, None, Some timestamp
+        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
+        let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
-    let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
-    let (|Match|_|) (streamName, span) =
-        match streamName, span with
-        | Events.MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        
+    let (|TryDecode|_|) stream event : Event option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    let (|Match|_|) (streamName, event) =
+        match streamName, event with
+        | Events.MatchesCategory clientId, TryDecode streamName event -> Some (clientId, event)
         | _ -> None
+        
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
+    let (|Parse|_|) (streamName, span) =
+        match streamName, span with
+        | Events.MatchesCategory clientId, Decode streamName es -> Some (clientId, es)
+        | _ -> None        
 ```
 
 This allows us to tweak the `runCodec` above as follows to also surface additional contextual information:
@@ -604,7 +681,7 @@ This allows us to tweak the `runCodec` above as follows to also surface addition
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | EventsWithMeta.Match (clientId, (index, ts, e)) ->
+        | Reactions.Match (clientId, (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
         | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
