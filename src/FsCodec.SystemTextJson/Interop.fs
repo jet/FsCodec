@@ -42,7 +42,7 @@ type InteropExtensions =
         else JsonSerializer.Deserialize(System.ReadOnlySpan.op_Implicit x)
     static member private MapTo(x: JsonElement) : byte[] =
         if x.ValueKind = JsonValueKind.Undefined then null
-        else JsonSerializer.SerializeToUtf8Bytes(x, InteropExtensions.NoOverEscapingOptions)
+        else JsonSerializer.SerializeToUtf8Bytes(x, options = InteropExtensions.NoOverEscapingOptions)
     // Avoid introduction of HTML escaping for things like quotes etc (as standard Options.Create() profile does)
     static member private NoOverEscapingOptions =
         System.Text.Json.JsonSerializerOptions(Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)

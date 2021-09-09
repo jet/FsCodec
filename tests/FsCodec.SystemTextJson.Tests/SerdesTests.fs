@@ -14,7 +14,7 @@ type RecordWithOption = { a : int; b : string option }
 module StjCharacterization =
     let ootbOptions = Options.CreateDefault()
 
-    let [<Fact>] ``OOTB STJ records`` () =
+    let [<Fact>] ``OOTB STJ records Just Works`` () =
         // Ver 5.x includes standard support for calling a single ctor (4.x required a custom implementation)
         let value = { a = 1 }
         let ser = Serdes.Serialize(value, ootbOptions)
@@ -23,35 +23,30 @@ module StjCharacterization =
         let res = Serdes.Deserialize<Record>(ser, ootbOptions)
         test <@ res = value @>
 
-    let [<Fact>] ``OOTB STJ options`` () =
+    let [<Fact>] ``OOTB STJ options Just Works`` () =
         let value = { a = 1; b = Some "str" }
         let ser = Serdes.Serialize(value, ootbOptions)
-        test <@ ser = """{"a":1,"b":{"Value":"str"}}""" @>
+        test <@ ser = """{"a":1,"b":"str"}""" @>
 
-        let correctSer = """{"a":1,"b":"str"}"""
-        raisesWith <@ Serdes.Deserialize<RecordWithOption>(correctSer, ootbOptions) @>
-            <| fun e -> <@ e.Message.Contains "The JSON value could not be converted to Microsoft.FSharp.Core.FSharpOption`1[System.String]" @>
+        test <@ value = Serdes.Deserialize<RecordWithOption>(ser, ootbOptions) @>
 
-    let [<Fact>] ``OOTB STJ lists`` () =
+    let [<Fact>] ``OOTB STJ lists Just Works`` () =
         let value = [ "A"; "B" ]
         let ser = Serdes.Serialize(value, ootbOptions)
         test <@ ser = """["A","B"]""" @>
 
-        let correctSer = """["A,"B"]"""
-        raisesWith <@ Serdes.Deserialize<string list>(correctSer, ootbOptions) @>
-            <| fun e -> <@ e.Message.Contains "The collection type 'Microsoft.FSharp.Collections.FSharpList`1[System.String]' is abstract, an interface, or is read only, and could not be instantiated and populated" @>
+        test <@ value = Serdes.Deserialize<string list>(ser, ootbOptions) @>
 
     // System.Text.Json's JsonSerializerOptions by default escapes HTML-sensitive characters when generating JSON strings
     // while this arguably makes sense as a default
     // - it's not particularly relevant for event encodings
     // - and is not in alignment with the FsCodec.NewtonsoftJson default options
     // see https://github.com/dotnet/runtime/issues/28567#issuecomment-53581752 for lowdown
-    let asRequiredForExamples : System.Text.Json.Serialization.JsonConverter [] = [| JsonOptionConverter() |]
     type OverescapedOptions() as this =
         inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
 
         do // OOTB System.Text.Json over-escapes HTML-sensitive characters - `CreateDefault` honors this
-           this.Add(Options.CreateDefault(converters = asRequiredForExamples)) // the value we use here requires two custom Converters
+           this.Add(Options.CreateDefault()) // the value we use here requires two custom Converters
            // Options.Create provides a simple way to override it
            this.Add(Options.Create(unsafeRelaxedJsonEscaping = false))
     let [<Theory; ClassData(typedefof<OverescapedOptions>)>] ``provides various ways to use HTML-escaped encoding``(opts : System.Text.Json.JsonSerializerOptions) =

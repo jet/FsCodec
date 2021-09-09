@@ -77,15 +77,15 @@ type TestDU =
 // Centred on ignoreNulls for backcompat; round-tripping test covers the case where they get rendered too
 
 #if SYSTEM_TEXT_JSON
-let serializeWith<'t> profile value = JsonSerializer.Serialize(value, profile)
+let serializeWith<'t> profile value = JsonSerializer.Serialize(value, options = profile)
 let defaultOptions = Options.Create(camelCase = false, ignoreNulls = true)
 let serializeDefault<'t> value = serializeWith<'t> defaultOptions value
 
-let deserializeWith<'t> profile (serialized : string) = JsonSerializer.Deserialize<'t>(serialized, profile)
+let deserializeWith<'t> profile (serialized : string) = JsonSerializer.Deserialize<'t>(serialized, options = profile)
 let inline deserializeDefault<'t> serialized = deserializeWith<'t> defaultOptions serialized
 
 let assertIgnoreNullsIs value (profile : JsonSerializerOptions) =
-    profile.IgnoreNullValues =! value
+    profile.DefaultIgnoreCondition =! if value then JsonIgnoreCondition.Always else JsonIgnoreCondition.Never
 #else
 let serializeWith<'t> (profile : JsonSerializerSettings) (value : 't) = JsonConvert.SerializeObject(value, profile)
 let settings = Settings.Create(camelCase = false, ignoreNulls = true)
