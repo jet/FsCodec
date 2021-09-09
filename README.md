@@ -7,7 +7,7 @@ Typically used in [applications](https://github.com/jet/dotnet-templates) levera
 
 ## Components
 
-The components within this repository are delivered as multi-targeted Nuget packages supporting `net461` (F# 3.1+) and `netstandard2.0` (F# 4.5+) profiles.
+The components within this repository are delivered as multi-targeted Nuget packages supporting `net461` (F# 3.1+) and `netstandard2.0`/`1` (F# 4.5+) profiles.
 
 - [![Codec NuGet](https://img.shields.io/nuget/v/FsCodec.svg)](https://www.nuget.org/packages/FsCodec/) `FsCodec` Defines interfaces with trivial implementation helpers.
   - No dependencies.

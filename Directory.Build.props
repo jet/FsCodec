@@ -10,8 +10,7 @@
 
     <TestTargetFrameworks>netcoreapp3.1;net461</TestTargetFrameworks>
     <!-- avoid fighting with CI images about getting mono to run on MacOSX-->
-    <TestTargetFrameworks Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">netcoreapp3.1</TestTargetFrameworks>
-
+    <TestTargetFrameworks Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">net5.0</TestTargetFrameworks>
     <ThisDirAbsolute>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</ThisDirAbsolute>
 
     <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->

@@ -113,8 +113,7 @@ let ``deserializes properly`` () =
 
     test <@ CaseE ("hi", 0) = deserialize """{"case":"CaseE","Item1":"hi","Item2":0}""" @>
     // NB this only passes by virtue of MissingMemberHandling=Ignore and NullValueHandling=Ignore in default settings
-    test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item3":"hi","Item4":0}""" @>
-
+    test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item1":null,"Item2":0,"Item3":"hi","Item4":"0"}""" @>
     test <@ CaseF ("hi", 0) = deserialize """{"case":"CaseF","a":"hi","b":0}""" @>
 
     test <@ CaseG {Item = "hi"} = deserialize """{"case":"CaseG","Item":"hi"}""" @>
