@@ -10,12 +10,16 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
-
-- `FsCodec.SystemTextJson` - updated to target released `System.Text.Json` v `5.0.0` binaries [#66](https://github.com/jet/FsCodec/pull/66)
-
 ### Removed
 ### Fixed
 
+<a name="2.2.1"></a>
+## [2.2.1] - 2021-09-09
+
+### Changed
+
+- `FsCodec.SystemTextJson` - updated to target released `System.Text.Json` v `5.0.0` binaries [#66](https://github.com/jet/FsCodec/pull/66)
+- 
 <a name="2.2.0"></a>
 ## [2.2.0] - 2021-05-05
 
