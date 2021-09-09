@@ -10,12 +10,10 @@ type IUnionConverterOptions =
     abstract member Discriminator : string with get
     abstract member CatchAllCase : string option with get
 
-/// <summary>Use this attribute in combination with a JsonConverter/UnionConverter attribute to specify
+/// Use this attribute in combination with a JsonConverter/UnionConverter attribute to specify
 /// your own name for a discriminator and/or a catch-all case for a specific discriminated union.
 /// If this attribute is set, its values take precedence over the values set on the converter via its constructor.
-/// Example: <c>[<JsonConverter(typeof<UnionConverter>); JsonUnionConverterOptions("type")>]</c></summary>
-/// <remarks>Not inherited because JsonConverters don't get inherited right now.
-/// https://github.com/dotnet/runtime/issues/30427#issuecomment-610080138</remarks>
+/// Example: <c>[<JsonConverter(typeof<UnionConverter<T>>); JsonUnionConverterOptions("type")>]</c>
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false, Inherited = false)>]
 type JsonUnionConverterOptionsAttribute(discriminator : string) =
     inherit Attribute()
