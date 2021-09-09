@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>$(TestTargetFrameworks)</TargetFrameworks>
+    <TargetFramework>net5.0</TargetFramework>
     <WarningLevel>5</WarningLevel>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
