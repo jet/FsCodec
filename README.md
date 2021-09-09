@@ -140,9 +140,9 @@ Hence the following represents the recommended default policy:-
         |> Seq.iter options.SerializerSettings.Converters.Add
     ) |> ignore	        
 
-This adds all the converters used by the default `Serdes` mechanism (currently only `FsCodec.NewtonsoftJson.OptionConverter()`), and add them to any imposed by other configuration logic.
+This adds all the converters used by the default `Serdes` mechanism (currently only `FsCodec.NewtonsoftJson.OptionConverter`), and add them to any imposed by other configuration logic.
 
-<a name="asnetpstj"></a>
+<a name="aspnetstj"></a>
 ## ASP.NET Core with `System.Text.Json`
 
 The equivalent for the native `System.Text.Json` looks like this:
@@ -153,7 +153,7 @@ The equivalent for the native `System.Text.Json` looks like this:
         |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
 
-_As of `System.Text.Json` v5, the only converter used under the hood at present is `FsCodec.SystemTextJson.JsonOptionConverter()`_.
+_As of `System.Text.Json` v5, the only converter used under the hood is `FsCodec.SystemTextJson.JsonOptionConverter`. [In v6, the `OptionConverter` goes](https://github.com/dotnet/runtime/pull/55108)._
 
 # Examples: `FsCodec.(Newtonsoft|SystemText)Json`
 
@@ -381,7 +381,7 @@ See [a scheme for the serializing Events modelled as an F# Discriminated Union](
 module Events =
 
     // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
-    let [<Literal>] CategoryId = "Favorites"
+    let [<Literal>] Category = "Favorites"
 
     type Added = { item : string }
     type Removed = { name: string }
@@ -393,7 +393,7 @@ module Events =
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
 
     // See "logging unmatched events" later in this section for information about this wrapping using an EventCodec helper
-    let (|Decode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+    let (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 ```
 
 <a name="umx"></a>
@@ -512,7 +512,7 @@ and the helpers defined above, we can route and/or filter them as follows:
 let runCodec () =
     for stream, event in events do
         match stream, event with
-        | StreamName.Category (Events.CategoryId, ClientId.Parse id), (Events.Decode stream e) ->
+        | StreamName.Category (Events.Category, ClientId.Parse id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
         | StreamName.Category (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
@@ -575,16 +575,22 @@ module Events =
 
     // Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
     // Yields a strongly typed id from the aggregateId if the Category does match
-    let (|MatchesCategory|_|) = function
-        | FsCodec.StreamName.CategoryAndId (CategoryId, ClientId.Parse clientId) -> Some clientId
+    let (|StreamName|_|) = function
+        | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
         | _ -> None
 
     // ... (as above)
 
-    // Yields decoded event and relevant strongly typed ids if the category of the Stream Name is correct
-    let (|Match|_|) (streamName, span) =
+    // Yields decoded events and relevant strongly typed ids if the category of the Stream Name is correct
+    let (|Match|_|) (streamName, event) =
+        match streamName, event with
+        | MatchesCategory clientId, TryDecode streamName e -> Some (clientId, e)
+        | _ -> None
+        
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
+    let (|Parse|_|) (streamName, span) =
         match streamName, span with
-        | MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        | Events.MatchesCategory clientId, Decode streamName es -> Some (clientId, es)
         | _ -> None
 ```
 
@@ -648,20 +654,25 @@ For example, we may wish to log (or process as part of our domain logic) metadat
 A clean way to wrap such a set of transitions is as follows:
 
 ```fsharp
-module EventsWithMeta =
+module Reactions =
 
-    type EventWithMeta = int64 * DateTimeOffset * Events.Event
+    type Event = int64 * DateTimeOffset * Events.Event
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : EventWithMeta =
-            raw.Index, raw.Timestamp, contract
-        let down ((_index, timestamp, event) : EventWithMeta) =
-            event, None, Some timestamp
+        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
+        let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
-    let (|Decode|_|) stream event : EventWithMeta option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
-    let (|Match|_|) (streamName, span) =
-        match streamName, span with
-        | Events.MatchesCategory clientId, (Decode streamName event) -> Some (clientId, event)
+        
+    let (|TryDecode|_|) stream event : Event option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    let (|Match|_|) (streamName, event) =
+        match streamName, event with
+        | Events.MatchesCategory clientId, TryDecode streamName event -> Some (clientId, event)
         | _ -> None
+        
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
+    let (|Parse|_|) (streamName, span) =
+        match streamName, span with
+        | Events.MatchesCategory clientId, Decode streamName es -> Some (clientId, es)
+        | _ -> None        
 ```
 
 This allows us to tweak the `runCodec` above as follows to also surface additional contextual information:
@@ -670,7 +681,7 @@ This allows us to tweak the `runCodec` above as follows to also surface addition
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | EventsWithMeta.Match (clientId, (index, ts, e)) ->
+        | Reactions.Match (clientId, (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
         | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
