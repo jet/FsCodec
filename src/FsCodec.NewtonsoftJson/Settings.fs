@@ -38,7 +38,7 @@ type Settings private () =
             MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
             NullValueHandling = (if ignoreNulls then NullValueHandling.Ignore else NullValueHandling.Include))
 
-    /// Optionated helper that creates serializer settings that provide good defaults for F#
+    /// Opinionated helper that creates serializer settings that provide good defaults for F#
     /// - no camel case conversion - assumption is you'll use records with camelCased names
     /// - Always prepends an OptionConverter() to any converters supplied
     /// - everything else is as per CreateDefault:- i.e. emit nulls instead of omitting fields etc
