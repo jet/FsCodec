@@ -1,17 +1,8 @@
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.NewtonsoftJson.Tests before attempting to send this to FSI with Alt-Enter
 
-#if VISUALSTUDIO
-#r "netstandard"
-#endif
-#I "bin/Debug/netcoreapp3.1"
-#r "Newtonsoft.Json.dll"
-#r "Serilog.dll"
-#r "Serilog.Sinks.Console.dll"
-#r "TypeShape.dll"
-#r "FsCodec.dll"
-#r "FsCodec.NewtonsoftJson.dll"
-#r "FSharp.UMX.dll"
+#r "nuget: FsCodec.NewtonsoftJson"
+#r "nuget: Serilog.Sinks.Console"
 
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
@@ -230,15 +221,13 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
    Where relevant, a decoding process may want to extract such context alongside mapping the base information.
 *)
 
-module EventsWithMeta =
+module Reactions =
 
-    type EventWithMeta = int64 * DateTimeOffset * Events.Event
+    type Event = int64 * DateTimeOffset * Events.Event
 
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : EventWithMeta =
-            raw.Index, raw.Timestamp, contract
-        let down ((_index, timestamp, event) : EventWithMeta) =
-            event, None, Some timestamp
+        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
+        let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
 
     (* Helpers for parsing individual events *)
@@ -260,7 +249,7 @@ module EventsWithMeta =
 let runWithContext () =
     for stream, event in events do
         match stream, event with
-        | EventsWithMeta.Match (clientId, (index, ts, e)) ->
+        | Reactions.Match (clientId, (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
         | FsCodec.StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
