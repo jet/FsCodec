@@ -326,7 +326,7 @@ let includeNullsProfile = Options.Create(ignoreNulls = false)
 let includeNullsProfile = Settings.CreateDefault(OptionConverter() (*, ignoreNulls=false*))
 #endif
 [<DomainProperty(MaxTest=1000)>]
-let ``UnionConverter ignoreNulls Profile roundtrip property test`` (x: TestDU) =
+let ``UnionConverter includeNulls Profile roundtrip property test`` (x: TestDU) =
     let ignoreNulls, profile = false, includeNullsProfile
     assertIgnoreNullsIs false profile
     roundtripProperty ignoreNulls profile x

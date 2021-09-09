@@ -5,6 +5,8 @@ open System.Runtime.InteropServices
 open System.Text.Json
 open System.Text.Json.Serialization
 
+#nowarn "44" // see IgnoreNullValues below
+
 type Options private () =
 
     static let defaultConverters : JsonConverter[] = [| |]
@@ -29,7 +31,7 @@ type Options private () =
         if converters <> null then converters |> Array.iter options.Converters.Add
         if indent then options.WriteIndented <- true
         if camelCase then options.PropertyNamingPolicy <- JsonNamingPolicy.CamelCase; options.DictionaryKeyPolicy <- JsonNamingPolicy.CamelCase
-        if ignoreNulls then options.IgnoreNullValues <- true
+        if ignoreNulls then options.IgnoreNullValues <- true // options.DefaultIgnoreCondition <- JsonIgnoreCondition.Always is outlawed so nowarn required
         if unsafeRelaxedJsonEscaping then options.Encoder <- System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         options
 

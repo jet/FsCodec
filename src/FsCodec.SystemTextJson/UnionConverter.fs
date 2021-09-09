@@ -116,7 +116,7 @@ type UnionConverter<'T>() =
         match fieldInfos with
         | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
             match fieldValues.[0] with
-            | null when options.IgnoreNullValues -> ()
+            | null when options.DefaultIgnoreCondition = Serialization.JsonIgnoreCondition.Always -> ()
             | fv ->
                 let element = JsonSerializer.SerializeToElement(fv, options)
                 match element.ValueKind with
@@ -129,7 +129,7 @@ type UnionConverter<'T>() =
                     element.WriteTo writer
         | _ ->
             for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
-                if fieldValue <> null || not options.IgnoreNullValues then
+                if fieldValue <> null || options.DefaultIgnoreCondition <> Serialization.JsonIgnoreCondition.Always  then
                     writer.WritePropertyName(fieldInfo.Name)
                     JsonSerializer.Serialize(writer, fieldValue, options)
 
