@@ -39,7 +39,7 @@ module StjCharacterization =
 
         let correctSer = """["A,"B"]"""
         raisesWith <@ Serdes.Deserialize<string list>(correctSer, ootbOptions) @>
-            <| fun e -> <@ e.Message.Contains "Deserialization of reference types without a parameterless constructor, a singular parameterized constructor, or a parameterized constructor annotated with 'JsonConstructorAttribute' is not supported. Type 'Microsoft.FSharp.Collections.FSharpList`1[System.String]" @>
+            <| fun e -> <@ e.Message.Contains "The collection type 'Microsoft.FSharp.Collections.FSharpList`1[System.String]' is abstract, an interface, or is read only, and could not be instantiated and populated" @>
 
     // System.Text.Json's JsonSerializerOptions by default escapes HTML-sensitive characters when generating JSON strings
     // while this arguably makes sense as a default
