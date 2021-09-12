@@ -13,6 +13,11 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="2.2.2"></a>
+## [2.2.2] - 2021-09-12
+
+### Fixed
+
 - Fix CI to stop emitting builds with incorrect versions (update MinVer to 2.5.0)
 
 <a name="2.2.1"></a>
@@ -182,7 +187,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.2.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.2.2...HEAD
+[2.2.2]: https://github.com/jet/FsCodec/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/jet/FsCodec/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/jet/FsCodec/compare/2.1.1...2.2.0
 [2.1.1]: https://github.com/jet/FsCodec/compare/2.1.0...2.1.1
