@@ -13,15 +13,17 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+- Fix CI to stop emitting builds with incorrect versions (update MinVer to 2.5.0)
+
 <a name="2.2.1"></a>
-## [2.2.1] - 2021-09-09
+## [2.2.1] - 2021-09-09 NOTE erroneously tagged with `AssemblyVersion`/`FileVersion` 1.0.0 ; unlisted
 
 ### Changed
 
 - `FsCodec.SystemTextJson` - updated to target released `System.Text.Json` v `5.0.0` binaries [#66](https://github.com/jet/FsCodec/pull/66)
  
 <a name="2.2.0"></a>
-## [2.2.0] - 2021-05-05
+## [2.2.0] - 2021-05-05 NOTE erroneously tagged with `AssemblyVersion`/`FileVersion` 1.0.0 ; unlisted
 
 ### Added
 
