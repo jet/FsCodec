@@ -21,7 +21,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - Provides relevant Converters for common non-primitive types prevalent in F#
   - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape >= 8`, `Microsoft.IO.RecyclableMemoryStream >= 1.2.2`, `System.Buffers >= 4.5`
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
-  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 5.0.0-preview.3`, `TypeShape >= 8`
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 5.0.0`, `TypeShape >= 8`
 
   Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
   

@@ -18,17 +18,22 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Fixed
 
-- Fix CI to stop emitting builds with incorrect versions (update MinVer to 2.5.0)
+- Fix CI to stop emitting builds with incorrect `AssemblyVersion 1.0.0.0` (updated MinVer to `2.5.0`)
+- Update global.json to use SDK version `5.0.200`
 
 <a name="2.2.1"></a>
-## [2.2.1] - 2021-09-09 NOTE erroneously tagged with `AssemblyVersion`/`FileVersion` 1.0.0 ; unlisted
+## [2.2.1] - 2021-09-09
+
+**NOTE erroneously tagged with `AssemblyVersion`/`FileVersion` 1.0.0; _unpublished_**
 
 ### Changed
 
 - `FsCodec.SystemTextJson` - updated to target released `System.Text.Json` v `5.0.0` binaries [#66](https://github.com/jet/FsCodec/pull/66)
  
 <a name="2.2.0"></a>
-## [2.2.0] - 2021-05-05 NOTE erroneously tagged with `AssemblyVersion`/`FileVersion` 1.0.0 ; unlisted
+## [2.2.0] - 2021-05-05
+
+**NOTE erroneously tagged with `AssemblyVersion`/`FileVersion` 1.0.0, which causes runtime errors when used by callers built against 2.x versions (i.e. Equinox, Propulsion etc); :pray: [@mousake](https://github.com/mousaka) _unlisted_**
 
 ### Added
 
