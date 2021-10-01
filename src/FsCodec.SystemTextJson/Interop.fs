@@ -11,30 +11,30 @@ type InteropExtensions =
             down : 'To -> 'From) : FsCodec.IEventCodec<'Event, 'To, 'Context> =
 
         { new FsCodec.IEventCodec<'Event, 'To, 'Context> with
-            member __.Encode(context, event) =
+            member _.Encode(context, event) =
                 let encoded = native.Encode(context, event)
                 { new FsCodec.IEventData<_> with
-                    member __.EventType = encoded.EventType
-                    member __.Data = up encoded.Data
-                    member __.Meta = up encoded.Meta
-                    member __.EventId = encoded.EventId
-                    member __.CorrelationId = encoded.CorrelationId
-                    member __.CausationId = encoded.CausationId
-                    member __.Timestamp = encoded.Timestamp }
+                    member _.EventType = encoded.EventType
+                    member _.Data = up encoded.Data
+                    member _.Meta = up encoded.Meta
+                    member _.EventId = encoded.EventId
+                    member _.CorrelationId = encoded.CorrelationId
+                    member _.CausationId = encoded.CausationId
+                    member _.Timestamp = encoded.Timestamp }
 
-            member __.TryDecode encoded =
+            member _.TryDecode encoded =
                 let mapped =
                     { new FsCodec.ITimelineEvent<_> with
-                        member __.Index = encoded.Index
-                        member __.IsUnfold = encoded.IsUnfold
-                        member __.Context = encoded.Context
-                        member __.EventType = encoded.EventType
-                        member __.Data = down encoded.Data
-                        member __.Meta = down encoded.Meta
-                        member __.EventId = encoded.EventId
-                        member __.CorrelationId = encoded.CorrelationId
-                        member __.CausationId = encoded.CausationId
-                        member __.Timestamp = encoded.Timestamp }
+                        member _.Index = encoded.Index
+                        member _.IsUnfold = encoded.IsUnfold
+                        member _.Context = encoded.Context
+                        member _.EventType = encoded.EventType
+                        member _.Data = down encoded.Data
+                        member _.Meta = down encoded.Meta
+                        member _.EventId = encoded.EventId
+                        member _.CorrelationId = encoded.CorrelationId
+                        member _.CausationId = encoded.CausationId
+                        member _.Timestamp = encoded.Timestamp }
                 native.TryDecode mapped }
 
     static member private MapFrom(x : byte[]) : JsonElement =

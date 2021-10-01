@@ -238,8 +238,8 @@ The mechanisms in the previous section have proven themselves sufficient for div
 ```fsharp
 type GuidConverter() =
     inherit JsonIsomorphism<Guid, string>()
-    override __.Pickle g = g.ToString "N"
-    override __.UnPickle g = Guid.Parse g
+    override _.Pickle g = g.ToString "N"
+    override _.UnPickle g = Guid.Parse g
 ```
 
 ## `TypeSafeEnumConverter` basic usage
@@ -275,9 +275,9 @@ Here we implement a converter as a JsonIsomorphism to achieve such a mapping
 type OutcomeWithOther = Joy | Pain | Misery | Other
 and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
-    override __.Pickle v =
+    override _.Pickle v =
         TypeSafeEnum.toString v
-    override __.UnPickle json =
+    override _.UnPickle json =
         json
         |> TypeSafeEnum.tryParse<OutcomeWithOther>
         |> Option.defaultValue Other

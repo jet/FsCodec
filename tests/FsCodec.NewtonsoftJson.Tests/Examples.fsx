@@ -19,7 +19,7 @@ module Contract =
 module Contract2 =
 
     type TypeThatRequiresMyCustomConverter = { mess : int }
-    type MyCustomConverter() = inherit JsonPickler<string>() override __.Read(_,_) = "" override __.Write(_,_,_) = ()
+    type MyCustomConverter() = inherit JsonPickler<string>() override _.Read(_,_) = "" override _.Write(_,_,_) = ()
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Settings to be used within this contract
     // note OptionConverter is also included by default
@@ -38,8 +38,8 @@ It's recommended to avoid global converters, for at least the following reasons:
 - Explicit is better than implicit *)
 type GuidConverter() =
     inherit JsonIsomorphism<Guid, string>()
-    override __.Pickle g = g.ToString "N"
-    override __.UnPickle g = Guid.Parse g
+    override _.Pickle g = g.ToString "N"
+    override _.UnPickle g = Guid.Parse g
 
 type WithEmbeddedGuid = { a: string; [<Newtonsoft.Json.JsonConverter(typeof<GuidConverter>)>] b: Guid }
 
@@ -82,10 +82,10 @@ Here we implement a converter as a JsonIsomorphism to achieve such a mapping *)
 type OutcomeWithOther = Joy | Pain | Misery | Other
 and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
-    override __.Pickle v =
+    override _.Pickle v =
         TypeSafeEnum.toString v
 
-    override __.UnPickle json =
+    override _.UnPickle json =
         json
         |> TypeSafeEnum.tryParse<OutcomeWithOther>
         |> Option.defaultValue Other

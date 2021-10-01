@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>$(TestTargetFrameworks)</TargetFrameworks>
-    <WarningLevel>5</WarningLevel>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

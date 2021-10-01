@@ -464,12 +464,12 @@ module IsomorphismUnionEncoder =
         | B of int
     and TopConverter() =
         inherit JsonIsomorphism<Top, Flat<int>>()
-        override __.Pickle value =
+        override _.Pickle value =
             match value with
             | S -> { disc = TS; v = None }
             | N A -> { disc = TA; v = None }
             | N (B v) -> { disc = TB; v = Some v }
-        override __.UnPickle flat =
+        override _.UnPickle flat =
             match flat with
             | { disc = TS } -> S
             | { disc = TA } -> N A

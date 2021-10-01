@@ -33,16 +33,16 @@ type JsonPickler<'T>() =
     abstract Write : writer: JsonWriter * serializer: JsonSerializer * source: 'T  -> unit
     abstract Read : reader: JsonReader * serializer: JsonSerializer -> 'T
 
-    override __.CanConvert t = isMatchingType t
+    override _.CanConvert t = isMatchingType t
 
-    override __.CanRead = true
-    override __.CanWrite = true
+    override _.CanRead = true
+    override _.CanWrite = true
 
-    override __.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
-        __.Write(writer, serializer, value :?> 'T)
+    override x.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
+        x.Write(writer, serializer, value :?> 'T)
 
-    override __.ReadJson(reader : JsonReader, _ : Type, _ : obj, serializer : JsonSerializer) =
-        __.Read(reader, serializer) :> obj
+    override x.ReadJson(reader : JsonReader, _ : Type, _ : obj, serializer : JsonSerializer) =
+        x.Read(reader, serializer) :> obj
 
 /// Json Converter that serializes based on an isomorphic type
 [<AbstractClass>]
@@ -52,16 +52,16 @@ type JsonIsomorphism<'T, 'U>(?targetPickler : JsonPickler<'U>) =
     abstract Pickle   : 'T -> 'U
     abstract UnPickle : 'U -> 'T
 
-    override __.Write(writer : JsonWriter, serializer : JsonSerializer, source : 'T) =
-        let target = __.Pickle source
+    override x.Write(writer : JsonWriter, serializer : JsonSerializer, source : 'T) =
+        let target = x.Pickle source
         match targetPickler with
         | None -> serializer.Serialize(writer, target, typeof<'U>)
         | Some p -> p.Write(writer, serializer, target)
 
-    override __.Read(reader : JsonReader, serializer : JsonSerializer) =
+    override x.Read(reader : JsonReader, serializer : JsonSerializer) =
         let target =
             match targetPickler with
             | None -> serializer.Deserialize<'U>(reader)
             | Some p -> p.Read(reader, serializer)
 
-        __.UnPickle target
+        x.UnPickle target

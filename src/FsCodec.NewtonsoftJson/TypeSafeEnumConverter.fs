@@ -35,13 +35,13 @@ module TypeSafeEnum =
 type TypeSafeEnumConverter() =
     inherit JsonConverter()
 
-    override __.CanConvert (t : Type) = TypeSafeEnum.isTypeSafeEnum t
+    override _.CanConvert (t : Type) = TypeSafeEnum.isTypeSafeEnum t
 
-    override __.WriteJson(writer : JsonWriter, value : obj, _ : JsonSerializer) =
+    override _.WriteJson(writer : JsonWriter, value : obj, _ : JsonSerializer) =
         let str = TypeSafeEnum.toString value
         writer.WriteValue str
 
-    override __.ReadJson(reader : JsonReader, t : Type, _ : obj, _ : JsonSerializer) =
+    override _.ReadJson(reader : JsonReader, t : Type, _ : obj, _ : JsonSerializer) =
         if reader.TokenType <> JsonToken.String then
             sprintf "Unexpected token when reading TypeSafeEnum: %O" reader.TokenType |> JsonSerializationException |> raise
         let str = reader.Value :?> string

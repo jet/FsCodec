@@ -11,8 +11,8 @@ module private CharBuffersPool =
     let private inner = System.Buffers.ArrayPool<char>.Shared
     let instance =
         { new IArrayPool<char> with
-            member __.Rent minLen = inner.Rent minLen
-            member __.Return x = inner.Return x }
+            member _.Rent minLen = inner.Rent minLen
+            member _.Return x = inner.Return x }
 
 // http://www.philosophicalgeek.com/2015/02/06/announcing-microsoft-io-recycablememorystream/
 module private Utf8BytesEncoder =
@@ -35,44 +35,44 @@ module Core =
     type BytesEncoder(settings : JsonSerializerSettings) =
         let serializer = JsonSerializer.Create(settings)
         interface TypeShape.UnionContract.IEncoder<byte[]> with
-            member __.Empty = Unchecked.defaultof<_>
+            member _.Empty = Unchecked.defaultof<_>
 
-            member __.Encode (value : 'T) =
+            member _.Encode (value : 'T) =
                 use ms = Utf8BytesEncoder.rentStream ()
                 (   use jsonWriter = Utf8BytesEncoder.makeJsonWriter ms
                     serializer.Serialize(jsonWriter, value, typeof<'T>))
                 // TOCONSIDER as noted in the comments on RecyclableMemoryStream.ToArray, ideally we'd be continuing the rental and passing out a Span
                 ms.ToArray()
 
-            member __.Decode(json : byte[]) =
+            member _.Decode(json : byte[]) =
                 use ms = Utf8BytesEncoder.wrapAsStream json
                 use jsonReader = Utf8BytesEncoder.makeJsonReader ms
                 serializer.Deserialize<'T>(jsonReader)
 
-/// Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores based using <c>Newtonsoft.Json</c> and the conventions implied by using
+/// <summary>Provides Codecs that render to a UTF-8 array suitable for storage in Event Stores based using <c>Newtonsoft.Json</c> and the conventions implied by using
 /// <c>TypeShape.UnionContract.UnionContractEncoder</c> - if you need full control and/or have have your own codecs, see <c>FsCodec.Codec.Create</c> instead
-/// See <a href=""https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs"></a> for example usage.
+/// See <a href="https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs" /> for example usage.</summary>
 type Codec private () =
 
     static let defaultSettings = lazy Settings.Create()
 
-    /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
+    /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.<br/>
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion
-    ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
+    ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c><br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
-    /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    /// <c>Contract</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
-        (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
-            /// to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
+        (   /// <summary>Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
+            /// to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.</summary>
             up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Event,
-            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
+            /// <summary>Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
-            ///   and an Event Creation <c>timestamp</c>.
+            ///   and an Event Creation <c>timestamp</c>.</summary>
             down : 'Context option * 'Event -> 'Contract * 'Meta option * Guid * string * string * DateTimeOffset option,
-            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
+            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
-            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], 'Context> =
 
@@ -89,36 +89,36 @@ type Codec private () =
                 allowNullaryCases = not (defaultArg rejectNullaryCases false))
 
         { new FsCodec.IEventCodec<'Event, byte[], 'Context> with
-            member __.Encode(context, event) =
+            member _.Encode(context, event) =
                 let (c, meta : 'Meta option, eventId, correlationId, causationId, timestamp : DateTimeOffset option) = down (context, event)
                 let enc = dataCodec.Encode c
                 let metaUtf8 = match meta with Some x -> bytesEncoder.Encode<'Meta> x | None -> null
                 FsCodec.Core.EventData.Create(enc.CaseName, enc.Payload, metaUtf8, eventId, correlationId, causationId, ?timestamp = timestamp)
 
-            member __.TryDecode encoded =
+            member _.TryDecode encoded =
                 match dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } with
                 | None -> None
                 | Some contract -> up (encoded, contract) |> Some }
 
-    /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
+    /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
-    /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    /// <c>Contract</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
-        (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
-            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
+        (   /// <summary>Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
+            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.</summary>
             up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Event,
-            /// Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
+            /// <summary>Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
-            ///   and an Event Creation <c>timestamp</c>.
+            ///   and an Event Creation <c>timestamp</c>.</summary>
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
-            /// Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
+            /// <summary>Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId</summary>
             mapCausation : 'Context option * 'Meta option -> 'Meta option * Guid * string * string,
-            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
+            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
-            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], 'Context> =
 
@@ -128,36 +128,36 @@ type Codec private () =
             c, m', eventId, correlationId, causationId, t
         Codec.Create(up = up, down = down, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
 
-    /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json<c/> <c>settings</c>.
+    /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
     /// Uses <c>up</c> and <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and correlation/causationId mapping
     ///   and/or surfacing metadata to the Programming Model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
-    /// <c>Contract</c> must be tagged with </c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    /// <c>Contract</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Event, 'Contract, 'Meta when 'Contract :> TypeShape.UnionContract.IUnionContract>
-        (   /// Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
-            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.
+        (   /// <summary>Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
+            /// to the representation (typically a Discriminated Union) that is to be presented to the programming model.</summary>
             up : FsCodec.ITimelineEvent<byte[]> * 'Contract -> 'Event,
-            /// Maps a fresh <c>'Event</c> resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
+            /// <summary>Maps a fresh <c>'Event</c> resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             /// The function is also expected to derive
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
-            ///   and an Event Creation <c>timestamp</c>.
+            ///   and an Event Creation <c>timestamp</c>.</summary>
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
-            /// Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
+            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
-            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, byte[], obj> =
 
         let mapCausation (_context : obj, m : 'Meta option) = m, Guid.NewGuid(), null, null
         Codec.Create(up = up, down = down, mapCausation = mapCausation, ?settings = settings, ?rejectNullaryCases = rejectNullaryCases)
 
-    /// Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
+    /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
-    /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.
+    /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
-        (   // Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c>
+        (   /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Create()</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
-            /// Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them
+            /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, byte[], obj> =
 
