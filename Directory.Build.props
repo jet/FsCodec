@@ -13,10 +13,9 @@
     <TestTargetFrameworks Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">net5.0</TestTargetFrameworks>
     <ThisDirAbsolute>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</ThisDirAbsolute>
 
+    <!-- Global Project config flags -->
     <WarningLevel>5</WarningLevel>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Syntax check xmldoc comments-->
-    <WarnOn>3390;$(WarnOn)</WarnOn>
 
     <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
