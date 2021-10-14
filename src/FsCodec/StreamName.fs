@@ -3,10 +3,10 @@ namespace FsCodec
 
 open FSharp.UMX
 
-/// Lightly-wrapped well-formed Stream Name adhering to one of two forms:
-/// 1. <code>{category}-{aggregateId}</code>
-/// 2. <code>{category}-{id1}_{id2}_...{idN}</code>
-// see https://github.com/fsprojects/FSharp.UMX
+/// <summary>Lightly-wrapped well-formed Stream Name adhering to one of two forms:<br/>
+/// 1. <c>{category}-{aggregateId}</c>
+/// 2. <c>{category}-{id1}_{id2}_...{idN}</c><br/>
+/// See <a href="https://github.com/fsprojects/FSharp.UMX" /></summary>
 type StreamName = string<streamName>
 and [<Measure>] streamName
 
@@ -40,8 +40,8 @@ module StreamName =
             buf.Append x |> ignore
         create category (buf.ToString())
 
-    /// Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-` (dash)
-    /// Throws <code>InvalidArgumentException</code> if it does not adhere to that form
+    /// <summary>Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-` (dash).<br/>
+    /// Throws <c>InvalidArgumentException</c> if it does not adhere to that form.</summary>
     let parse (rawStreamName : string) : StreamName =
         if rawStreamName.IndexOf('-') = -1 then
             invalidArg "streamName" (sprintf "Stream Name '%s' must contain a '-' separator" rawStreamName)
@@ -49,17 +49,17 @@ module StreamName =
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
 
-    /// Attempts to split a Stream Name in the form {category}-{id} into its two elements.
-    /// The {id} segment is permitted to include embedded '-' (dash) characters
-    /// Returns <code>None</code> if it does not adhere to that form.
+    /// <summary>Attempts to split a Stream Name in the form <c>{category}-{id}</c> into its two elements.
+    /// The <c>{id}</c> segment is permitted to include embedded '-' (dash) characters
+    /// Returns <c>None</c> if it does not adhere to that form.</summary>
     let trySplitCategoryAndId (rawStreamName : string) : (string * string) option =
         match rawStreamName.Split(dash, 2) with
         | [| cat; id |] -> Some (cat, id)
         | _ -> None
 
-    /// Attempts to split a Stream Name in the form {category}-{id} into its two elements.
-    /// The {id} segment is permitted to include embedded '-' (dash) characters
-    /// Yields <code>NotCategorized</code> if it does not adhere to that form.
+    /// <summary>Attempts to split a Stream Name in the form <c>{category}-{id}</c> into its two elements.
+    /// The <c>{id}</c> segment is permitted to include embedded '-' (dash) characters
+    /// Yields <c>NotCategorized</c> if it does not adhere to that form.</summary>
     let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string * string, unit> =
         match trySplitCategoryAndId rawStreamName with
         | Some catAndId -> Categorized catAndId
@@ -74,35 +74,35 @@ module StreamName =
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
 
-    /// Splits a well-formed Stream Name of the form {category}-{id} into its two elements.
-    /// Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
-    /// <remarks>Inverse of <code>create</code>
+    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{id}</c> into its two elements.<br/>
+    /// Throws <c>InvalidArgumentException</c> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).</summary>
+    /// <remarks>Inverse of <c>create</c></remarks>
     let splitCategoryAndId (streamName : StreamName) : string * string =
         let rawName = toString streamName
         match trySplitCategoryAndId rawName with
         | Some catAndId -> catAndId
         | None -> invalidArg (sprintf "Stream Name '%s' must contain a '-' separator" rawName) "streamName"
 
-    /// Splits a well-formed Stream Name of the form {category}-{id} into its two elements
-    /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed
-    /// <remarks>Inverse of <code>create</code>
+    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{id}</c> into its two elements.<br/>
+    /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed.</summary>
+    /// <remarks>Inverse of <c>create</c></remarks>
     let (|CategoryAndId|) : StreamName -> (string * string) = splitCategoryAndId
 
-    /// Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.
-    /// <remarks>Inverse of what <code>compose</code> does to the subElements
+    /// <summary>Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.</summary>
+    /// <remarks>Inverse of what <code>compose</code> does to the subElements</remarks>
     let (|IdElements|) (aggregateId : string) : string[] =
         aggregateId.Split underscore
 
-    /// Splits a well-formed Stream Name of the form {category}-{id1}_{id2}_{idN} into a pair of category and ids
-    /// Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
-    /// <remarks>Inverse of <code>create</code>
+    /// <summary>Splits a well-formed Stream Name of the form {category}-{id1}_{id2}_{idN} into a pair of category and ids.<br/>
+    /// Throws <c>InvalidArgumentException</c> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).</summary>
+    /// <remarks>Inverse of <c>create</c></remarks>
     let splitCategoryAndIds (streamName : StreamName) : string * string[] =
         let rawName = toString streamName
         match trySplitCategoryAndId rawName with
         | Some (cat, IdElements ids) -> (cat, ids)
         | None -> invalidArg (sprintf "Stream Name '%s' did not contain exactly one '-' separator" rawName) "streamName"
 
-    /// Splits a well-formed Stream Name of the form {category}-{id} into the two elements
-    /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed
-    /// <remarks>Inverse of <code>create</code>
+    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{id}</c> into the two elements.<br/>
+    /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed</summary>
+    /// <remarks>Inverse of <c>create</c></remarks>
     let (|CategoryAndIds|) : StreamName -> (string * string[]) = splitCategoryAndIds

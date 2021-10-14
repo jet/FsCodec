@@ -21,8 +21,8 @@ open FsCodec.NewtonsoftJson.Tests.Fixtures
 /// </remarks>
 type GuidConverter() =
     inherit JsonIsomorphism<Guid, string>()
-    override __.Pickle g = g.ToString "N"
-    override __.UnPickle g = Guid.Parse g
+    override _.Pickle g = g.ToString "N"
+    override _.UnPickle g = Guid.Parse g
 
 type WithEmbeddedGuid = { a: string; [<JsonConverter(typeof<GuidConverter>)>] b: Guid }
 
