@@ -713,6 +713,12 @@ NOTE this does not imply one should avoid testing this aspect; the opposite in f
 
 _You should absolutely have acceptance tests that apply the actual serialization encoding with the real store for a representative number of scenarios at the top of the pyramid_
 
+<a name="articles"></a>
+## RELATED ARTICLES / BLOG POSTS etc
+
+- [Contracts for Event Sourced Systems with FsCodec](https://asti.dynz.net/post/fscodec/) by [@deviousasti](https://github.com/deviousasti)
+- [A Contract Pattern for Schemaless DataStores] by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
+
 ## CONTRIBUTING
 
 The intention is to keep this set of converters minimal and interoperable, e.g., many candidates are deliberately being excluded from this set; _its definitely a non-goal for this to become a compendium of every possible converter_. **So, especially in this repo, the bar for adding converters will be exceedingly high and hence any contribution should definitely be preceded by a discussion.**
