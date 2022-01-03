@@ -97,11 +97,11 @@ type UnionConverter<'T>() =
 
     let getOptions union = defaultArg union.options defaultConverterOptions
 
-    override __.CanConvert(t : Type) = t = typeof<'T> && Union.isUnion t
+    override _.CanConvert(t : Type) = t = typeof<'T> && Union.isUnion t
 
-    override __.Write(writer, value, options) =
+    override _.Write(writer, value, options) =
         let value = box value
-        let union = Union.getUnion (typeof<'T>)
+        let union = Union.getUnion typeof<'T>
         let unionOptions = getOptions union
         let tag = union.tagReader value
         let case = union.cases.[tag]
@@ -136,11 +136,11 @@ type UnionConverter<'T>() =
 
         writer.WriteEndObject()
 
-    override __.Read(reader, t : Type, options) =
+    override _.Read(reader, t : Type, options) =
         if reader.TokenType <> JsonTokenType.StartObject then
             sprintf "Unexpected token when reading Union: %O" reader.TokenType |> JsonException |> raise
         use document = JsonDocument.ParseValue &reader
-        let union = Union.getUnion (typeof<'T>)
+        let union = Union.getUnion typeof<'T>
         let unionOptions = getOptions union
         let element = document.RootElement
 
