@@ -9,8 +9,6 @@ open System.Text.Json.Serialization
 
 type Options private () =
 
-    static let defaultConverters : JsonConverter[] = [| |]
-
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault
         (   [<Optional; ParamArray>] converters : JsonConverter[],
@@ -53,7 +51,7 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool) =
 
         Options.CreateDefault(
-            converters = (match converters with null | [||] -> defaultConverters | xs -> Array.append defaultConverters xs),
+            converters = converters,
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
             ?camelCase = camelCase,

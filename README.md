@@ -85,6 +85,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 
 ### `FsCodec.NewtonsoftJson`-specific low level converters
 
+  - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`; included in the standard `Settings.Create` profile.
   - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code, used in `Equinox.Cosmos` versions prior to `3.0`).
   
 ## `FsCodec.NewtonsoftJson.Settings`
@@ -147,7 +148,7 @@ The equivalent for the native `System.Text.Json` looks like this:
         |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
 
-_As of `System.Text.Json` v 6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), the internal `JsonOptionConverter` goes, making the above a no-op._
+_As of `System.Text.Json` v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), the above is presently a no-op._
 
 # Examples: `FsCodec.(Newtonsoft|SystemText)Json`
 

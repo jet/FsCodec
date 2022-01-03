@@ -46,7 +46,7 @@ module StjCharacterization =
         inherit TheoryData<System.Text.Json.JsonSerializerOptions>()
 
         do // OOTB System.Text.Json over-escapes HTML-sensitive characters - `CreateDefault` honors this
-           this.Add(Options.CreateDefault()) // the value we use here requires two custom Converters
+           this.Add(Options.CreateDefault()) // the value we use here one required two custom Converters
            // Options.Create provides a simple way to override it
            this.Add(Options.Create(unsafeRelaxedJsonEscaping = false))
     let [<Theory; ClassData(typedefof<OverescapedOptions>)>] ``provides various ways to use HTML-escaped encoding``(opts : System.Text.Json.JsonSerializerOptions) =
