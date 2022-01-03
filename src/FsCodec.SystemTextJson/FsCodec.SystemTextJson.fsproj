@@ -8,8 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="JsonSerializerElementExtensions.fs" />
-    <Compile Include="JsonOptionConverter.fs" />
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
     <Compile Include="TypeSafeEnumConverter.fs" />
@@ -23,10 +21,11 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     <PackageReference Include="MinVer" Version="2.5.0" PrivateAssets="All" />
 
-    <PackageReference Include="FSharp.Core" Version="4.3.4" />
+    <!-- NOTE: Not 4.3.4 as typical, as TypeShape v10 demands higher -->
+    <PackageReference Include="FSharp.Core" Version="4.5.4" />
 
-    <PackageReference Include="System.Text.Json" Version="5.0.1" />
-    <PackageReference Include="TypeShape" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="6.0.1" />
+    <PackageReference Include="TypeShape" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>

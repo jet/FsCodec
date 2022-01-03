@@ -21,11 +21,11 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - Provides relevant Converters for common non-primitive types prevalent in F#
   - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape >= 8`, `Microsoft.IO.RecyclableMemoryStream >= 1.2.2`, `System.Buffers >= 4.5`
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
-  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 5.0.0`, `TypeShape >= 8`
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 6.0.1`, `TypeShape >= 10`
 
   Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
-  
-  1. [`UnionConverter` is WIP](https://github.com/jet/FsCodec/pull/43); model-binding related functionality that `System.Text.Json` does not provide equivalents will not be carried forward (e.g., `MissingMemberHandling`)
+
+  1. [`UnionConverter` is WIP](https://github.com/jet/FsCodec/pull/43)
 
 # Features: `FsCodec`
 
@@ -75,7 +75,6 @@ While this may not seem like a sufficiently large set of converters for a large 
 ### Core converters
 
 The respective concrete Codec packages include relevant `Converter`/`JsonConverter` in order to facilitate interoperable and versionable renderings:
-  - `JsonOptionConverter` / [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`; included in the standard `Settings.Create`/`Options.Create` profile. `System.Text.Json` reimplementation :pray: [@ylibrach](https://github.com/ylibrach)
   - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
   - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within :pray: [@amjdd](https://github.com/amjjd); `System.Text.Json` reimplementation :pray: [@NickDarvey](https://github.com/NickDarvey)
   
@@ -90,6 +89,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 
 ### `FsCodec.NewtonsoftJson`-specific low level converters
 
+  - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`; included in the standard `Settings.Create` profile.
   - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code, used in `Equinox.Cosmos` versions prior to `3.0`).
   
 ## `FsCodec.NewtonsoftJson.Settings`
@@ -106,7 +106,6 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 [`FsCodec.SystemTextJson.Options`](https://github.com/jet/FsCodec/blob/stj/src/FsCodec.SystemTextJson/Options.fs#L8) provides a clean syntax for building a `System.Text.Json.Serialization.JsonSerializerOptions` as per `FsCodec.NewtonsoftJson.Settings`, above. Methods:
 - `CreateDefault`: equivalent to generating a `new JsonSerializerSettings()` without any overrides of any kind
 - `Create`: as `CreateDefault` with the following difference:
-  - adds a `JsonOptionConverter`; included in default `Settings` (see _Converters_, below)
   - Inhibits the HTML-safe escaping that `System.Text.Json` provides as a default by overriding `Encoder` with `System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping`
 
 ## `Serdes`
@@ -126,7 +125,7 @@ If you follow the policies covered in the rest of the documentation here, your D
 2. Types that require a global converter to be registered. _While it may seem that the second set is open-ended and potentially vast, experience teaches that you want to keep it minimal._. This boils down to:
   - records arrays and all other good choices for types Just Work already
   - `Nullable<MyType>`: Handled out of the box by both NSJ and STJ - requires no converters, provides excellent interop with other CLR languages. Would recommend.
-  - `MyType option`: Covered by the global `OptionConverter`/`JsonOptionConverter` (see below for a clean way to add them to the default MVC view rendering configuration). Note that while this works well with ASP.NET Core, it may be problematic if you share contracts (yes, not saying you should) or rely on things like Swashbuckle which will need to be aware of the types when they reflect over them.
+  - `MyType option`: Covered by the global `OptionConverter` for Newtonsoft, handled intrinsically by `System.Text.Json` versions `>= 6` (see below for a clean way to add them to the default MVC view rendering configuration). Note that while this works well with ASP.NET Core, it may be problematic if you share contracts (yes, not saying you should) or rely on things like Swashbuckle which will need to be aware of the types when they reflect over them.
 
 **The bottom line is that using exotic types in DTOs is something to think very hard about before descending into. The next sections are thus only relevant if you decide to add that extra complexity to your system...**
 
@@ -153,7 +152,7 @@ The equivalent for the native `System.Text.Json` looks like this:
         |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
 
-_As of `System.Text.Json` v5, the only converter used under the hood is `FsCodec.SystemTextJson.JsonOptionConverter`. [In v6, the `OptionConverter` goes](https://github.com/dotnet/runtime/pull/55108)._
+_As of `System.Text.Json` v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), the above is presently a no-op._
 
 # Examples: `FsCodec.(Newtonsoft|SystemText)Json`
 
@@ -187,7 +186,6 @@ While it's hard to justify the wrapping in the previous case, this illustrates h
 module Contract =
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Settings to be used within this contract
-    // note OptionConverter is also included by default
     let settings = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |])
     let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x,settings)
     let deserialize (json : string) : Item = FsCodec.NewtonsoftJson.Serdes.Deserialize(json,settings)
@@ -211,7 +209,7 @@ The recommendations here apply particularly to Event Contracts - the data in you
 | `'t[]` | As per C# | Don't forget to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` |
 | `DateTimeOffset` | Roundtrips cleanly | The default `Settings.Create` requests `RoundtripKind` | `DateTimeOffset.Now` | `"2019-09-04T20:30:37.272403+01:00"` |
 | `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | OOTB Json.NET and STJ roundtrip cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | `Nullable 14` | `14` |
-| `'t option` | `Some null`,`None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.NET and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default<br/> NOTE `Some null` will produce `null`, but deserialize as `None` - i.e., it's not round-trippable | `Some 14` | `14` | 
+| `'t option` | `Some null`,`None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.NET and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default in `FsCodec.NewtonsoftJson`<br/> NOTE `Some null` will produce `null`, but deserialize as `None` - i.e., it's not round-trippable | `Some 14` | `14` | 
 | `string` | As per C#; need to handle `null` | One can use a `string option` to map `null` and `Some null` to `None` | `"Abc"` | `"Abc"` |
 | types with unit of measure | Works well (doesnt encode the unit) | Unit of measure tags are only known to the compiler; Json.NET does not process the tags and treats it as the underlying primitive type | `54<g>` | `54` | 
 | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to type-tag `string` and `DateTimeOffset` values using the units of measure compiler feature, which Json.NET will render as if they were unadorned | `SkuId.parse "54-321"` | `"000-054-321"` |

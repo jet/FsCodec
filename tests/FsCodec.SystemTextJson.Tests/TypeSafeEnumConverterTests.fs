@@ -20,7 +20,8 @@ let [<Fact>] happy () =
     test <@ Joy = Serdes.Deserialize("\"Joy\"", optionsWithOutcomeConverter) @>
     test <@ Some Joy = Serdes.Deserialize("\"Joy\"", optionsWithOutcomeConverter) @>
     raises<KeyNotFoundException> <@ Serdes.Deserialize<Outcome>("\"Confusion\"", optionsWithOutcomeConverter) @>
-    raises<JsonException> <@ Serdes.Deserialize<Outcome> "1" @>
+    // Was a JsonException prior to V6
+    raises<NotSupportedException> <@ Serdes.Deserialize<Outcome> "1" @>
 
 let [<Fact>] sad () =
     raises<ArgumentException> <@ TypeSafeEnum.tryParse<string> "Wat" @>

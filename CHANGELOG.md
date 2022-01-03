@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `SystemTextJson`: Target `System.Text.Json` v `6.0.1`, `TypeShape` v `10.0.0` [#68](https://github.com/jet/FsCodec/pull/68)
+
 ### Removed
 ### Fixed
 
