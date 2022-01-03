@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `SystemTextJson.UnionConverter`: Complete port of equivalent functionality in `NewtonsoftJson` equivalent [#59](https://github.com/jet/FsCodec/pull/59)
+
 ### Changed
 
 - `SystemTextJson`: Target `System.Text.Json` v `6.0.1` [#59](https://github.com/jet/FsCodec/pull/59)

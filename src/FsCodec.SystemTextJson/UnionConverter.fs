@@ -131,7 +131,8 @@ type UnionConverter<'T>() =
             for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
                 if fieldValue <> null || options.DefaultIgnoreCondition <> Serialization.JsonIgnoreCondition.Always  then
                     writer.WritePropertyName(fieldInfo.Name)
-                    JsonSerializer.Serialize(writer, fieldValue, options)
+                    let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
+                    element.WriteTo writer
 
         writer.WriteEndObject()
 
