@@ -22,9 +22,9 @@ open System
 module Contract =
 
     type Item = { value : string option }
-    // implies default options from Options.Create(), which includes OptionConverter
+    // implies default options from Options.Create()
     let serialize (x : Item) : string = FsCodec.SystemTextJson.Serdes.Serialize x
-    // implies default options from Options.Create(), which includes OptionConverter
+    // implies default options from Options.Create()
     let deserialize (json : string) = FsCodec.SystemTextJson.Serdes.Deserialize json
 
 module Contract2 =
@@ -32,7 +32,7 @@ module Contract2 =
     type TypeThatRequiresMyCustomConverter = { mess : int }
     type MyCustomConverter() = inherit JsonPickler<string>() override _.Read(_,_) = "" override _.Write(_,_,_) = ()
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
-    /// Options to be used within this contract; note JsonOptionConverter is also included by default
+    /// Options to be used within this contract
     let options = FsCodec.SystemTextJson.Options.Create(converters = [| MyCustomConverter() |])
     let serialize (x : Item) = FsCodec.SystemTextJson.Serdes.Serialize(x, options)
     let deserialize (json : string) : Item = FsCodec.SystemTextJson.Serdes.Deserialize(json, options)

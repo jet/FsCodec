@@ -185,7 +185,6 @@ While it's hard to justify the wrapping in the previous case, this illustrates h
 module Contract =
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Settings to be used within this contract
-    // note OptionConverter is also included by default
     let settings = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |])
     let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x,settings)
     let deserialize (json : string) : Item = FsCodec.NewtonsoftJson.Serdes.Deserialize(json,settings)
@@ -209,7 +208,7 @@ The recommendations here apply particularly to Event Contracts - the data in you
 | `'t[]` | As per C# | Don't forget to handle `null` | `[ 1; 2; 3]` | `[1,2,3]` |
 | `DateTimeOffset` | Roundtrips cleanly | The default `Settings.Create` requests `RoundtripKind` | `DateTimeOffset.Now` | `"2019-09-04T20:30:37.272403+01:00"` |
 | `Nullable<'t>` | As per C#; `Nullable()` -> `null`, `Nullable x` -> `x` | OOTB Json.NET and STJ roundtrip cleanly. Works with `Settings.CreateDefault()`. Worth considering if your contract does not involve many `option` types | `Nullable 14` | `14` |
-| `'t option` | `Some null`,`None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.NET and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default<br/> NOTE `Some null` will produce `null`, but deserialize as `None` - i.e., it's not round-trippable | `Some 14` | `14` | 
+| `'t option` | `Some null`,`None` -> `null`, `Some x` -> `x` _with the converter `Settings.Create()` adds_ | OOTB Json.NET and STJ do not roundtrip `option` types cleanly; `Settings/Options/Codec.Create` wire in an `OptionConverter` by default in `FsCodec.NewtonsoftJson`<br/> NOTE `Some null` will produce `null`, but deserialize as `None` - i.e., it's not round-trippable | `Some 14` | `14` | 
 | `string` | As per C#; need to handle `null` | One can use a `string option` to map `null` and `Some null` to `None` | `"Abc"` | `"Abc"` |
 | types with unit of measure | Works well (doesnt encode the unit) | Unit of measure tags are only known to the compiler; Json.NET does not process the tags and treats it as the underlying primitive type | `54<g>` | `54` | 
 | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `string`, `DateTimeOffset` | Works well | [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) enables one to type-tag `string` and `DateTimeOffset` values using the units of measure compiler feature, which Json.NET will render as if they were unadorned | `SkuId.parse "54-321"` | `"000-054-321"` |

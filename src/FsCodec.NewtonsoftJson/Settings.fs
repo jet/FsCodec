@@ -7,8 +7,6 @@ open System.Runtime.InteropServices
 
 type Settings private () =
 
-    static let defaultConverters : JsonConverter[] = [| OptionConverter() |]
-
     /// Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
     static member CreateDefault
         (   [<Optional; ParamArray>] converters : JsonConverter[],
@@ -56,7 +54,7 @@ type Settings private () =
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
 
         Settings.CreateDefault(
-            converters = (match converters with null | [||] -> defaultConverters | xs -> Array.append defaultConverters xs),
+            converters = converters,
             ?ignoreNulls = ignoreNulls,
             ?errorOnMissing = errorOnMissing,
             ?indent = indent,
