@@ -18,21 +18,21 @@ type IEventData<'Format> =
     /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
     abstract member Timestamp : System.DateTimeOffset
 
-/// Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence
+/// <summary>Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence</summary>
 type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
     abstract member Index : int64
     /// Application-supplied context related to the origin of this event
     abstract member Context : obj
-    /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
+    /// <summary>Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c></summary>
     abstract member IsUnfold : bool
 
-/// Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category
+/// <summary>Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category</summary>
 type IEventCodec<'Event, 'Format, 'Context> =
-    /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
+    /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
     abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
-    /// Decodes a formatted representation into a <c>'Event<c> instance. Returns <c>None</c> on undefined <c>EventType</c>s
+    /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event option
 
 namespace FsCodec.Core
@@ -49,13 +49,13 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
         EventData(eventType, data, meta, eventId, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
 
     interface FsCodec.IEventData<'Format> with
-        member __.EventType = eventType
-        member __.Data = data
-        member __.Meta = meta
-        member __.EventId = eventId
-        member __.CorrelationId = correlationId
-        member __.CausationId = causationId
-        member __.Timestamp = timestamp
+        member _.EventType = eventType
+        member _.Data = data
+        member _.Meta = meta
+        member _.EventId = eventId
+        member _.CorrelationId = correlationId
+        member _.CausationId = causationId
+        member _.Timestamp = timestamp
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
@@ -67,14 +67,14 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eve
         let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
         TimelineEvent(index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) :> _
 
-    interface FsCodec.ITimelineEvent<'Format> with
-        member __.Index = index
-        member __.IsUnfold = isUnfold
-        member __.Context = context
-        member __.EventType = eventType
-        member __.Data = data
-        member __.Meta = meta
-        member __.EventId = eventId
-        member __.CorrelationId = correlationId
-        member __.CausationId = causationId
-        member __.Timestamp = timestamp
+    interface ITimelineEvent<'Format> with
+        member _.Index = index
+        member _.IsUnfold = isUnfold
+        member _.Context = context
+        member _.EventType = eventType
+        member _.Data = data
+        member _.Meta = meta
+        member _.EventId = eventId
+        member _.CorrelationId = correlationId
+        member _.CausationId = causationId
+        member _.Timestamp = timestamp

@@ -31,10 +31,10 @@ let [<Fact>] sad () =
 type OutcomeWithOther = Joy | Pain | Misery | Other
 and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
-    override __.Pickle v =
+    override _.Pickle v =
         TypeSafeEnum.toString v
 
-    override __.UnPickle json =
+    override _.UnPickle json =
         json
         |> TypeSafeEnum.tryParse<OutcomeWithOther>
         |> Option.defaultValue Other

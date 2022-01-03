@@ -76,9 +76,9 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
     new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase=None)
     new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase=match catchAllCase with null -> None | x -> Some x)
 
-    override __.CanConvert (t : Type) = Union.isUnion t
+    override _.CanConvert (t : Type) = Union.isUnion t
 
-    override __.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
+    override _.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
         let union = Union.getUnion (value.GetType())
         let tag = union.tagReader value
         let case = union.cases.[tag]
@@ -112,7 +112,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
 
         writer.WriteEndObject()
 
-    override __.ReadJson(reader : JsonReader, t : Type, _ : obj, serializer : JsonSerializer) =
+    override _.ReadJson(reader : JsonReader, t : Type, _ : obj, serializer : JsonSerializer) =
         let token = JToken.ReadFrom reader
         if token.Type <> JTokenType.Object then raise (FormatException(sprintf "Expected object token, got %O" token.Type))
         let inputJObject = token :?> JObject

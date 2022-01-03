@@ -1,7 +1,7 @@
 # FsCodec [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/fscodec.svg?logo=nuget)](https://www.nuget.org/packages/fscodec/) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE)
 
-Defines a minimal interface for serialization and deserialization of events for event-sourcing systems on .NET.
-Includes ready-to-go packages for writing simple yet versionable Event Contract definitions in F# using ubiquitous serializers (presently `Newtonsoft.Json`).
+Defines a minimal interface for serialization and deserialization of events for event-sourcing systems on .NET.\
+Provides implementation packages for writing simple yet versionable Event Contract definitions in F# using ubiquitous serializers.
 
 Typically used in [applications](https://github.com/jet/dotnet-templates) leveraging [Equinox](https://github.com/jet/equinox) and/or [Propulsion](https://github.com/jet/propulsion), but also applicable to defining DTOs for other purposes such as Web APIs.
 
@@ -21,7 +21,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - Provides relevant Converters for common non-primitive types prevalent in F#
   - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape >= 8`, `Microsoft.IO.RecyclableMemoryStream >= 1.2.2`, `System.Buffers >= 4.5`
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
-  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 5.0.0-preview.3`, `TypeShape >= 8`
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 5.0.0`, `TypeShape >= 8`
 
   Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
   
@@ -236,8 +236,8 @@ The mechanisms in the previous section have proven themselves sufficient for div
 ```fsharp
 type GuidConverter() =
     inherit JsonIsomorphism<Guid, string>()
-    override __.Pickle g = g.ToString "N"
-    override __.UnPickle g = Guid.Parse g
+    override _.Pickle g = g.ToString "N"
+    override _.UnPickle g = Guid.Parse g
 ```
 
 ## `TypeSafeEnumConverter` basic usage
@@ -273,9 +273,9 @@ Here we implement a converter as a JsonIsomorphism to achieve such a mapping
 type OutcomeWithOther = Joy | Pain | Misery | Other
 and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
-    override __.Pickle v =
+    override _.Pickle v =
         TypeSafeEnum.toString v
-    override __.UnPickle json =
+    override _.UnPickle json =
         json
         |> TypeSafeEnum.tryParse<OutcomeWithOther>
         |> Option.defaultValue Other
@@ -710,6 +710,12 @@ NOTE this does not imply one should avoid testing this aspect; the opposite in f
 - integration tests can in general use `BoxEncoder` and `MemoryStore`
 
 _You should absolutely have acceptance tests that apply the actual serialization encoding with the real store for a representative number of scenarios at the top of the pyramid_
+
+<a name="articles"></a>
+## RELATED ARTICLES / BLOG POSTS etc
+
+- [Contracts for Event Sourced Systems with FsCodec](https://asti.dynz.net/post/fscodec/) by [@deviousasti](https://github.com/deviousasti)
+- [A Contract Pattern for Schemaless DataStores] by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 
 ## CONTRIBUTING
 

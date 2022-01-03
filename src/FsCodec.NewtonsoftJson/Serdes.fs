@@ -3,13 +3,13 @@ namespace FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open System.Runtime.InteropServices
 
-/// Serializes to/from strings using the settings arising from a call to <c>Settings.Create()</c>
+/// <summary>Serializes to/from strings using the settings arising from a call to <c>Settings.Create()</c></summary>
 type Serdes private () =
 
     static let defaultSettings = lazy Settings.Create()
     static let indentSettings = lazy Settings.Create(indent = true)
 
-    /// Yields the settings used by <c>Serdes</c> when no <c>settings</c> are supplied.
+    /// <summary>Yields the settings used by <c>Serdes</c> when no <c>settings</c> are supplied.</summary>
     static member DefaultSettings : JsonSerializerSettings = defaultSettings.Value
 
     /// Serializes given value to a JSON string.
