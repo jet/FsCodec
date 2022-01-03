@@ -68,8 +68,9 @@ module private Union =
            && (typedefof<Option<_>> = t.GetGenericTypeDefinition()
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
-    let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<Serialization.JsonConverterAttribute>(*, false*)))
-    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute t)
+    let typeHasJsonConverterAttribute_ (t : Type) = t.IsDefined(typeof<Serialization.JsonConverterAttribute>(*, false*))
+    let typeHasJsonConverterAttribute = memoize typeHasJsonConverterAttribute_
+    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute_ t)
 
     let propTypeRequiresConstruction (propertyType : Type) =
         not (isInlinedIntoUnionItem propertyType)
@@ -108,31 +109,18 @@ type UnionConverter<'T>() =
         let fieldInfos = case.GetFields()
 
         writer.WriteStartObject()
-
         writer.WritePropertyName(unionOptions.Discriminator)
         writer.WriteStringValue(case.Name)
-
-        match fieldInfos with
-        | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
-            match fieldValues.[0] with
-            | null when options.DefaultIgnoreCondition = Serialization.JsonIgnoreCondition.Always -> ()
-            | fv ->
-                let element = JsonSerializer.SerializeToElement(fv, options)
-                match element.ValueKind with
-                | JsonValueKind.Object ->
+        for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
+            if fieldValue <> null || options.DefaultIgnoreCondition <> Serialization.JsonIgnoreCondition.Always then
+                let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
+                if fieldInfos.Length = 1 && element.ValueKind = JsonValueKind.Object && not (Union.typeIsUnionWithConverterAttribute fieldInfo.PropertyType) then
                     // flatten the object properties into the same one as the discriminator
                     for prop in element.EnumerateObject() do
                         prop.WriteTo writer
-                | _ ->
-                    writer.WritePropertyName(fi.Name)
-                    element.WriteTo writer
-        | _ ->
-            for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
-                if fieldValue <> null || options.DefaultIgnoreCondition <> Serialization.JsonIgnoreCondition.Always  then
+                else
                     writer.WritePropertyName(fieldInfo.Name)
-                    let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
                     element.WriteTo writer
-
         writer.WriteEndObject()
 
     override _.Read(reader, t : Type, options) =
