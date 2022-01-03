@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="JsonSerializerElementExtensions.fs" />
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
     <Compile Include="TypeSafeEnumConverter.fs" />

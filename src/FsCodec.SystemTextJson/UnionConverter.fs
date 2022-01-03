@@ -1,6 +1,5 @@
 ﻿namespace FsCodec.SystemTextJson
 
-open FsCodec.SystemTextJson.Core
 open FSharp.Reflection
 open System
 open System.Reflection
@@ -78,17 +77,17 @@ module private Union =
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to defer to System.Text.Json
-    let mapTargetCaseArgs (element : JsonElement) options (props : PropertyInfo[]) : obj [] =
+    let mapTargetCaseArgs (element : JsonElement) (options : JsonSerializerOptions) (props : PropertyInfo[]) : obj [] =
         match props with
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
-            [| JsonSerializer.DeserializeElement(element, singleCaseArg.PropertyType, options) |]
+            [| JsonSerializer.Deserialize(element, singleCaseArg.PropertyType, options) |]
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
                 match element.TryGetProperty fi.Name with
                 | false, _ when fi.PropertyType.IsValueType -> Activator.CreateInstance fi.PropertyType
                 | false, _ -> null
                 | true, el when el.ValueKind = JsonValueKind.Null -> null
-                | true, el -> JsonSerializer.DeserializeElement(el, fi.PropertyType, options) |]
+                | true, el -> JsonSerializer.Deserialize(el, fi.PropertyType, options) |]
 
 type UnionConverter<'T>() =
     inherit Serialization.JsonConverter<'T>()

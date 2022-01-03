@@ -10,8 +10,8 @@ type JsonElementEncoder(options : JsonSerializerOptions) =
         member _.Encode(value : 'T) =
             JsonSerializer.SerializeToElement(value, options)
 
-        member _.Decode(json : JsonElement) =
-            JsonSerializer.DeserializeElement(json, options)
+        member _.Decode<'T>(json : JsonElement) =
+            JsonSerializer.Deserialize<'T>(json, options)
 
 namespace FsCodec.SystemTextJson
 
