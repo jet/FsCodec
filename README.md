@@ -23,10 +23,6 @@ The components within this repository are delivered as multi-targeted Nuget pack
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
   - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 6.0.1`, `TypeShape >= 10`
 
-  Deltas in behavior/functionality vs `FsCodec.NewtonsoftJson`:
-  
-  1. [`UnionConverter` is WIP](https://github.com/jet/FsCodec/pull/43); model-binding related functionality that `System.Text.Json` does not provide equivalents will not be carried forward (e.g., `MissingMemberHandling`)
-
 # Features: `FsCodec`
 
 The purpose of the `FsCodec` package is to provide a minimal interface on which libraries such as Equinox and Propulsion can depend on in order that they can avoid forcing a specific serialization mechanism.
