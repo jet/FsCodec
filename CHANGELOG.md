@@ -9,15 +9,20 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
 
-- `SystemTextJson.UnionConverter`: Port of `NewtonsoftJson` equivalent started in [#43](https://github.com/jet/FsCodec/pull/43) [#59](https://github.com/jet/FsCodec/pull/59) :pray: [@NickDarvey](https://github.com/NickDarvey) 
+<a name="2.3.0-rc.1"></a>
+## [2.3.0-rc.1] - 2022-01-04
+
+### Added
+
+- `SystemTextJson.UnionConverter`: Port of `NewtonsoftJson` equivalent started in [#43](https://github.com/jet/FsCodec/pull/43) [#59](https://github.com/jet/FsCodec/pull/59) :pray: [@NickDarvey](https://github.com/NickDarvey)
 
 ### Changed
 
 - `SystemTextJson`: Target `System.Text.Json` v `6.0.1`, `TypeShape` v `10.0.0` [#68](https://github.com/jet/FsCodec/pull/68)
-
-### Removed
-### Fixed
 
 <a name="2.2.2"></a>
 ## [2.2.2] - 2021-09-12
@@ -198,7 +203,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.2.2...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.0-rc.1...HEAD
+[2.3.0-rc.1]: https://github.com/jet/FsCodec/compare/2.2.2...2.3.0-rc.1
 [2.2.2]: https://github.com/jet/FsCodec/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/jet/FsCodec/compare/2.2.0...2.2.1
 [2.2.0]: https://github.com/jet/FsCodec/compare/2.1.1...2.2.0
