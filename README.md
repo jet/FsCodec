@@ -28,7 +28,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
 The purpose of the `FsCodec` package is to provide a minimal interface on which libraries such as Equinox and Propulsion can depend on in order that they can avoid forcing a specific serialization mechanism.
 
 - [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4) represents a single event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type)
-- [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23) represents a single stored event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type). Inherits `IEventData`, adding `Index` and `IsUnfold` in order to represent the position on the timeline which the event logically occupies.
+- [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23) represents a single stored event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type). Inherits `IEventData`, adding `Index` and `IsUnfold` in order to represent the position on the timeline that the event logically occupies.
 - [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode : 'Context option * 'Event -> IEventData` and `TryDecode : ITimelineEvent -> 'Event option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
 - [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode : 'Event -> string * byte[]` and `tryDecode : string * byte[] -> 'Event option` functions (other overloads are available for advanced cases)
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L44) is a low level helper to create an `IEventData` directly for purposes such as tests etc.
@@ -40,12 +40,12 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 
 The concrete implementations implement common type/member/function signatures and behavior that offer consistent behavior using either `Newtonsoft.Json` or `System.Text.Json`, emphasizing the following qualities:
 
-- lean toward having straightforward encodings:
+- avoid non-straightforward encodings:
   - tuples don't magically become arrays
-  - union bodies don't become arrays of mixed types (they become JSON Objects with named fields)
-- don't surprise .NET developers used to Json.NET or System.Text.Json
+  - union bodies don't become arrays of mixed types like they do OOTB in JSON.NET (they become JSON Objects with named fields via `UnionEncoder`, or `string` values via `TypeSafeEnumConverter`)
+- don't surprise .NET developers used to `JSON.NET` or `System.Text.Json`
 - having an opinionated core set of behaviors, but don't conflict with the standard extensibility mechanisms afforded by the underlying serializer (one should be able to search up and apply answers from StackOverflow to questions regarding corner cases)
-- maintain a minimal but well formed set of built in converters which are implemented per supported serializer - e.g., choices like not supporting F# `list` types
+- maintain a minimal but well formed set of built in converters that are implemented per supported serializer - e.g., choices like not supporting F# `list` types (although `System.Text.Json` v `>= 6` does now provide such support)
 
 ## `Codec`
 
@@ -66,7 +66,15 @@ While this may not seem like a sufficiently large set of converters for a large 
 
 ### ... but don't forget `FSharp.SystemTextJson`
 
-`System.Text.Json` v `4.x` did not even support F# records that are not marked `[<CLIMutable>]` out-of-the-box (it was similarly spartan wrt C# types, requiring a default constructor on `class`es). The `>= 5.0` that `FsCodec.System.Text.Json` requires does support records, but it doesnt support Discriminated Unions, `option`s, `list`s, `Set` or `Map` out of the box. It's worth calling out explicitly that there are no plans to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time ([the advice for `FsCodec.NewtonsoftJson` has always been to avoid stuff outside of records, `option`s and `array`s](#recommendations)) - if you have specific exotic corner cases and determine you need something more specifically tailored, the Converters abstraction affords you ability to mix and match from the [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library - it provides a much broader and complete (and well tested) set of converters with a broader remit than what FsCodec is trying to maintain as its sweet spot.
+The role and intention of the converters in the box in `FsCodec.SystemTextJson` and/or `FsCodec.NewtonsoftJson` has always been to be minimal but provide escape hatches; short lived shims absolutely fit within this remit. For example, with regard to `System.Text.Json`, over time the shimming provided has been adjusted in alignment with the STJ implementation:
+- `System.Text.Json` v4 did not even support F# records that are not marked `[<CLIMutable>]` out-of-the-box (it was similarly spartan wrt C# types, requiring a default constructor on `class`es). This library previously provided a shim for that.
+- Version 5 added support for records.
+- [Version 6 added support for F# `option`s, `list`s, `Set` and `Map` out of the box](https://github.com/dotnet/runtime/pull/55108). This enabled the [removal of the `JsonOptionConverter` that once lived here](https://github.com/jet/FsCodec/pull/68).
+- There is an [open issue on the System.Text.Json repo wrt supporting F# Unions](https://github.com/dotnet/runtime/issues/55744). `UnionConverter` and `TypeSafeEnumConverter` provide for round-tripping of the most common usages of F# discriminated union types in two canonical formats that are known to have good versioning properties, rendering in formats that are known to be interoperable with other ecosystems, i.e. there are clean ways of generating and consuming in the same way in e.g. on the JVM and JavaScript.  
+
+It's worth calling out explicitly that there are no plans to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time ([the advice for `FsCodec.NewtonsoftJson` has always been to avoid stuff outside of records, `option`s and `array`s](#recommendations)) - if you have specific exotic corner cases and determine you need something more specifically tailored, the Converters abstraction affords you ability to mix and match as necessary for specific applications.
+
+_The single most complete set of `System.Text.Json` Converters is the [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library; it provides a much broader, well tested set of converters with a broader remit than what FsCodec is trying to succinctly address as its sweet spot._
   
 ### Core converters
 
@@ -76,7 +84,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
   
     NOTE: The encoding differs from that provided by `NewtonsoftJson`'s default converter: `Newtonsoft.Json.Converters.DiscriminatedUnionConverter`, which encodes the fields as an array without names, which has some pros, but many obvious cons
     
-    NOTE `System.Text.Json` does not support F# unions out of the box. It's not intended to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time - if you have specific requirements, the powerful and complete [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library is likely your best option in this space.
+    NOTE `System.Text.Json`, even in v `6.0` does not support F# unions out of the box. It's not intended to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time - if you have specific requirements, the powerful and complete [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library is likely your best option in this space.
     
 ### Custom converter base classes
 
@@ -95,7 +103,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
   - `DateTimeZoneHandling = DateTimeZoneHandling.Utc` (default is `RoundtripKind`)
   - no custom `IContractResolver` (one is expected to use `camelCase` field names within records, for which this does not matter)
 - `Create`: as `CreateDefault` with the following difference:
-  - adds an `OptionConverter` (see _Converters_, below)
+  - adds an `OptionConverter` (see _Converters_, above)
 
 ## `FsCodec.SystemTextJson.Options`
 
@@ -219,7 +227,7 @@ The mechanisms in the previous section have proven themselves sufficient for div
 
 | Type kind | TL;DR | Example input | Example output | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `'t list` | __Don't use__; use `'t[]` | `[ 1; 2; 3]` | `[1,2,3]` | While the happy path works, `null` or  missing field maps to a `null` object rather than `[]` [which is completely wrong from an F# perspective] |
+| `'t list` | __Don't use__; use `'t[]` | `[ 1; 2; 3]` | `[1,2,3]` | While the happy path works, `null` or  missing field maps to a `null` object rather than `[]` [which is completely wrong from an F# perspective]. (`System.Text.Json` v `>= 6` does now handle them correctly, but arrays are still the preferred representation, and there is no plan at present to have `FsCodec.NewtonsoftJson` provide support for it in the name of interoperability) |
 | `DateTime` | __Don't use__; use `DateTimeOffset` | | | Round-tripping can be messy, wrong or lossy; `DateTimeOffset` covers same use cases |
 | `Guid` or [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged `Guid` | __don't use__; wrap as a reference `type` and use a `JsonIsomorphism`, or represent as a tagged `string` | `Guid.NewGuid()` | `"ba7024c7-6795-413f-9f11-d3b7b1a1fe7a"` | If you wrap the value in a type, you can have that roundtrip with a specific format via a Converter implemented as a `JsonIsomorphism`. Alternately, represent in your contract as a [`FSharp.UMX`](https://github.com/fsprojects/FSharp.UMX) tagged-string. |
 | maps/`Dictionary` etc. | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.NET has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer<br/>For `System.Text.Json`, use an `IDictionary<'K, 'V>` or `Dictionary<'K, 'V>` |
