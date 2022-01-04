@@ -43,10 +43,9 @@ type private Union =
 module private Union =
 
     let isUnion : Type -> bool = memoize (fun t -> FSharpType.IsUnion(t, true))
-    let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
 
     let private createUnion t =
-        let cases = getUnionCases t
+        let cases = FSharpType.GetUnionCases(t, true)
         {
             cases = cases
             tagReader = FSharpValue.PreComputeUnionTagReader(t, true)
@@ -59,6 +58,14 @@ module private Union =
         }
     let getUnion : Type -> Union = memoize createUnion
 
+    /// Allows us to distinguish between Unions that have bodies and hence should UnionConverter
+    let (|NotUnion|TypeSafeEnum|Other|) (t : Type) =
+        if not (isUnion t) then NotUnion else
+
+        let union = getUnion t
+        if union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0) then TypeSafeEnum
+        else Other
+
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
         t = typeof<string>
@@ -68,27 +75,41 @@ module private Union =
            && (typedefof<Option<_>> = t.GetGenericTypeDefinition()
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
-    let typeHasJsonConverterAttribute_ (t : Type) = t.IsDefined(typeof<Serialization.JsonConverterAttribute>(*, false*))
-    let typeHasJsonConverterAttribute = memoize typeHasJsonConverterAttribute_
-    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute_ t)
-
-    let propTypeRequiresConstruction (propertyType : Type) =
-        not (isInlinedIntoUnionItem propertyType)
-        && not (typeHasJsonConverterAttribute propertyType)
+    let private typeHasJsonConverterAttribute_ (t : Type) = t.IsDefined(typeof<Serialization.JsonConverterAttribute>(*, false*))
+    let typeHasJsonConverterAttribute : Type -> bool = memoize typeHasJsonConverterAttribute_
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to defer to System.Text.Json
     let mapTargetCaseArgs (element : JsonElement) (options : JsonSerializerOptions) (props : PropertyInfo[]) : obj [] =
-        match props with
-        | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
-            [| JsonSerializer.Deserialize(element, singleCaseArg.PropertyType, options) |]
-        | multipleFieldsInCustomCaseType ->
-            [| for fi in multipleFieldsInCustomCaseType ->
-                match element.TryGetProperty fi.Name with
-                | false, _ when fi.PropertyType.IsValueType -> Activator.CreateInstance fi.PropertyType
-                | false, _ -> null
-                | true, el when el.ValueKind = JsonValueKind.Null -> null
-                | true, el -> JsonSerializer.Deserialize(el, fi.PropertyType, options) |]
+        [| for fi in props ->
+            match element.TryGetProperty fi.Name with
+            | false, _ when props.Length = 1 && not fi.PropertyType.IsValueType && element.ValueKind = JsonValueKind.Object ->
+                JsonSerializer.Deserialize(element, fi.PropertyType, options)
+            | false, _ when props.Length = 1 && isInlinedIntoUnionItem fi.PropertyType ->
+                JsonSerializer.Deserialize(element, fi.PropertyType, options)
+            | false, _ ->
+                failwithf "NF %d %s %b" props.Length fi.Name (isInlinedIntoUnionItem fi.PropertyType)
+//                JsonSerializer.Deserialize(el, fi.PropertyType, options)
+            | true, el when props.Length <> 1 ->
+                JsonSerializer.Deserialize(el, fi.PropertyType, options)
+            | true, el when props.Length = 1 && typeHasJsonConverterAttribute fi.PropertyType ->
+                JsonSerializer.Deserialize(el, fi.PropertyType, options)
+            | true, el when props.Length = 1 ->
+                JsonSerializer.Deserialize(element, fi.PropertyType, options)
+            | true, el when props.Length = 1 && not (isInlinedIntoUnionItem fi.PropertyType) ->
+                JsonSerializer.Deserialize(el, fi.PropertyType, options)
+            | true, el when props.Length = 1 && isInlinedIntoUnionItem fi.PropertyType ->
+//                failwithf "NF2 %d %s %b" props.Length fi.Name (isInlinedIntoUnionItem fi.PropertyType)
+//                failwithf "NF2 %d %s %b" props.Length fi.Name fi.PropertyType
+//                failwithf "NF2 %d %s %b" props.Length fi.Name (isInlinedIntoUnionItem fi.PropertyType)
+                JsonSerializer.Deserialize(el, fi.PropertyType, options)
+//            | true, el when props.Length = 1 && isInlinedIntoUnionItem fi.PropertyType ->
+//                JsonSerializer.Deserialize(element, fi.PropertyType, options)
+//                failwithf "NF2 %d %s %b" props.Length fi.Name (isInlinedIntoUnionItem fi.PropertyType)
+            | true, el ->
+                failwithf "NF2 %d %s %b" props.Length fi.Name (isInlinedIntoUnionItem fi.PropertyType) |]
+//                let el = if props.Length = 1 && isInlinedIntoUnionItem fi.PropertyType then el else element
+//                JsonSerializer.Deserialize(element, fi.PropertyType, options) |]
 
 type UnionConverter<'T>() =
     inherit Serialization.JsonConverter<'T>()
@@ -114,7 +135,7 @@ type UnionConverter<'T>() =
         for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
             if fieldValue <> null || options.DefaultIgnoreCondition <> Serialization.JsonIgnoreCondition.Always then
                 let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
-                if fieldInfos.Length = 1 && element.ValueKind = JsonValueKind.Object && not (Union.typeIsUnionWithConverterAttribute fieldInfo.PropertyType) then
+                if fieldInfos.Length = 1 && element.ValueKind = JsonValueKind.Object && Union.isInlinedIntoUnionItem fieldInfo.PropertyType then
                     // flatten the object properties into the same one as the discriminator
                     for prop in element.EnumerateObject() do
                         prop.WriteTo writer

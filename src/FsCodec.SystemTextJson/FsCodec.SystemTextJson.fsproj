@@ -15,6 +15,7 @@
     <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
     <Compile Include="Interop.fs" />
+    <Compile Include="UnionOrTypeSafeEnumConverterFactory.fs" />
   </ItemGroup>
 
   <ItemGroup>

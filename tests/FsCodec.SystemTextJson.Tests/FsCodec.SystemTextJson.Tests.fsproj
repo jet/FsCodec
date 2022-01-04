@@ -35,6 +35,7 @@
       <Link>UnionConverterTests.fs</Link>
     </Compile>
     <Compile Include="InteropTests.fs" />
+    <Compile Include="UnionOrTypeSafeEnumConverterFactoryTests.fs" />
   </ItemGroup>
 
 </Project>

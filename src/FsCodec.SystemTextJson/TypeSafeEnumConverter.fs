@@ -7,14 +7,11 @@ open System.Text.Json
 /// Utilities for working with DUs where none of the cases have a value
 module TypeSafeEnum =
 
-    let private _isTypeSafeEnum (t : Type) =
-        Union.isUnion t
-        && (Union.getUnion t).cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
-    let isTypeSafeEnum : Type -> bool = memoize _isTypeSafeEnum
+    let isTypeSafeEnum : Type -> bool = function
+        | Union.TypeSafeEnum -> true
+        | Union.NotUnion | Union.Other -> false
 
     let tryParseT (t : Type) predicate =
-        if not (Union.isUnion t) then invalidArg "t" "Type must be a FSharpUnion." else
-
         let u = Union.getUnion t
         u.cases
         |> Array.tryFindIndex (fun c -> predicate c.Name)
@@ -31,9 +28,7 @@ module TypeSafeEnum =
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
     let toString<'t> (x : 't) =
-        if not (Union.isUnion (typeof<'t>)) then invalidArg "'t" "Type must be a FSharpUnion." else
-
-        let u = Union.getUnion (typeof<'t>)
+        let u = Union.getUnion typeof<'t>
         let tag = u.tagReader (box x)
         // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
         u.cases.[tag].Name
