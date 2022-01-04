@@ -1,7 +1,15 @@
+#if SYSTEM_TEXT_JSON
+module FsCodec.SystemTextJson.Tests.Fixtures
+
+open FsCodec.SystemTextJson // JsonIsomorphism
+open System.Text.Json.Serialization // JsonConverter
+#else
 module FsCodec.NewtonsoftJson.Tests.Fixtures
 
 open FsCodec.NewtonsoftJson // JsonIsomorphism
 open Newtonsoft.Json // JsonConverter
+#endif
+
 open System
 open System.Runtime.Serialization
 

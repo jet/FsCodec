@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <DefineConstants>SYSTEM_TEXT_JSON</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +28,12 @@
     <Compile Include="SerdesTests.fs" />
     <Compile Include="UmxInteropTests.fs" />
     <Compile Include="TypeSafeEnumConverterTests.fs" />
+    <Compile Include="..\FsCodec.NewtonsoftJson.Tests\Fixtures.fs">
+      <Link>Fixtures.fs</Link>
+    </Compile>
+    <Compile Include="..\FsCodec.NewtonsoftJson.Tests\UnionConverterTests.fs">
+      <Link>UnionConverterTests.fs</Link>
+    </Compile>
     <Compile Include="InteropTests.fs" />
   </ItemGroup>
 
