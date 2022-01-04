@@ -16,11 +16,8 @@ type UnionOrTypeSafeEnumConverterFactory() =
         res
 
     override _.CreateConverter(typ, _options) =
-        let constructor =
-             match typ with
-             | Union.NotUnion -> invalidOp (sprintf "%s is not a union type" typ.FullName)
-             | Union.TypeSafeEnum -> typedefof<TypeSafeEnumConverter<_>>.MakeGenericType(typ).GetConstructors() |> Array.head
-             | Union.Other _ -> typedefof<UnionConverter<_>>.MakeGenericType(typ).GetConstructors() |> Array.head
+        let openConverterType = if Union.hasOnlyNullaryCases typ then typedefof<TypeSafeEnumConverter<_>> else typedefof<UnionConverter<_>>
+        let constructor = openConverterType.MakeGenericType(typ).GetConstructors() |> Array.head
         let newExpression = Expression.New(constructor)
         let lambda = Expression.Lambda(typeof<ConverterActivator>, newExpression)
 

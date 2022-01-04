@@ -7,9 +7,9 @@ open System.Text.Json
 /// Utilities for working with DUs where none of the cases have a value
 module TypeSafeEnum =
 
-    let isTypeSafeEnum : Type -> bool = function
-        | Union.TypeSafeEnum -> true
-        | Union.NotUnion | Union.Other -> false
+    let isTypeSafeEnum (typ : Type) =
+        Union.isUnion typ
+        && Union.hasOnlyNullaryCases typ
 
     let tryParseT (t : Type) predicate =
         let u = Union.getUnion t

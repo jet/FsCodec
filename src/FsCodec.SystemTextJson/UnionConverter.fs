@@ -59,12 +59,9 @@ module private Union =
     let getUnion : Type -> Union = memoize createUnion
 
     /// Allows us to distinguish between Unions that have bodies and hence should UnionConverter
-    let (|NotUnion|TypeSafeEnum|Other|) (t : Type) =
-        if not (isUnion t) then NotUnion else
-
+    let hasOnlyNullaryCases (t : Type) =
         let union = getUnion t
-        if union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0) then TypeSafeEnum
-        else Other
+        union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
 
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
