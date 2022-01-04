@@ -10,7 +10,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-- `SystemTextJson.UnionConverter`: Complete port of equivalent functionality in `NewtonsoftJson` equivalent [#59](https://github.com/jet/FsCodec/pull/59)
+- `SystemTextJson.UnionConverter`: Port of `NewtonsoftJson` equivalent started in [#43](https://github.com/jet/FsCodec/pull/43) [#59](https://github.com/jet/FsCodec/pull/59) :pray: [@NickDarvey](https://github.com/NickDarvey) 
 
 ### Changed
 
