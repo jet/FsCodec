@@ -6,7 +6,7 @@ open System.Runtime.InteropServices
 /// Serializes to/from strings using the supplied Settings
 type Serdes(options : JsonSerializerSettings) =
 
-    /// <summary>The <c>Settings</c> used by this instance.</summary>
+    /// <summary>The <c>JsonSerializerSettings</c> used by this instance.</summary>
     member _.Options : JsonSerializerSettings = options
 
     /// Serializes given value to a JSON string.

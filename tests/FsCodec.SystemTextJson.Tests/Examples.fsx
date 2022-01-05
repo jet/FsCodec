@@ -1,18 +1,20 @@
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.SystemTextJson.Tests before attempting to send this to FSI with Alt-Enter
 
+#if USE_LOCAL_BUILD
 (* Rider's FSI is not happy without the explicit references :shrug: *)
-
 #I "bin/Debug/net5.0"
 #r "FsCodec.dll"
+//#r "System.Text.Json.dll" // Does not work atm :(
 #r "FsCodec.SystemTextJson.dll"
 #r "TypeShape.dll"
 #r "FSharp.UMX.dll"
 #r "Serilog.dll"
 #r "Serilog.Sinks.Console.dll"
-
+#else
 #r "nuget: FsCodec.SystemTextJson"
 #r "nuget: Serilog.Sinks.Console"
+#endif
 
 open FsCodec.SystemTextJson
 open System.Text.Json

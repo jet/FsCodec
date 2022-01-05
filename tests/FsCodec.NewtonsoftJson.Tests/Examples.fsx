@@ -1,8 +1,19 @@
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.NewtonsoftJson.Tests before attempting to send this to FSI with Alt-Enter
 
+#if USE_LOCAL_BUILD
+#I "bin/Debug/net5.0"
+#r "FsCodec.dll"
+#r "Newtonsoft.Json.dll"
+#r "FsCodec.NewtonsoftJson.dll"
+#r "TypeShape.dll"
+#r "FSharp.UMX.dll"
+#r "Serilog.dll"
+#r "Serilog.Sinks.Console.dll"
+#else
 #r "nuget: FsCodec.NewtonsoftJson"
 #r "nuget: Serilog.Sinks.Console"
+#endif
 
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
