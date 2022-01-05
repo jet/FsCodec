@@ -10,10 +10,7 @@ type UnionOrTypeSafeEnumConverterFactory() =
     inherit JsonConverterFactory()
 
     override _.CanConvert(t : Type) =
-        let res = Union.isUnion t
-        if Union.typeHasJsonConverterAttribute t then failwith "needs conjunction"
-        //&& not (Union.typeHasJsonConverterAttribute t)
-        res
+        Union.isUnion t
 
     override _.CreateConverter(typ, _options) =
         let openConverterType = if Union.hasOnlyNullaryCases typ then typedefof<TypeSafeEnumConverter<_>> else typedefof<UnionConverter<_>>

@@ -19,9 +19,9 @@ let [<Xunit.Fact>] ``Basic characteristics`` () =
     test <@ "{\"case\":\"D\",\"value\":\"A\"}" = ser (D "A") @>
     test <@ "{\"case\":\"Tse\",\"enum\":\"B\"}" = ser (Tse B) @>
     test <@ Tse B = des "{\"case\":\"Tse\",\"enum\":\"B\"}" @>
-    test <@ Not { body = "A" } = des "{\"case\":\"Not\",\"Item\":{\"body\":\"A\"}}" @>
+    test <@ Not { body = "A" } = des "{\"case\":\"Not\",\"body\":\"A\"}" @>
 
-let [<FsCheck.Xunit.Property>] ``auto-encodes Unions and non-unions`` (x: Any) =
+let [<FsCheck.Xunit.Property>] ``auto-encodes Unions and non-unions`` (x : Any) =
     let encoded = ser x
     let decoded : Any = des encoded
     test <@ decoded = x @>

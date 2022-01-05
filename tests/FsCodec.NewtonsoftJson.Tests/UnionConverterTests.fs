@@ -487,6 +487,7 @@ module ``Struct discriminated unions`` =
         | CaseAV of av : TestRecordPayloadStruct
         | CaseB
         | CaseC of string
+        | CaseC2 of c2: int
         | CaseD of d : string
         | CaseE of e : string * int
         | CaseF of f : string * fb : int
@@ -510,6 +511,9 @@ module ``Struct discriminated unions`` =
 
         let c = CaseC "hi"
         test <@ """{"case":"CaseC","Item":"hi"}""" = serialize c @>
+
+        let c2 = CaseC2 2
+        test <@ """{"case":"CaseC2","c2":2}""" = serialize c2 @>
 
         let d = CaseD "hi"
         test <@ """{"case":"CaseD","d":"hi"}""" = serialize d @>

@@ -12,7 +12,7 @@ module TypeSafeEnum =
         && Union.hasOnlyNullaryCases typ
 
     let tryParseT (t : Type) predicate =
-        let u = Union.getUnion t
+        let u = Union.getInfo t
         u.cases
         |> Array.tryFindIndex (fun c -> predicate c.Name)
         |> Option.map (fun tag -> u.caseConstructor.[tag] [||])
@@ -28,7 +28,7 @@ module TypeSafeEnum =
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
     let toString<'t> (x : 't) =
-        let u = Union.getUnion typeof<'t>
+        let u = Union.getInfo typeof<'t>
         let tag = u.tagReader (box x)
         // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
         u.cases.[tag].Name
