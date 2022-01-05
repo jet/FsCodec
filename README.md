@@ -114,10 +114,10 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 
 ## `Serdes`
 
-[`FsCodec.NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Serdes.fs#L7) provides light wrappers over `JsonConvert.(Des|S)erializeObject` that utilize the serialization profile defined by `Settings/Options.Create` (above). Methods:
+[`FsCodec.SystemTextJson/NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/Serdes.fs#L7) provides light wrappers over `(JsonConvert|JsonSerializer).(Des|S)erialize(Object)?` based on an explicitly supplied serialization profile created by `Settings/Options.Create` (above). This enables one to smoothly switch between `System.Text.Json` vs `Newtonsoft.Json` serializers with minimal application code changes, while also ensuring consistent and correct options get applied in each case. Methods:
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings/Options.Create`
-- `DefaultSettings` / `DefaultOptions`: Allows one to access a global static instance of the `JsonSerializerSettings`/`JsonSerializerOptions` used by the default profile.
+- `Options`: Allows one to access the `JsonSerializerSettings`/`JsonSerializerOptions` used by this instance.
 
 # Usage of Converters with ASP.NET Core
 
@@ -137,23 +137,26 @@ If you follow the policies covered in the rest of the documentation here, your D
 ## ASP.NET Core with `Newtonsoft.Json`
 Hence the following represents the recommended default policy:-
 
+    /// Define a Serdes instance with a given policy somewhere (globally if you need to do explicit JSON generation) 
+    let serdes = Settings.Create() |> Serdes
+
     services.AddMvc(fun options -> ...
     ).AddNewtonsoftJson(fun options ->
-        FsCodec.NewtonsoftJson.Serdes.DefaultSettings.Converters
-        |> Seq.iter options.SerializerSettings.Converters.Add
+        serdes.Options.Converters |> Seq.iter options.SerializerSettings.Converters.Add
     ) |> ignore	        
 
-This adds all the converters used by the default `Serdes` mechanism (currently only `FsCodec.NewtonsoftJson.OptionConverter`), and add them to any imposed by other configuration logic.
+This adds all the converters used by the `serdes` serialization/deserialization policy (currently only `FsCodec.NewtonsoftJson.OptionConverter`) into the equivalent managed by ASP.NET.
 
 <a name="aspnetstj"></a>
 ## ASP.NET Core with `System.Text.Json`
 
 The equivalent for the native `System.Text.Json` looks like this:
 
+    let serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
+
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->
-        FsCodec.SystemTextJson.Serdes.DefaultOptions.Converters
-        |> Seq.iter options.JsonSerializerOptions.Converters.Add
+        serdes.Options.Converters |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
 
 _As of `System.Text.Json` v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), the above is presently a no-op._
@@ -165,7 +168,7 @@ There's a test playground in [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](t
 There's an equivalent of that for `FsCodec.SystemTextJson`: [tests/FsCodec.SystemTextJson.Tests/Examples.fsx](tests/FsCodec.SystemTextJson.Tests/Examples.fsx).
 
 <a name="contracts"></a>
-### Examples of using `Settings` and `Serdes` to define a contract
+### Examples of using `Serdes` to define a contract
 
 In a contract assembly used as a way to supply types as part of a client library, one way of encapsulating the conversion rules that need to be applied is as follows:
 
@@ -176,10 +179,12 @@ The minimal code needed to define helpers to consistently roundtrip where one on
 ```fsharp
 module Contract =
     type Item = { value : string option }
+    /// Settings to be used within this contract (opinionated ones compared to just using JsonConvert.SerializeObject / DeserializeObject)
+    let private serdes = FsCodec.NewtonsoftJson.Settings() |> FsCodec.NewtonsoftJson.Serdes
     // implies default settings from Settings.Create(), which includes OptionConverter
-    let serialize (x : Item) : string = FsCodec.NewtonsoftJson.Serdes.Serialize x
+    let serialize (x : Item) : string = serdes.Serialize x
     // implies default settings from Settings.Create(), which includes OptionConverter
-    let deserialize (json : string) = FsCodec.NewtonsoftJson.Serdes.Deserialize json
+    let deserialize (json : string) = serdes.Deserialize json
 ```
 
 #### More advanced case necessitating a custom converter
@@ -190,9 +195,9 @@ While it's hard to justify the wrapping in the previous case, this illustrates h
 module Contract =
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Settings to be used within this contract
-    let settings = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |])
-    let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x,settings)
-    let deserialize (json : string) : Item = FsCodec.NewtonsoftJson.Serdes.Deserialize(json,settings)
+    let private serdes = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |]) |> FsCodec.NewtonsoftJson.Serdes
+    let serialize (x : Item) = serdes.Serialize x
+    let deserialize (json : string) : Item = serdes.Deserialize json
 ```
 
 ## Encoding and conversion of F# types

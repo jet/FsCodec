@@ -3,25 +3,32 @@ namespace FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open System.Runtime.InteropServices
 
-/// <summary>Serializes to/from strings using the settings arising from a call to <c>Settings.Create()</c></summary>
-type Serdes private () =
+/// Serializes to/from strings using the supplied Settings
+type Serdes(options : JsonSerializerSettings) =
 
-    static let defaultSettings = lazy Settings.Create()
-    static let indentSettings = lazy Settings.Create(indent = true)
-
-    /// <summary>Yields the settings used by <c>Serdes</c> when no <c>settings</c> are supplied.</summary>
-    static member DefaultSettings : JsonSerializerSettings = defaultSettings.Value
+    /// <summary>The <c>JsonSerializerSettings</c> used by this instance.</summary>
+    member _.Options : JsonSerializerSettings = options
 
     /// Serializes given value to a JSON string.
+    member _.Serialize<'T>(value : 'T) =
+        JsonConvert.SerializeObject(value, options)
+
+    /// Deserializes value of given type from JSON string.
+    member x.Deserialize<'T>(json : string) : 'T =
+        JsonConvert.DeserializeObject<'T>(json, options)
+
+    /// Serializes given value to a JSON string.
+    [<System.Obsolete "Please use non-static Serdes instead">]
     static member Serialize<'T>
         (   /// Value to serialize.
             value : 'T,
             /// Use indentation when serializing JSON. Defaults to false.
             [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
-        let settings = (if defaultArg indent false then indentSettings else defaultSettings).Value
-        Serdes.Serialize<'T>(value, settings)
+        let options = (if indent = Some true then Settings.Create(indent = true) else Settings.Create())
+        JsonConvert.SerializeObject(value, options)
 
-    /// Serializes given value to a JSON string with custom settings
+    /// Serializes given value to a JSON string with custom options
+    [<System.Obsolete "Please use non-static Serdes instead">]
     static member Serialize<'T>
         (   /// Value to serialize.
             value : 'T,
@@ -30,10 +37,11 @@ type Serdes private () =
         JsonConvert.SerializeObject(value, settings)
 
     /// Deserializes value of given type from JSON string.
+    [<System.Obsolete "Please use non-static Serdes instead">]
     static member Deserialize<'T>
         (   /// Json string to deserialize.
             json : string,
             /// Settings to use (defaults to Settings.Create() profile)
             [<Optional; DefaultParameterValue null>] ?settings : JsonSerializerSettings) : 'T =
-        let settings = match settings with None -> defaultSettings.Value | Some x -> x
+        let settings = match settings with Some x -> x | None -> Settings.Create()
         JsonConvert.DeserializeObject<'T>(json, settings)

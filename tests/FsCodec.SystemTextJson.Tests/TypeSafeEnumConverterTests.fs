@@ -16,12 +16,13 @@ let [<Fact>] happy () =
     test <@ None = TypeSafeEnum.tryParse<Outcome> "Wat" @>
     raises<KeyNotFoundException> <@ TypeSafeEnum.parse<Outcome> "Wat" @>
 
-    let optionsWithOutcomeConverter = Options.Create(TypeSafeEnumConverter<Outcome>())
-    test <@ Joy = Serdes.Deserialize("\"Joy\"", optionsWithOutcomeConverter) @>
-    test <@ Some Joy = Serdes.Deserialize("\"Joy\"", optionsWithOutcomeConverter) @>
-    raises<KeyNotFoundException> <@ Serdes.Deserialize<Outcome>("\"Confusion\"", optionsWithOutcomeConverter) @>
+    let serdesWithOutcomeConverter = Options.Create(TypeSafeEnumConverter<Outcome>()) |> Serdes
+    test <@ Joy = serdesWithOutcomeConverter.Deserialize "\"Joy\"" @>
+    test <@ Some Joy = serdesWithOutcomeConverter.Deserialize "\"Joy\"" @>
+    raises<KeyNotFoundException> <@ serdesWithOutcomeConverter.Deserialize<Outcome> "\"Confusion\"" @>
     // Was a JsonException prior to V6
-    raises<NotSupportedException> <@ Serdes.Deserialize<Outcome> "1" @>
+    let serdes = Options.Create() |> Serdes
+    raises<NotSupportedException> <@ serdes.Deserialize<Outcome> "1" @>
 
 let [<Fact>] sad () =
     raises<ArgumentException> <@ TypeSafeEnum.tryParse<string> "Wat" @>
@@ -40,8 +41,9 @@ and OutcomeWithCatchAllConverter() =
         |> Option.defaultValue Other
 
 let [<Fact>] fallBackExample () =
-    test <@ Joy = Serdes.Deserialize<OutcomeWithOther> "\"Joy\"" @>
-    test <@ Some Other = Serdes.Deserialize<OutcomeWithOther option> "\"Wat\"" @>
-    test <@ Other = Serdes.Deserialize<OutcomeWithOther> "\"Wat\"" @>
-    raises<JsonException> <@ Serdes.Deserialize<OutcomeWithOther> "1" @>
-    test <@ Seq.forall (fun (x,y) -> x = y) <| Seq.zip [Joy; Other] (Serdes.Deserialize "[\"Joy\", \"Wat\"]") @>
+    let serdes = Options.Create() |> Serdes
+    test <@ Joy = serdes.Deserialize<OutcomeWithOther> "\"Joy\"" @>
+    test <@ Some Other = serdes.Deserialize<OutcomeWithOther option> "\"Wat\"" @>
+    test <@ Other = serdes.Deserialize<OutcomeWithOther> "\"Wat\"" @>
+    raises<JsonException> <@ serdes.Deserialize<OutcomeWithOther> "1" @>
+    test <@ Seq.forall (fun (x,y) -> x = y) <| Seq.zip [Joy; Other] (serdes.Deserialize "[\"Joy\", \"Wat\"]") @>

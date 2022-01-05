@@ -4,20 +4,21 @@ open FsCodec.NewtonsoftJson
 open Swensen.Unquote
 open Xunit
 
-let def = Settings.CreateDefault()
+let ootb = Settings.CreateDefault() |> Serdes
+let serdes = Settings.Create() |> Serdes
 
 let [<Fact>] ``Settings.CreateDefault roundtrips null string option, but rendering is ugly`` () =
     let value : string option = Some null
-    let ser = Serdes.Serialize(value, def)
+    let ser = ootb.Serialize value
     test <@ ser = "{\"Case\":\"Some\",\"Fields\":[null]}" @>
-    test <@ value = Serdes.Deserialize(ser, def) @>
+    test <@ value = ootb.Deserialize ser @>
 
 let [<Fact>] ``Settings.Create does not roundtrip Some null`` () =
     let value : string option = Some null
-    let ser = Serdes.Serialize value
+    let ser = serdes.Serialize value
     "null" =! ser
     // But it doesn't roundtrip
-    value <>! Serdes.Deserialize ser
+    value <>! serdes.Deserialize ser
 
 let hasSomeNull value = TypeShape.Generic.exists(fun (x : string option) -> x = Some null) value
 let replaceSomeNullsWithNone value = TypeShape.Generic.map (function Some (null : string) -> None | x -> x) value
@@ -31,10 +32,10 @@ let [<Fact>] ``Workaround is to detect and/or substitute such non-roundtrippable
     let value : string option = replaceSomeNullsWithNone value
     None =! value
     test <@ (not << hasSomeNull) value @>
-    let ser = Serdes.Serialize value
+    let ser = serdes.Serialize value
     ser =! "null"
     // ... and validate that the [substituted] value did roundtrip
-    test <@ value = Serdes.Deserialize ser @>
+    test <@ value = serdes.Deserialize ser @>
 
 type RecordWithStringOptions = { x : int; y : Nested }
 and Nested = { z : string option }
@@ -44,12 +45,12 @@ let [<Fact>] ``Can detect and/or substitute null string option when using Settin
     test <@ hasSomeNull value @>
     let value = replaceSomeNullsWithNone value
     test <@ (not << hasSomeNull) value @>
-    let ser = Serdes.Serialize value
+    let ser = serdes.Serialize value
     ser =! """{"x":9,"y":{"z":null}}"""
-    test <@ value = Serdes.Deserialize ser @>
+    test <@ value = serdes.Deserialize ser @>
 
     // As one might expect, the ignoreNulls setting is also honored
-    let ignoreNullsSettings = Settings.Create(ignoreNulls=true)
-    let ser = Serdes.Serialize(value,ignoreNullsSettings)
+    let ignoreNullsSerdes = Settings.Create(ignoreNulls=true) |> Serdes
+    let ser = ignoreNullsSerdes.Serialize value
     ser =! """{"x":9,"y":{}}"""
-    test <@ value = Serdes.Deserialize ser @>
+    test <@ value = serdes.Deserialize ser @>

@@ -30,7 +30,8 @@ let [<Theory; ClassData(typeof<Configs>)>]
 
     let value = Guid.Empty
 
-    let result = Serdes.Serialize(value, options)
+    let serdes = Serdes options
+    let result = serdes.Serialize value
     test <@ expectedSer = result @>
-    let des = Serdes.Deserialize(result, options)
+    let des = serdes.Deserialize result
     test <@ value = des @>
