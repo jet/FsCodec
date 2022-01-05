@@ -10,6 +10,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `Serdes`: Changed `Serdes` to be stateful, requiring a specific set of `Options`/`Settings` that are always applied consistently [#70](https://github.com/jet/FsCodec/pull/70)
+- `Serdes.DefaultSettings`: Updated [README.md ASP.NET integration advice](https://github.com/jet/FsCodec#aspnetstj) to reflect minor knock-on effect [#70](https://github.com/jet/FsCodec/pull/70)
+
 ### Removed
 ### Fixed
 

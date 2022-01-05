@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".project", ".project", "{1D
 		README.md = README.md
 		SECURITY.md = SECURITY.md
 		CHANGELOG.md = CHANGELOG.md
+		FsCodec.sln.DotSettings.user = FsCodec.sln.DotSettings.user
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsCodec", "src\FsCodec\FsCodec.fsproj", "{9D2A9566-9C80-4AF3-A487-76A9FE8CBE64}"
