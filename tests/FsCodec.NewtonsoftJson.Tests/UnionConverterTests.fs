@@ -539,6 +539,12 @@ module ``Struct discriminated unions`` =
         test <@ """{"case":"CaseIV","iv":{"test":"hi"},"ibv":"bye"}""" = serialize i @>
 #endif
 
+#if SYSTEM_TEXT_JSON
+let serdes = Options.Create() |> Serdes
+#else
+let serdes = Settings.Create() |> Serdes
+#endif
+
 module Nested =
 
 #if SYSTEM_TEXT_JSON
@@ -598,45 +604,45 @@ module Nested =
         | V2
 
     let [<FsCheck.Xunit.Property>] ``can nest`` (value : U) =
-        let ser = Serdes.Serialize value
-        test <@ value = Serdes.Deserialize ser @>
+        let ser = serdes.Serialize value
+        test <@ value = serdes.Deserialize ser @>
 
     let [<Fact>] ``nesting Unions represents child as item`` () =
         let v : U = U.C(UUA.B 42)
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"C","Item":{"case2":"B","Item":42}}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
     let [<Fact>] ``TypeSafeEnum converts direct`` () =
         let v : U = U.C (UUA.E E.V1)
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"C","Item":{"case2":"E","Item":"V1"}}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
         let v : U = U.E E.V2
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"E","Item":"V2"}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
         let v : U = U.EA [|E.V2; E.V2|]
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"EA","Item":["V2","V2"]}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
         let v : U = U.C (UUA.EO (Some E.V1))
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"C","Item":{"case2":"EO","Item":"V1"}}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
         let v : U = U.C (UUA.EO None)
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"C","Item":{"case2":"EO","Item":null}}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
         let v : U = U.C UUA.S
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"case":"C","Item":{"case2":"S"}}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
 /// And for everything else, JsonIsomorphism allows plenty ways of customizing the encoding and/or decoding
 module IsomorphismUnionEncoder =
@@ -670,10 +676,10 @@ module IsomorphismUnionEncoder =
 
     let [<Fact>] ``Can control the encoding to the nth degree`` () =
         let v : Top = N (B 42)
-        let ser = Serdes.Serialize v
+        let ser = serdes.Serialize v
         """{"disc":"TB","v":42}""" =! ser
-        test <@ v = Serdes.Deserialize ser @>
+        test <@ v = serdes.Deserialize ser @>
 
     let [<FsCheck.Xunit.Property>] ``can roundtrip`` (value : Top) =
-        let ser = Serdes.Serialize value
-        test <@ value = Serdes.Deserialize ser @>
+        let ser = serdes.Serialize value
+        test <@ value = serdes.Deserialize ser @>

@@ -11,10 +11,10 @@ open System
 module Contract =
 
     type Item = { value : string option }
-    // implies default settings from Settings.Create(), which includes OptionConverter
-    let serialize (x : Item) : string = FsCodec.NewtonsoftJson.Serdes.Serialize x
-    // implies default settings from Settings.Create(), which includes OptionConverter
-    let deserialize (json : string) = FsCodec.NewtonsoftJson.Serdes.Deserialize json
+    // implies an OptionConverter will be applied
+    let private serdes = FsCodec.NewtonsoftJson.Settings.Create() |> FsCodec.NewtonsoftJson.Serdes
+    let serialize (x : Item) : string = serdes.Serialize x
+    let deserialize (json : string) = serdes.Deserialize json
 
 module Contract2 =
 
@@ -23,12 +23,13 @@ module Contract2 =
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Settings to be used within this contract
     // note OptionConverter is also included by default
-    let settings = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |])
-    let serialize (x : Item) = FsCodec.NewtonsoftJson.Serdes.Serialize(x,settings)
-    let deserialize (json : string) : Item = FsCodec.NewtonsoftJson.Serdes.Deserialize(json,settings)
+    let private serdes = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |]) |> FsCodec.NewtonsoftJson.Serdes
+    let serialize (x : Item) = serdes.Serialize x
+    let deserialize (json : string) : Item = serdes.Deserialize json
 
-let inline ser x = Serdes.Serialize(x)
-let inline des<'t> x = Serdes.Deserialize<'t>(x)
+let private serdes = FsCodec.NewtonsoftJson.Settings.Create() |> FsCodec.NewtonsoftJson.Serdes
+let inline ser x = serdes.Serialize(x)
+let inline des<'t> x = serdes.Deserialize<'t>(x)
 
 (* Global vs local Converters
 
@@ -49,8 +50,8 @@ ser { a = "testing"; b = Guid.Empty }
 ser Guid.Empty
 // "00000000-0000-0000-0000-000000000000"
 
-let settings = Settings.Create(converters = [| GuidConverter() |])
-Serdes.Serialize(Guid.Empty, settings)
+let serdesWithGuidConverter = Settings.Create(converters = [| GuidConverter() |]) |> Serdes
+serdesWithGuidConverter.Serialize(Guid.Empty)
 // 00000000000000000000000000000000
 
 (* TypeSafeEnumConverter basic usage *)

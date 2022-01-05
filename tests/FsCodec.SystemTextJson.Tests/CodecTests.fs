@@ -38,7 +38,8 @@ let [<Property>] roundtrips value =
     let enveloped = { d = encoded }
 
     // the options should be irrelevant, but use the defaults (which would add nulls in that we don't want if it was leaking)
-    let ser = FsCodec.SystemTextJson.Serdes.Serialize enveloped
+    let serdes = Options.Create() |> Serdes
+    let ser = serdes.Serialize enveloped
 
     match embedded with
     | Choice1Of2 { embed = null }
@@ -53,7 +54,7 @@ let [<Property>] roundtrips value =
     | Choice1Of2 _ ->
         test <@ ser.StartsWith """{"d":{"embed":""" && not (ser.Contains "\"opt\"") @>
 
-    let des = FsCodec.SystemTextJson.Serdes.Deserialize<Envelope> ser
+    let des = serdes.Deserialize<Envelope> ser
     let wrapped = FsCodec.Core.TimelineEvent<JsonElement>.Create(-1L, eventType, des.d)
     let decoded = eventCodec.TryDecode wrapped |> Option.get
 

@@ -32,29 +32,31 @@ type Configs() as this =
 
 let [<Theory; ClassData(typeof<Configs>)>] ``Tagging with GuidConverter roundtrips`` (options : JsonSerializerOptions) =
     let value = { a = "testing"; b = Guid.Empty }
-
-    let result = Serdes.Serialize(value, options)
+    let profile = Serdes options
+    let result = profile.Serialize value
 
     test <@ """{"a":"testing","b":"00000000000000000000000000000000"}""" = result @>
 
-    let des = Serdes.Deserialize(result, options)
+    let des = profile.Deserialize result
     test <@ value = des @>
+
+let serdes = Serdes(Options.Create())
 
 let [<Fact>] ``Global GuidConverter roundtrips`` () =
     let value = Guid.Empty
 
-    let defaultHandlingHasDashes = Serdes.Serialize value
+    let defaultHandlingHasDashes = serdes.Serialize value
 
-    let optionsWithConverter = Options.Create(GuidConverter())
-    let resNoDashes = Serdes.Serialize(value, optionsWithConverter)
+    let profileWithConverter = Options.Create(GuidConverter()) |> Serdes
+    let resNoDashes = profileWithConverter.Serialize value
 
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = defaultHandlingHasDashes
             && "\"00000000000000000000000000000000\"" = resNoDashes @>
 
     // Non-dashed is not accepted by default handling in STJ (Newtonsoft does accept it)
-    raises<exn> <@ Serdes.Deserialize<Guid> resNoDashes @>
+    raises<exn> <@ serdes.Deserialize<Guid> resNoDashes @>
 
     // With the converter, things roundtrip either way
     for result in [defaultHandlingHasDashes; resNoDashes] do
-        let des = Serdes.Deserialize(result, optionsWithConverter)
+        let des = profileWithConverter.Deserialize result
         test <@ value= des @>

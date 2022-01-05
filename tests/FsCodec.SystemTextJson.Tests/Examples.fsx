@@ -22,23 +22,24 @@ open System
 module Contract =
 
     type Item = { value : string option }
-    // implies default options from Options.Create()
-    let serialize (x : Item) : string = FsCodec.SystemTextJson.Serdes.Serialize x
-    // implies default options from Options.Create()
-    let deserialize (json : string) = FsCodec.SystemTextJson.Serdes.Deserialize json
+    // while no converter actually gets applied as STJ v6 handles Options out of the box, this makes it explicit that we have a policy
+    let private serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
+    let serialize (x : Item) = serdes.Serialize x
+    let deserialize (json : string) = serdes.Deserialize json
 
 module Contract2 =
 
     type TypeThatRequiresMyCustomConverter = { mess : int }
     type MyCustomConverter() = inherit JsonPickler<string>() override _.Read(_,_) = "" override _.Write(_,_,_) = ()
     type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
-    /// Options to be used within this contract
-    let options = FsCodec.SystemTextJson.Options.Create(converters = [| MyCustomConverter() |])
-    let serialize (x : Item) = FsCodec.SystemTextJson.Serdes.Serialize(x, options)
-    let deserialize (json : string) : Item = FsCodec.SystemTextJson.Serdes.Deserialize(json, options)
+    /// Note we add a custom converter here
+    let private serdes = FsCodec.SystemTextJson.Options.Create(converters = [| MyCustomConverter() |]) |> FsCodec.SystemTextJson.Serdes
+    let serialize (x : Item) = serdes.Serialize x
+    let deserialize (json : string) = serdes.Deserialize json
 
-let inline ser x = Serdes.Serialize(x)
-let inline des<'t> x = Serdes.Deserialize<'t>(x)
+let private serdes = Options.Create() |> Serdes
+let inline ser x = serdes.Serialize x
+let inline des<'t> x = serdes.Deserialize<'t> x
 
 (* Global vs local Converters
 
@@ -59,8 +60,8 @@ ser { a = "testing"; b = Guid.Empty }
 ser Guid.Empty
 // "00000000-0000-0000-0000-000000000000"
 
-let options = Options.Create(converters = [| GuidConverter() |])
-Serdes.Serialize(Guid.Empty, options)
+let serdesWithGuidConverter = Options.Create(converters = [| GuidConverter() |]) |> Serdes
+serdesWithGuidConverter.Serialize Guid.Empty
 // 00000000000000000000000000000000
 
 (* TypeSafeEnumConverter basic usage *)
@@ -164,7 +165,7 @@ module Events =
 
 open FsCodec
 
-let enc (s : string) = Serdes.Deserialize<JsonElement>(s)
+let enc (s : string) = serdes.Deserialize<JsonElement> s
 let events = [
     StreamName.parse "Favorites-ClientA",    FsCodec.Core.TimelineEvent.Create(0L, "Added",     enc """{ "item": "a" }""")
     StreamName.parse "Favorites-ClientB",    FsCodec.Core.TimelineEvent.Create(0L, "Added",     enc """{ "item": "b" }""")

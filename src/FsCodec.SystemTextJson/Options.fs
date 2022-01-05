@@ -48,7 +48,10 @@ type Options private () =
             /// Ignore null values in input data, don't render fields with null values; defaults to `false`.
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             /// Drop escaping of HTML-sensitive characters. defaults to `true`.
-            [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool) =
+            [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool,
+            /// <summary>Apply convention-based Union conversion using <c>TypeSafeEnumConverter</c> if possible, or <c>UnionEncoder</c> for all Discriminated Unions.
+            /// defaults to <c>false</c>.</summary>
+            [<Optional; DefaultParameterValue(null)>] ?autoUnion : bool) =
 
         Options.CreateDefault(
             converters = converters,
