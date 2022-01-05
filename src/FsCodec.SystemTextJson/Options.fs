@@ -54,7 +54,11 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?autoUnion : bool) =
 
         Options.CreateDefault(
-            converters = converters,
+            converters =
+                (   if autoUnion = Some true then
+                        let converter : JsonConverter array = [| UnionOrTypeSafeEnumConverterFactory() |]
+                        if converters = null then converter else Array.append converters converter
+                    else converters),
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
             ?camelCase = camelCase,
