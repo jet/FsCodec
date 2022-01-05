@@ -150,16 +150,16 @@ This adds all the converters used by the `serdes` serialization/deserialization 
 <a name="aspnetstj"></a>
 ## ASP.NET Core with `System.Text.Json`
 
-The equivalent for the native `System.Text.Json` looks like this:
+The equivalent for the native `System.Text.Json`, as v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), is presently a no-op.
 
-    let serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
+The following illustrates how opt into [`autoUnion` mode](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs):
+
+    let serdes = FsCodec.SystemTextJson.Options.Create(autoUnion = true) |> FsCodec.SystemTextJson.Serdes
 
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->
         serdes.Options.Converters |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
-
-_As of `System.Text.Json` v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), the above is presently a no-op._
 
 # Examples: `FsCodec.(Newtonsoft|SystemText)Json`
 
