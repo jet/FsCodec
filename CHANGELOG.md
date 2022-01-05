@@ -9,6 +9,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+ 
+- `SystemTextJson.UnionOrTypeSafeEnumConverterFactory`: Global converter that automatically applies a `TypeSafeEnumConverter` to all Discriminated Unions that support it, and `UnionConverter` to all others [#69](https://github.com/jet/FsCodec/pull/69)
+- `SystemTextJson.Options(autoUnion = true)`: Automated wireup of `UnionOrTypeSafeEnumConverterFactory` [#69](https://github.com/jet/FsCodec/pull/69)
+
 ### Changed
 
 - `Serdes`: Changed `Serdes` to be stateful, requiring a specific set of `Options`/`Settings` that are always applied consistently [#70](https://github.com/jet/FsCodec/pull/70)

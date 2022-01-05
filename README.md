@@ -95,7 +95,11 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 
   - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`; included in the standard `Settings.Create` profile.
   - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code, used in `Equinox.Cosmos` versions prior to `3.0`).
-  
+
+### `FsCodec.SystemTextJson`-specific low level converters
+
+- `UnionOrTypeSafeEnumConverterFactory`: Global converter that automatically applies a `TypeSafeEnumConverter` to all Discriminated Unions that support it, and `UnionConverter` to all others. See [this `System.Text.Json` issue](https://github.com/dotnet/runtime/issues/55744) for background information as to the reasoning behind and tradeoffs involved in applying such a policy.  
+ 
 ## `FsCodec.NewtonsoftJson.Settings`
 
 [`FsCodec.NewtonsoftJson.Settings`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Settings.fs#L8) provides a clean syntax for building a `Newtonsoft.Json.JsonSerializerSettings` with which to define a serialization contract profile for interoperability purposes. Methods:
@@ -110,7 +114,9 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 [`FsCodec.SystemTextJson.Options`](https://github.com/jet/FsCodec/blob/stj/src/FsCodec.SystemTextJson/Options.fs#L8) provides a clean syntax for building a `System.Text.Json.Serialization.JsonSerializerOptions` as per `FsCodec.NewtonsoftJson.Settings`, above. Methods:
 - `CreateDefault`: equivalent to generating a `new JsonSerializerSettings()` without any overrides of any kind
 - `Create`: as `CreateDefault` with the following difference:
-  - Inhibits the HTML-safe escaping that `System.Text.Json` provides as a default by overriding `Encoder` with `System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping`
+  - By default, inhibits the HTML-safe escaping that `System.Text.Json` provides as a default by overriding `Encoder` with `System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping`
+  - `(camelCase = true)`: opts into camel case conversion for `PascalCased` properties and `Dictionary` keys
+  - `(autoUnion = true)`: triggers inclusion of a `UnionOrTypeSafeEnumConverterFactory`, enabling F# Discriminated Unions to be converted in an opinionated manner. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples  
 
 ## `Serdes`
 
@@ -152,7 +158,7 @@ This adds all the converters used by the `serdes` serialization/deserialization 
 
 The equivalent for the native `System.Text.Json`, as v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), is presently a no-op.
 
-The following illustrates how opt into [`autoUnion` mode](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs):
+The following illustrates how opt into [`autoUnion` mode](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for the rendering of View Models by ASP.NET:
 
     let serdes = FsCodec.SystemTextJson.Options.Create(autoUnion = true) |> FsCodec.SystemTextJson.Serdes
 
