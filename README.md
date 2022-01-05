@@ -114,7 +114,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 
 ## `Serdes`
 
-[`FsCodec.SystemTextJson/NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/Serdes.fs#L7) provides light wrappers over `JsonConvert.(Des|S)erializeObject` based on a supplied serialization profile created by `Settings/Options.Create` (above). Methods:
+[`FsCodec.SystemTextJson/NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/Serdes.fs#L7) provides light wrappers over `(JsonConvert|JsonSerializer).(Des|S)erialize(Object)?` based on an explicitly supplied serialization profile created by `Settings/Options.Create` (above). This enables one to smoothly switch between `System.Text.Json` vs `Newtonsoft.Json` serializers with minimal application code changes, while also ensuring consistent and correct options get applied in each case. Methods:
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Options`: Allows one to access the `JsonSerializerSettings`/`JsonSerializerOptions` used by this instance.

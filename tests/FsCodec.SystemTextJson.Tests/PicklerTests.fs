@@ -32,12 +32,12 @@ type Configs() as this =
 
 let [<Theory; ClassData(typeof<Configs>)>] ``Tagging with GuidConverter roundtrips`` (options : JsonSerializerOptions) =
     let value = { a = "testing"; b = Guid.Empty }
-    let profile = Serdes options
-    let result = profile.Serialize value
+    let serdes = Serdes options
+    let result = serdes.Serialize value
 
     test <@ """{"a":"testing","b":"00000000000000000000000000000000"}""" = result @>
 
-    let des = profile.Deserialize result
+    let des = serdes.Deserialize result
     test <@ value = des @>
 
 let serdes = Serdes(Options.Create())
@@ -47,8 +47,8 @@ let [<Fact>] ``Global GuidConverter roundtrips`` () =
 
     let defaultHandlingHasDashes = serdes.Serialize value
 
-    let profileWithConverter = Options.Create(GuidConverter()) |> Serdes
-    let resNoDashes = profileWithConverter.Serialize value
+    let serdesWithConverter = Options.Create(GuidConverter()) |> Serdes
+    let resNoDashes = serdesWithConverter.Serialize value
 
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = defaultHandlingHasDashes
             && "\"00000000000000000000000000000000\"" = resNoDashes @>
@@ -58,5 +58,5 @@ let [<Fact>] ``Global GuidConverter roundtrips`` () =
 
     // With the converter, things roundtrip either way
     for result in [defaultHandlingHasDashes; resNoDashes] do
-        let des = profileWithConverter.Deserialize result
+        let des = serdesWithConverter.Deserialize result
         test <@ value= des @>
