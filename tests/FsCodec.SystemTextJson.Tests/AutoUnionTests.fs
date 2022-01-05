@@ -1,4 +1,4 @@
-module FsCodec.SystemTextJson.Tests.UnionOrTypeSafeEnumConverterFactoryTests
+module FsCodec.SystemTextJson.Tests.AutoUnionTests
 
 open FsCodec.SystemTextJson
 open Swensen.Unquote
