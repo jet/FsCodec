@@ -9,7 +9,15 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
- 
+### Changed
+### Removed
+### Fixed
+
+<a name="2.3.0-rc.2"></a>
+## [2.3.0-rc.2] - 2022-01-05
+
+### Added
+
 - `SystemTextJson.UnionOrTypeSafeEnumConverterFactory`: Global converter that automatically applies a `TypeSafeEnumConverter` to all Discriminated Unions that support it, and `UnionConverter` to all others [#69](https://github.com/jet/FsCodec/pull/69)
 - `SystemTextJson.Options(autoUnion = true)`: Automated wireup of `UnionOrTypeSafeEnumConverterFactory` [#69](https://github.com/jet/FsCodec/pull/69)
 
@@ -17,9 +25,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 - `Serdes`: Changed `Serdes` to be stateful, requiring a specific set of `Options`/`Settings` that are always applied consistently [#70](https://github.com/jet/FsCodec/pull/70)
 - `Serdes.DefaultSettings`: Updated [README.md ASP.NET integration advice](https://github.com/jet/FsCodec#aspnetstj) to reflect minor knock-on effect [#70](https://github.com/jet/FsCodec/pull/70)
-
-### Removed
-### Fixed
 
 <a name="2.3.0-rc.1"></a>
 ## [2.3.0-rc.1] - 2022-01-04
@@ -211,7 +216,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.0-rc.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.0-rc.3...HEAD
+[2.3.0-rc.2]: https://github.com/jet/FsCodec/compare/2.3.0-rc.1...2.3.0-rc.2
 [2.3.0-rc.1]: https://github.com/jet/FsCodec/compare/2.2.2...2.3.0-rc.1
 [2.2.2]: https://github.com/jet/FsCodec/compare/2.2.1...2.2.2
 [2.2.1]: https://github.com/jet/FsCodec/compare/2.2.0...2.2.1
