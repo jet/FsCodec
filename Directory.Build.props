@@ -1,10 +1,10 @@
 <Project>
   <PropertyGroup>
-    <Authors>@jet @amjjd @bartelink @eiriktsarpalis and contributors</Authors>
+    <Authors>@jet @moneylion @amjjd @bartelink @eiriktsarpalis and contributors</Authors>
     <Company>Jet.com</Company>
-    <Description>F# Union Event Codec with versioning tolerant converters</Description>
+    <Description>Extensible F# Event Codec for System.Text.Json and Newtonsoft.Json with versioning tolerant converters for Discriminated Unions</Description>
     <PackageProjectUrl>https://github.com/jet/FsCodec</PackageProjectUrl>
-    <PackageTags>fsharp unionconverter eventcodec JsonPickler JsonIsomorphism json converters typeshape</PackageTags>
+    <PackageTags>fsharp unionconverter eventcodec JsonPickler JsonIsomorphism UnionConverter json converters typeshape</PackageTags>
     <PackageLicense>Apache-2.0</PackageLicense>
     <Copyright>Copyright © 2016-22</Copyright>
 
