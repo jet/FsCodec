@@ -732,7 +732,7 @@ _You should absolutely have acceptance tests that apply the actual serialization
 ## RELATED ARTICLES / BLOG POSTS etc
 
 - [Contracts for Event Sourced Systems with FsCodec](https://asti.dynz.net/post/fscodec/) by [@deviousasti](https://github.com/deviousasti)
-- [A Contract Pattern for Schemaless DataStores] by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
+- [A Contract Pattern for Schemaless DataStores](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/) by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 
 ## CONTRIBUTING
 
