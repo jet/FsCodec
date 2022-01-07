@@ -21,7 +21,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - Provides relevant Converters for common non-primitive types prevalent in F#
   - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `TypeShape >= 8`, `Microsoft.IO.RecyclableMemoryStream >= 1.2.2`, `System.Buffers >= 4.5`
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
-  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 6.0.1`, `TypeShape >= 10`
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 6.0.1`, `TypeShape >= 9`
 
 # Features: `FsCodec`
 
@@ -74,7 +74,7 @@ The role and intention of the converters in the box in `FsCodec.SystemTextJson` 
 
 It's worth calling out explicitly that there are no plans to extend the representations `FsCodec.SystemTextJson` can handle in any significant way over time ([the advice for `FsCodec.NewtonsoftJson` has always been to avoid stuff outside of records, `option`s and `array`s](#recommendations)) - if you have specific exotic corner cases and determine you need something more specifically tailored, the Converters abstraction affords you ability to mix and match as necessary for specific applications.
 
-_The single most complete set of `System.Text.Json` Converters is the [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library; it provides a much broader, well tested set of converters with a broader remit than what FsCodec is trying to succinctly address as its sweet spot._
+_The single most complete set of `System.Text.Json` Converters is the [`FSharp.SystemTextJson`](https://github.com/Tarmil/FSharp.SystemTextJson) library; it provides a much broader, well tested set of converters with a broader remit than what FsCodec is trying to succinctly address as its sweet spot. [In general, there should be a smooth path to transition from using FsCodec to that as and when needed](https://github.com/jet/FsCodec/pull/69#issuecomment-1006532703)_
   
 ### Core converters
 

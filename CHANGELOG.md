@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `SystemTextJson`: Target `TypeShape` v `9.0.0` in order to reinstate support for `FSharp.Core` v `4.3.4` 
+
 ### Removed
 ### Fixed
 
