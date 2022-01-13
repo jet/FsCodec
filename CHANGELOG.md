@@ -10,11 +10,15 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
-
-- `SystemTextJson`: Target `TypeShape` v `9.0.0` in order to reinstate support for `FSharp.Core` v `4.3.4` 
-
 ### Removed
 ### Fixed
+
+<a name="2.3.0"></a>
+## [2.3.0] - 2022-01-14
+
+### Changed
+
+- `SystemTextJson`: Target `TypeShape` v `9.0.0` in order to reinstate support for `FSharp.Core` v `4.3.4`
 
 <a name="2.3.0-rc.2"></a>
 ## [2.3.0-rc.2] - 2022-01-05
@@ -219,7 +223,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.0-rc.3...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.0...HEAD
+[2.3.0]: https://github.com/jet/FsCodec/compare/2.3.0-rc.2...2.3.0
 [2.3.0-rc.2]: https://github.com/jet/FsCodec/compare/2.3.0-rc.1...2.3.0-rc.2
 [2.3.0-rc.1]: https://github.com/jet/FsCodec/compare/2.2.2...2.3.0-rc.1
 [2.2.2]: https://github.com/jet/FsCodec/compare/2.2.1...2.2.2
