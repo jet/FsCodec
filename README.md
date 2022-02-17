@@ -160,12 +160,15 @@ The equivalent for the native `System.Text.Json`, as v6, thanks [to the great wo
 
 The following illustrates how opt into [`autoUnion` mode](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for the rendering of View Models by ASP.NET:
 
-    let serdes = FsCodec.SystemTextJson.Options.Create(autoUnion = true) |> FsCodec.SystemTextJson.Serdes
+    // Default behavior throws an exception if you attempt to serialize a DU or TypeSafeEnum without an explicit JsonConverterAttribute
+    // let serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
 
-    let serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
+    // Serdes.Serialize / Deserialize applies the converters
+    let serdes = FsCodec.SystemTextJson.Options.Create(autoUnion = true) |> FsCodec.SystemTextJson.Serdes
 
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->
+        // Register the converters (actually a single JsonConverterFactory) from the Options passed to the `serdes` above
         serdes.Options.Converters |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
 
