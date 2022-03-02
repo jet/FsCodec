@@ -36,6 +36,9 @@
     </Compile>
     <Compile Include="InteropTests.fs" />
     <Compile Include="AutoUnionTests.fs" />
+    <Compile Include="..\FsCodec.NewtonsoftJson.Tests\SomeNullHandlingTests.fs">
+      <Link>SomeNullHandlingTests.fs</Link>
+    </Compile>
   </ItemGroup>
 
 </Project>

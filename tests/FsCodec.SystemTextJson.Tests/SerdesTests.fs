@@ -30,6 +30,14 @@ module StjCharacterization =
 
         test <@ value = ootb.Deserialize<RecordWithOption> ser @>
 
+    let [<Fact>] ``OOTB STJ Some null decodes as None as per NSJ`` () =
+        let value = { a = 1; b = Some null }
+        let ser = ootb.Serialize value
+        test <@ ser = """{"a":1,"b":null}""" @>
+
+        // sic: does not roundtrip
+        test <@ { value with b = None } = ootb.Deserialize<RecordWithOption> ser @>
+
     let [<Fact>] ``OOTB STJ lists Just Works`` () =
         let value = [ "A"; "B" ]
         let ser = ootb.Serialize value
