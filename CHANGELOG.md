@@ -13,6 +13,11 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="2.3.1"></a>
+## [2.3.1] - 2022-03-02
+
+### Fixed
+
 - `SystemTextJson`: Prevent `UnionConverter` being applied to `option` and `list` types when using `UnionOrTypeSafeEnumConverterFactory`/`SystemTextJson.Options(autoUnion = true)` [#72](https://github.com/jet/FsCodec/pull/72)
 
 <a name="2.3.0"></a>
@@ -225,7 +230,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.0...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.1...HEAD
+[2.3.1~~~~]: https://github.com/jet/FsCodec/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/jet/FsCodec/compare/2.3.0-rc.2...2.3.0
 [2.3.0-rc.2]: https://github.com/jet/FsCodec/compare/2.3.0-rc.1...2.3.0-rc.2
 [2.3.0-rc.1]: https://github.com/jet/FsCodec/compare/2.2.2...2.3.0-rc.1
