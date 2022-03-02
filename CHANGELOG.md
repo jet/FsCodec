@@ -13,8 +13,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+- `SystemTextJson`: Prevent `UnionConverter` being applied to `option` and `list` types when using `UnionOrTypeSafeEnumConverterFactory`/`SystemTextJson.Options(autoUnion = true)` [#72](https://github.com/jet/FsCodec/pull/72)
+
 <a name="2.3.0"></a>
-## [2.3.0] - 2022-01-14
+## [2.3.0] - 2022-01-14 **Unlisted due to bug fixed in 2.3.1**
 
 ### Changed
 
