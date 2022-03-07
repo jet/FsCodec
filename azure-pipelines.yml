@@ -1,7 +1,4 @@
 name: $(Rev:r)
-trigger:
-- master
-- refs/tags/*
 jobs:
 - job: Windows
   pool:
