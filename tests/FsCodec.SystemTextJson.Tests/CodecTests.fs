@@ -38,7 +38,7 @@ let [<Property>] roundtrips value =
     let enveloped = { d = encoded }
 
     // the options should be irrelevant, but use the defaults (which would add nulls in that we don't want if it was leaking)
-    let serdes = Options.Create() |> Serdes
+    let serdes = Serdes Options.Default
     let ser = serdes.Serialize enveloped
 
     match embedded with

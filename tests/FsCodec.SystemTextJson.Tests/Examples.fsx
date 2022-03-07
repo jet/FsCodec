@@ -39,7 +39,7 @@ module Contract2 =
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
-let private serdes = Options.Create() |> Serdes
+let private serdes = Serdes Options.Default
 let inline ser x = serdes.Serialize x
 let inline des<'t> x = serdes.Deserialize<'t> x
 

@@ -540,9 +540,9 @@ module ``Struct discriminated unions`` =
 #endif
 
 #if SYSTEM_TEXT_JSON
-let serdes = Options.Create() |> Serdes
+let serdes = Serdes Options.Default
 #else
-let serdes = Settings.Create() |> Serdes
+let serdes = Serdes Settings.Default
 #endif
 
 module Nested =

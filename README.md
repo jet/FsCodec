@@ -112,15 +112,17 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 ## `FsCodec.SystemTextJson.Options`
 
 [`FsCodec.SystemTextJson.Options`](https://github.com/jet/FsCodec/blob/stj/src/FsCodec.SystemTextJson/Options.fs#L8) provides a clean syntax for building a `System.Text.Json.Serialization.JsonSerializerOptions` as per `FsCodec.NewtonsoftJson.Settings`, above. Methods:
-- `CreateDefault`: equivalent to generating a `new JsonSerializerSettings()` without any overrides of any kind
+- `CreateDefault`: equivalent to generating a `new JsonSerializerSettings()` out of the box without any overrides of any kind
 - `Create`: as `CreateDefault` with the following difference:
   - By default, inhibits the HTML-safe escaping that `System.Text.Json` provides as a default by overriding `Encoder` with `System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping`
   - `(camelCase = true)`: opts into camel case conversion for `PascalCased` properties and `Dictionary` keys
-  - `(autoUnion = true)`: triggers inclusion of a `UnionOrTypeSafeEnumConverterFactory`, enabling F# Discriminated Unions to be converted in an opinionated manner. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples  
+  - `(autoTypeSafeEnumToJsonString = true)`: triggers usage of `TypeSafeEnumConverter` for any F# Discriminated Unions that only contain nullary cases. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples  
+  - `(autoUnionToJsonObject = true)`: triggers inclusion of a `UnionOrTypeSafeEnumConverterFactory`, enabling F# Discriminated Unions to round-tripped as JSON Object structures using `UnionConverter`. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples
+  - `Default`: Default settings; same as calling `Create()` produces (same intent as [`JsonSerializerOptions.Default`](https://github.com/dotnet/runtime/pull/61434)) 
 
 ## `Serdes`
 
-[`FsCodec.SystemTextJson/NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/Serdes.fs#L7) provides light wrappers over `(JsonConvert|JsonSerializer).(Des|S)erialize(Object)?` based on an explicitly supplied serialization profile created by `Settings/Options.Create` (above). This enables one to smoothly switch between `System.Text.Json` vs `Newtonsoft.Json` serializers with minimal application code changes, while also ensuring consistent and correct options get applied in each case. Methods:
+[`FsCodec.SystemTextJson/NewtonsoftJson.Serdes`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/Serdes.fs#L7) provides light wrappers over `(JsonConvert|JsonSerializer).(Des|S)erialize(Object)?` based on an explicitly supplied serialization profile created by `Settings/Options.Create` (above), or using `Settings/Options.Default`. This enables one to smoothly switch between `System.Text.Json` vs `Newtonsoft.Json` serializers with minimal application code changes, while also ensuring consistent and correct options get applied in each case. Methods:
 - `Serialize<T>`: serializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Deserialize<T>`: deserializes an object per its type using the settings defined in `Settings/Options.Create`
 - `Options`: Allows one to access the `JsonSerializerSettings`/`JsonSerializerOptions` used by this instance.
@@ -144,11 +146,13 @@ If you follow the policies covered in the rest of the documentation here, your D
 Hence the following represents the recommended default policy:-
 
     /// Define a Serdes instance with a given policy somewhere (globally if you need to do explicit JSON generation) 
-    let serdes = Settings.Create() |> Serdes
+    let serdes = Serdes Settings.Default
 
     services.AddMvc(fun options -> ...
     ).AddNewtonsoftJson(fun options ->
+        // Borrow the Converters from the Options the Serdes is holding
         serdes.Options.Converters |> Seq.iter options.SerializerSettings.Converters.Add
+        // OR, in the trivial case: Settings.Default.Converters |> Seq.iter options.SerializerSettings.Converters.Add
     ) |> ignore	        
 
 This adds all the converters used by the `serdes` serialization/deserialization policy (currently only `FsCodec.NewtonsoftJson.OptionConverter`) into the equivalent managed by ASP.NET.
@@ -158,13 +162,13 @@ This adds all the converters used by the `serdes` serialization/deserialization 
 
 The equivalent for the native `System.Text.Json`, as v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), is presently a no-op.
 
-The following illustrates how opt into [`autoUnion` mode](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for the rendering of View Models by ASP.NET:
+The following illustrates how opt into [`autoTypeSafeEnumToJsonString` and/or `autoUnionToJsonObject` modes](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for the rendering of View Models by ASP.NET:
 
     // Default behavior throws an exception if you attempt to serialize a DU or TypeSafeEnum without an explicit JsonConverterAttribute
-    // let serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
+    // let serdes = FsCodec.SystemTextJson.Options.Default |> FsCodec.SystemTextJson.Serdes
 
-    // Serdes.Serialize / Deserialize applies the converters
-    let serdes = FsCodec.SystemTextJson.Options.Create(autoUnion = true) |> FsCodec.SystemTextJson.Serdes
+    // If you use autoTypeSafeEnumToJsonString = true or autoUnionToJsonObject = true, serdes.Serialize / Deserialize applies the relevant converters
+    let serdes = FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true) |> FsCodec.SystemTextJson.Serdes
 
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->

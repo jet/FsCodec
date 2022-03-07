@@ -8,7 +8,7 @@ type NotAUnion = { body : string; opt : string option; list: string list }
 type AUnion = D of value : string | E of ATypeSafeEnum | F | G of value : string option
 type Any = Tse of enum : ATypeSafeEnum | Not of NotAUnion | Union of AUnion
 
-let serdes = Options.Create(autoUnion = true) |> Serdes
+let serdes = Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true) |> Serdes
 
 let [<Xunit.Fact>] ``Basic characteristics`` () =
     test <@ "\"B\"" = serdes.Serialize B @>
@@ -21,6 +21,19 @@ let [<Xunit.Fact>] ``Basic characteristics`` () =
     test <@ Tse B = serdes.Deserialize "{\"case\":\"Tse\",\"enum\":\"B\"}" @>
     test <@ Not { body = "A"; opt = None; list = [] } = serdes.Deserialize "{\"case\":\"Not\",\"body\":\"A\",\"list\":[]}" @>
     test <@ Not { body = "A"; opt = None; list = ["A"] } = serdes.Deserialize "{\"case\":\"Not\",\"body\":\"A\",\"list\":[\"A\"]}" @>
+
+let [<Xunit.Fact>] ``Opting out`` () =
+    let serdesDef = Serdes Options.Default
+    let serdesT = Options.Create(autoTypeSafeEnumToJsonString = true) |> Serdes
+    let serdesU = Options.Create(autoUnionToJsonObject = true) |> Serdes
+
+    raises<System.NotSupportedException> <@ serdesU.Serialize(Tse A) @>
+    raises<System.NotSupportedException> <@ serdesDef.Serialize(Tse A) @>
+    test <@ Tse A = Tse A |> serdesT.Serialize |> serdesT.Deserialize @>
+
+    raises<System.NotSupportedException> <@ serdesDef.Serialize(Union F) @>
+    raises<System.NotSupportedException> <@ serdesT.Serialize(Union F) @>
+    test <@ Union F = Union F |> serdesT.Serialize |> serdesT.Deserialize @>
 
 let [<FsCheck.Xunit.Property>] ``auto-encodes Unions and non-unions`` (x : Any) =
     let encoded = serdes.Serialize x

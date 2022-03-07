@@ -6,7 +6,7 @@ open System.Text.Json.Serialization
 
 type internal ConverterActivator = delegate of unit -> JsonConverter
 
-type UnionOrTypeSafeEnumConverterFactory() =
+type UnionOrTypeSafeEnumConverterFactory(typeSafeEnum, union) =
     inherit JsonConverterFactory()
 
     let isIntrinsic (t : Type) =
@@ -17,6 +17,8 @@ type UnionOrTypeSafeEnumConverterFactory() =
     override _.CanConvert(t : Type) =
         Union.isUnion t
         && not (isIntrinsic t)
+        && ((typeSafeEnum && union)
+            || typeSafeEnum = Union.hasOnlyNullaryCases t)
 
     override _.CreateConverter(typ, _options) =
         let openConverterType = if Union.hasOnlyNullaryCases typ then typedefof<TypeSafeEnumConverter<_>> else typedefof<UnionConverter<_>>

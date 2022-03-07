@@ -9,6 +9,11 @@ type Settings private () =
 
     static let defaultConverters : JsonConverter[] = [| OptionConverter() |]
 
+    static let def = lazy Settings.Create()
+
+    /// <summary>Analogous to <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
+    static member Default : JsonSerializerSettings = def.Value
+
     /// Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
     static member CreateDefault
         (   [<Optional; ParamArray>] converters : JsonConverter[],
