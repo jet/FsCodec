@@ -14,7 +14,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Changed
 
-- `SystemTextJson`: Replace `autoUnion=true` with individually controllable `autoTypeSafeEnumToJsonString` and `autoUnionToJsonObject` settings [#73](https://github.com/jet/FsCodec/pull/73)
+- `SystemTextJson`: Replace `autoUnion=true` with individually controllable `autoTypeSafeEnumToJsonString` and `autoUnionToJsonObject` settings re [#71](https://github.com/jet/FsCodec/pull/71) [#73](https://github.com/jet/FsCodec/pull/73)
 
 ### Removed
 ### Fixed
