@@ -24,8 +24,9 @@ open System
 module Contract =
 
     type Item = { value : string option }
-    // while no converter actually gets applied as STJ v6 handles Options out of the box, this makes it explicit that we have a policy
-    let private serdes = FsCodec.SystemTextJson.Options.Create() |> FsCodec.SystemTextJson.Serdes
+    // while no converter actually gets applied, as STJ v6 handles Options out of the box, this makes it explicit that we have a policy
+    let private serdes = Serdes Options.Default
+    // applies default settings from Options.Create(), i.e., includes UnsafeRelaxedJsonEscaping
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
@@ -33,9 +34,10 @@ module Contract2 =
 
     type TypeThatRequiresMyCustomConverter = { mess : int }
     type MyCustomConverter() = inherit JsonPickler<string>() override _.Read(_,_) = "" override _.Write(_,_,_) = ()
-    type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
-    /// Note we add a custom converter here
-    let private serdes = FsCodec.SystemTextJson.Options.Create(converters = [| MyCustomConverter() |]) |> FsCodec.SystemTextJson.Serdes
+    // NOTE: Pascal-cased field that needs to be converted to camelCase, see `camelCase = true`
+    type Item = { Value : string option; other : TypeThatRequiresMyCustomConverter }
+    // Note we add a custom converter here
+    let private serdes = Options.Create(converters = [| MyCustomConverter() |], camelCase = true) |> Serdes
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
