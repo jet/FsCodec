@@ -27,6 +27,7 @@ type WithEmbeddedGuid = { a: string; [<Serialization.JsonConverter(typeof<GuidCo
 type Configs() as this =
     inherit TheoryData<JsonSerializerOptions>()
     do  this.Add(Options.CreateDefault()) // validate it works with minimal converters
+        this.Add(Options.Default) // Flush out clashes with standard converter set
         this.Add(Options.Create()) // Flush out clashes with standard converter set
         this.Add(Options.Create(GuidConverter())) // and a global registration does not conflict
 
@@ -40,7 +41,7 @@ let [<Theory; ClassData(typeof<Configs>)>] ``Tagging with GuidConverter roundtri
     let des = serdes.Deserialize result
     test <@ value = des @>
 
-let serdes = Serdes(Options.Create())
+let serdes = Serdes(Options.Default)
 
 let [<Fact>] ``Global GuidConverter roundtrips`` () =
     let value = Guid.Empty

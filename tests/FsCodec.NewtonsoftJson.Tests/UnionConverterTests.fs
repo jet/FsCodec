@@ -166,9 +166,9 @@ let ``deserializes properly`` () =
     test <@ CaseL (Nullable 1, Nullable 2) = deserialize """{"case":"CaseL", "a": 1, "b": 2 }""" @>
 
 #if SYSTEM_TEXT_JSON
-    let requiredSettingsToHandleOptionalFields = Options.Create()
+    let requiredSettingsToHandleOptionalFields = Options.Default
 #else
-    // This is equivalent to Settings.Create(), but we want absolutely minimal adjustment from the out-of-the-box Newtonsoft settings
+    // This is equivalent to Settings.Default, but we want absolutely minimal adjustment from the out-of-the-box Newtonsoft settings
     let requiredSettingsToHandleOptionalFields = Settings.CreateDefault(OptionConverter())
 #endif
     let deserializeCustom s = deserializeWith<TestDU> requiredSettingsToHandleOptionalFields s
@@ -332,9 +332,9 @@ let ``UnionConverter includeNulls Profile roundtrip property test`` (x: TestDU) 
     roundtripProperty ignoreNulls profile x
 
 #if SYSTEM_TEXT_JSON
-let defaultProfile = Options.Create()
+let defaultProfile = Options.Default
 #else
-let defaultProfile = Settings.Create()
+let defaultProfile = Settings.Default
 #endif
 [<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =

@@ -24,7 +24,7 @@ type Serdes(options : JsonSerializerOptions) =
             value : 'T,
             /// Use indentation when serializing JSON. Defaults to false.
             [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
-        let options = (if indent = Some true then Options.Create(indent = true) else Options.Create())
+        let options = (if indent = Some true then Options.Create(indent = true) else Options.Default)
         JsonSerializer.Serialize<'T>(value, options)
 
     /// Serializes given value to a JSON string with custom options
@@ -32,7 +32,7 @@ type Serdes(options : JsonSerializerOptions) =
     static member Serialize<'T>
         (   /// Value to serialize.
             value : 'T,
-            /// Options to use (use other overload to use Options.Create() profile)
+            /// Options to use (use other overload to use Options.Default profile)
             options : JsonSerializerOptions) : string =
         JsonSerializer.Serialize<'T>(value, options)
 
@@ -41,7 +41,7 @@ type Serdes(options : JsonSerializerOptions) =
     static member Deserialize<'T>
         (   /// Json string to deserialize.
             json : string,
-            /// Options to use (defaults to Options.Create() profile)
+            /// Options to use (defaults to Options.Default profile)
             [<Optional; DefaultParameterValue null>] ?options : JsonSerializerOptions) : 'T =
-        let settings = options |> Option.defaultWith Options.Create
+        let settings = match options with Some o -> o | None -> Options.Default
         JsonSerializer.Deserialize<'T>(json, settings)

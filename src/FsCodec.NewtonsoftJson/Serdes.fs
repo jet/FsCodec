@@ -1,5 +1,6 @@
 namespace FsCodec.NewtonsoftJson
 
+open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open System.Runtime.InteropServices
 
@@ -24,7 +25,7 @@ type Serdes(options : JsonSerializerSettings) =
             value : 'T,
             /// Use indentation when serializing JSON. Defaults to false.
             [<Optional; DefaultParameterValue false>] ?indent : bool) : string =
-        let options = (if indent = Some true then Settings.Create(indent = true) else Settings.Create())
+        let options = (if indent = Some true then Settings.Create(indent = true) else Settings.Default)
         JsonConvert.SerializeObject(value, options)
 
     /// Serializes given value to a JSON string with custom options
@@ -32,7 +33,7 @@ type Serdes(options : JsonSerializerSettings) =
     static member Serialize<'T>
         (   /// Value to serialize.
             value : 'T,
-            /// Settings to use (use other overload to use Settings.Create() profile)
+            /// Settings to use (use other overload to use Settings.Default profile)
             settings : JsonSerializerSettings) : string =
         JsonConvert.SerializeObject(value, settings)
 
@@ -41,7 +42,7 @@ type Serdes(options : JsonSerializerSettings) =
     static member Deserialize<'T>
         (   /// Json string to deserialize.
             json : string,
-            /// Settings to use (defaults to Settings.Create() profile)
+            /// Settings to use (defaults to Settings.Default profile)
             [<Optional; DefaultParameterValue null>] ?settings : JsonSerializerSettings) : 'T =
-        let settings = match settings with Some x -> x | None -> Settings.Create()
+        let settings = match settings with Some x -> x | None -> Settings.Default
         JsonConvert.DeserializeObject<'T>(json, settings)
