@@ -23,7 +23,7 @@ module Contract =
 
     type Item = { value : string option }
     // implies an OptionConverter will be applied
-    let private serdes = FsCodec.NewtonsoftJson.Settings.Create() |> FsCodec.NewtonsoftJson.Serdes
+    let private serdes = Serdes Settings.Default
     let serialize (x : Item) : string = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
@@ -31,14 +31,14 @@ module Contract2 =
 
     type TypeThatRequiresMyCustomConverter = { mess : int }
     type MyCustomConverter() = inherit JsonPickler<string>() override _.Read(_,_) = "" override _.Write(_,_,_) = ()
-    type Item = { value : string option; other : TypeThatRequiresMyCustomConverter }
+    type Item = { Value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Settings to be used within this contract
-    // note OptionConverter is also included by default
-    let private serdes = FsCodec.NewtonsoftJson.Settings.Create(converters = [| MyCustomConverter() |]) |> FsCodec.NewtonsoftJson.Serdes
+    // note OptionConverter is also included by default; Value field will write as `"value"`
+    let private serdes = Settings.Create(MyCustomConverter(), camelCase = true) |> FsCodec.NewtonsoftJson.Serdes
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) : Item = serdes.Deserialize json
 
-let private serdes = FsCodec.NewtonsoftJson.Settings.Create() |> FsCodec.NewtonsoftJson.Serdes
+let private serdes = Settings.Default |> Serdes
 let inline ser x = serdes.Serialize(x)
 let inline des<'t> x = serdes.Deserialize<'t>(x)
 

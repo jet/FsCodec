@@ -5,7 +5,7 @@ open FsCodec.SystemTextJson
 open Swensen.Unquote
 open Xunit
 
-let serdes = Options.Create() |> Serdes
+let serdes = Serdes Options.Default
 
 let [<Fact>] ``Options.Create does not roundtrip Some null`` () =
     let value : string option = Some null
@@ -22,7 +22,7 @@ open Swensen.Unquote
 open Xunit
 
 let ootb = Settings.CreateDefault() |> Serdes
-let serdes = Settings.Create() |> Serdes
+let serdes = Serdes Settings.Default
 
 let [<Fact>] ``Settings.CreateDefault roundtrips null string option, but rendering is ugly`` () =
     let value : string option = Some null

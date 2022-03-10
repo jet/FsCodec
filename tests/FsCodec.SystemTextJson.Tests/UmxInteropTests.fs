@@ -21,7 +21,7 @@ type WithEmbeddedMyGuid =
 
 type Configs() as this =
     inherit TheoryData<string, JsonSerializerOptions>()
-    do  this.Add("\"00000000-0000-0000-0000-000000000000\"", Options.Create())
+    do  this.Add("\"00000000-0000-0000-0000-000000000000\"", Options.Default)
         this.Add("\"00000000000000000000000000000000\"",     Options.Create(GuidConverter()))
 
 let [<Theory; ClassData(typeof<Configs>)>]

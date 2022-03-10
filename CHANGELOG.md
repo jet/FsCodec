@@ -9,7 +9,13 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `SystemTextJson`: Add `Options.Default` to match [`JsonSerializerSettings.Default`](https://github.com/dotnet/runtime/pull/61434) [#73](https://github.com/jet/FsCodec/pull/73)
+
 ### Changed
+
+- `SystemTextJson`: Replace `autoUnion=true` with individually controllable `autoTypeSafeEnumToJsonString` and `autoUnionToJsonObject` settings re [#71](https://github.com/jet/FsCodec/pull/71) [#73](https://github.com/jet/FsCodec/pull/73)
+
 ### Removed
 ### Fixed
 

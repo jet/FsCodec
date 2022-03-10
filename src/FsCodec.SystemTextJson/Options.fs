@@ -9,6 +9,11 @@ open System.Text.Json.Serialization
 
 type Options private () =
 
+    static let def = lazy Options.Create()
+
+    /// <summary>Analogous to <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
+    static member Default : JsonSerializerOptions = def.Value
+
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault
         (   [<Optional; ParamArray>] converters : JsonConverter[],
@@ -49,16 +54,18 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             /// Drop escaping of HTML-sensitive characters. defaults to `true`.
             [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool,
-            /// <summary>Apply convention-based Union conversion using <c>TypeSafeEnumConverter</c> if possible, or <c>UnionEncoder</c> for all Discriminated Unions.
-            /// defaults to <c>false</c>.</summary>
-            [<Optional; DefaultParameterValue(null)>] ?autoUnion : bool) =
+            /// <summary>Apply <c>TypeSafeEnumConverter</c> if possible. Defaults to <c>false</c>.</summary>
+            [<Optional; DefaultParameterValue(null)>] ?autoTypeSafeEnumToJsonString : bool,
+            /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
+            [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool) =
 
         Options.CreateDefault(
             converters =
-                (   if autoUnion = Some true then
-                        let converter : JsonConverter array = [| UnionOrTypeSafeEnumConverterFactory() |]
+                (   match autoTypeSafeEnumToJsonString = Some true, autoUnionToJsonObject = Some true with
+                    | tse, u when tse || u ->
+                        let converter : JsonConverter array = [| UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = tse, union = u) |]
                         if converters = null then converter else Array.append converters converter
-                    else converters),
+                    | _ -> converters),
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
             ?camelCase = camelCase,

@@ -67,7 +67,7 @@ module StjCharacterization =
 
 (* Serdes + default Options behavior, i.e. the stuff we do *)
 
-let serdes = Options.Create() |> Serdes
+let serdes = Serdes Options.Default
 
 let [<Fact>] records () =
     let value = { a = 1 }
