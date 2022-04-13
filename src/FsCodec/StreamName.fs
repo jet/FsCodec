@@ -40,7 +40,7 @@ module StreamName =
             buf.Append x |> ignore
         create category (buf.ToString())
 
-    /// <summary>Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-` (dash).<br/>
+    /// <summary>Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-' (dash).<br/>
     /// Throws <c>InvalidArgumentException</c> if it does not adhere to that form.</summary>
     let parse (rawStreamName : string) : StreamName =
         if rawStreamName.IndexOf('-') = -1 then
