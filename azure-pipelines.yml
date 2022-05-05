@@ -37,6 +37,11 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
+  - task: UseDotNet@2
+    displayName: 'Install .NET 6 sdk'
+    inputs:
+      packageType: sdk
+      version: 6.x
   - script: dotnet test build.proj
     displayName: dotnet test
   - task: PublishTestResults@2
