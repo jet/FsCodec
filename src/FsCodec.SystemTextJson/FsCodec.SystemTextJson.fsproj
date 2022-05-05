@@ -12,6 +12,7 @@
     <Compile Include="TypeSafeEnumConverter.fs" />
     <Compile Include="UnionOrTypeSafeEnumConverterFactory.fs" />
     <Compile Include="Options.fs" />
+    <Compile Include="CoreCodec.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
     <Compile Include="Interop.fs" />
