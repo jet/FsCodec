@@ -10,7 +10,15 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `Newtonsoft.Json`: Rename `Settings` to `Options` [#60](https://github.com/jet/FsCodec/issues/60) [#76](https://github.com/jet/FsCodec/pull/76)
+- Updated build and tests to use `net6.0`, all test package dependencies
+- Updated to reference `TypeShape` v `10`, triggering min `FSharp.Core` target moving to `4.5.4` 
+
 ### Removed
+
+- `net461` support [#60](https://github.com/jet/FsCodec/issues/60) [#76](https://github.com/jet/FsCodec/pull/76)
+
 ### Fixed
 
 <a name="2.3.2"></a>
