@@ -1,6 +1,7 @@
 module FsCodec.SystemTextJson.Tests.CodecTests
 
-open FsCodec.SystemTextJson // bring in ToByteArrayCodec etc extension methods
+open FsCodec.SystemTextJson
+open FsCodec.SystemTextJson.Interop // bring in ToUtf8Codec, ToJsonElementCodec extension methods
 open System.Text.Json
 open FsCheck.Xunit
 open Swensen.Unquote
@@ -14,12 +15,12 @@ type Union =
     | BO of EmbeddedWithOption
     interface TypeShape.UnionContract.IUnionContract
 
-let ignoreNullOptions = FsCodec.SystemTextJson.Options.Create(ignoreNulls = true)
-let elementEncoder : TypeShape.UnionContract.IEncoder<System.Text.Json.JsonElement> =
+let ignoreNullOptions = Options.Create(ignoreNulls = true)
+let elementEncoder : TypeShape.UnionContract.IEncoder<JsonElement> =
     FsCodec.SystemTextJson.Core.JsonElementEncoder(ignoreNullOptions) :> _
 
-let eventCodec = FsCodec.SystemTextJson.CodecJsonElement.Create<Union>(ignoreNullOptions)
-let multiHopCodec = eventCodec.ToUtf8Codec().ToByteArrayCodec().ToJsonElementCodec()
+let eventCodec = CodecJsonElement.Create<Union>(ignoreNullOptions)
+let multiHopCodec = eventCodec.ToUtf8Codec().ToJsonElementCodec()
 
 [<NoComparison>]
 type Envelope = { d : JsonElement }

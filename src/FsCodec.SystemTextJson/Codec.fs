@@ -61,7 +61,7 @@ type CodecJsonElement private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, JsonElement, 'Context> =
-        Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
     /// Uses <c>up</c>, <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and eventId/correlationId/causationId/timestamp mapping
@@ -84,7 +84,7 @@ type CodecJsonElement private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, JsonElement, 'Context> =
-        Core.Codec.Create(mkEncoder options, up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <code>IEventCodec</code> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion/timestamping without eventId/correlation/causationId mapping
@@ -105,7 +105,7 @@ type CodecJsonElement private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, JsonElement, obj> =
-        Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <code>IEventCodec</code> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -116,7 +116,7 @@ type CodecJsonElement private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, JsonElement, obj> =
-        Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)
 
 /// <summary>Provides Codecs that render to a <c>ReadOnlyMemory&lt;byte&gt;</c>, suitable for storage in Event Stores that handle Event Data and Metadata as opaque blobs.
 /// Requires that Contract types adhere to the conventions implied by using <c>TypeShape.UnionContract.UnionContractEncoder</c><br/>
@@ -148,7 +148,7 @@ type Codec private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// Uses <c>up</c>, <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and eventId/correlationId/causationId/timestamp mapping
@@ -171,7 +171,7 @@ type Codec private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        Core.Codec.Create(mkEncoder options, up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion/timestamping without eventId/correlation/causationId mapping
@@ -192,7 +192,7 @@ type Codec private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, obj> =
-        Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -203,4 +203,4 @@ type Codec private () =
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, ReadOnlyMemory<byte>, obj> =
-        Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Box.Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)

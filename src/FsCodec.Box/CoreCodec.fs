@@ -1,7 +1,6 @@
-namespace FsCodec.SystemTextJson.Core
+namespace FsCodec.Box.Core
 
 open System
-open System.Text.Json
 open System.Runtime.InteropServices
 
 /// <summary>Low-level Codec Generator that encodes to a Generic Event <c>'Body</c> Type.

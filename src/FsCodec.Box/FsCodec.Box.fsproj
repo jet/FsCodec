@@ -1,13 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFramework>netstandard2.1</TargetFramework>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="CoreCodec.fs" />
         <Compile Include="Codec.fs" />
+        <Compile Include="Interop.fs" />
     </ItemGroup>
 
     <ItemGroup>
