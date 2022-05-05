@@ -2,7 +2,7 @@ namespace FsCodec.NewtonsoftJson
 
 open Newtonsoft.Json
 
-/// Serializes to/from strings using the supplied Settings
+/// Serializes to/from strings using the supplied JsonSerializerSettings
 type Serdes(options : JsonSerializerSettings) =
 
     /// <summary>The <c>JsonSerializerSettings</c> used by this instance.</summary>

@@ -36,8 +36,8 @@ let [<Fact>] ``Tagging with GuidConverter`` () =
 let [<Fact>] ``Global GuidConverter`` () =
     let value = Guid.Empty
 
-    let resDashes = JsonConvert.SerializeObject(value, Settings.Default)
-    let resNoDashes = JsonConvert.SerializeObject(value, Settings.Create(GuidConverter()))
+    let resDashes = JsonConvert.SerializeObject(value, Options.Default)
+    let resNoDashes = JsonConvert.SerializeObject(value, Options.Create(GuidConverter()))
 
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = resDashes
             && "\"00000000000000000000000000000000\"" = resNoDashes @>

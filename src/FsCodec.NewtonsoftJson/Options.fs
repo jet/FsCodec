@@ -5,13 +5,13 @@ open Newtonsoft.Json.Serialization
 open System
 open System.Runtime.InteropServices
 
-type Settings private () =
+type Options private () =
 
     static let defaultConverters : JsonConverter[] = [| OptionConverter() |]
 
-    static let def = lazy Settings.Create()
+    static let def = lazy Options.Create()
 
-    /// <summary>Analogous to <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Settings.Create()</c></summary>
+    /// <summary>Analogous to <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
     static member Default : JsonSerializerSettings = def.Value
 
     /// Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
@@ -60,7 +60,7 @@ type Settings private () =
             /// Error on missing values (as opposed to letting them just be default-initialized); defaults to false
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
 
-        Settings.CreateDefault(
+        Options.CreateDefault(
             converters = (match converters with null | [||] -> defaultConverters | xs -> Array.append defaultConverters xs),
             ?ignoreNulls = ignoreNulls,
             ?errorOnMissing = errorOnMissing,

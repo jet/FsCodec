@@ -70,7 +70,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
         let decoded = eventCodec.TryDecode loaded |> Option.get
         input =! decoded
 
-    let defaultSettings = Settings.CreateDefault()
+    let defaultSettings = Options.CreateDefault()
     let defaultEventCodec = Codec.Create<U>(defaultSettings)
 
     let [<Property>] ``round-trips diverse bodies correctly`` (x: U) =
