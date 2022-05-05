@@ -1,4 +1,4 @@
-/// Covers interop with stores that manage event bodies as byte[]
+/// Covers adapting of Codecs that map to JsonElement to instead map to ReadOnlyMemory, and interop with the VerbatimUtf8Converter
 module FsCodec.SystemTextJson.Tests.InteropTests
 
 open FsCheck.Xunit
@@ -11,7 +11,7 @@ type Batch = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.Batch
 type Union = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.Union
 let mkBatch = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.mkBatch
 
-let indirectCodec = FsCodec.SystemTextJson.Codec.Create() |> FsCodec.SystemTextJson.InteropExtensions.ToByteArrayCodec
+let indirectCodec = FsCodec.SystemTextJson.CodecJsonElement.Create() |> FsCodec.SystemTextJson.Interop.InteropExtensions.ToUtf8Codec
 let [<Fact>] ``encodes correctly`` () =
     let input = Union.A { embed = "\"" }
     let encoded = indirectCodec.Encode(None, input)
@@ -19,7 +19,7 @@ let [<Fact>] ``encodes correctly`` () =
     let res = JsonConvert.SerializeObject(e)
     test <@ res.Contains """"d":{"embed":"\""}""" @>
     let des = JsonConvert.DeserializeObject<Batch>(res)
-    let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
+    let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
     let decoded = indirectCodec.TryDecode loaded |> Option.get
     input =! decoded
 
@@ -34,7 +34,7 @@ type U =
 
 let defaultSettings = FsCodec.NewtonsoftJson.Options.CreateDefault() // Test without converters, as that's what Equinox.Cosmos will do
 let defaultEventCodec = FsCodec.NewtonsoftJson.Codec.Create<U>(defaultSettings)
-let indirectCodecU = FsCodec.SystemTextJson.Codec.Create<U>() |> FsCodec.SystemTextJson.InteropExtensions.ToByteArrayCodec
+let indirectCodecU = FsCodec.SystemTextJson.CodecJsonElement.Create<U>() |> FsCodec.SystemTextJson.Interop.InteropExtensions.ToUtf8Codec
 
 let [<Property>] ``round-trips diverse bodies correctly`` (x: U, encodeDirect, decodeDirect) =
     let encoder = if encodeDirect then defaultEventCodec else indirectCodecU
@@ -43,6 +43,6 @@ let [<Property>] ``round-trips diverse bodies correctly`` (x: U, encodeDirect, d
     let e : Batch = mkBatch encoded
     let ser = JsonConvert.SerializeObject(e, defaultSettings)
     let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
-    let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
+    let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
     let decoded = decoder.TryDecode loaded |> Option.get
     x =! decoded

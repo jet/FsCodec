@@ -49,9 +49,9 @@ type [<NoEquality; NoComparison; JsonObject(ItemRequired=Required.Always)>]
         i: int64
         n: int64
         e: Event[] }
-let mkBatch (encoded : FsCodec.IEventData<byte[]>) : Batch =
+let mkBatch (encoded : FsCodec.IEventData<ReadOnlyMemory<byte>>) : Batch =
     {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
-        e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = encoded.Data; m = null } |] }
+        e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = (let d = encoded.Data in d.ToArray()); m = null } |] }
 
 #nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
 
@@ -66,7 +66,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
         let res = JsonConvert.SerializeObject(e)
         test <@ res.Contains """"d":{"embed":"\""}""" @>
         let des = JsonConvert.DeserializeObject<Batch>(res)
-        let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
+        let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
         let decoded = eventCodec.TryDecode loaded |> Option.get
         input =! decoded
 
@@ -78,7 +78,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
         let e : Batch = mkBatch encoded
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
-        let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e.[0].c, des.e.[0].d)
+        let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
         let decoded = defaultEventCodec.TryDecode loaded |> Option.get
         x =! decoded
 

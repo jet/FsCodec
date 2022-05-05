@@ -9,11 +9,18 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `SystemTextJson.CodecJsonElement`: Maps Unions to/from Events with `JsonElement` Bodies as `SystemTextJson.Codec` did in in `2.x` [#75](https://github.com/jet/FsCodec/pull/75)
+- `SystemTextJson.ToUtf8Codec`: Adapter to map from `JsonElement` to `ReadOnlyMemory<byte>` Event Bodies (for interop scenarios; ideally one uses `SystemTextJson.Codec` directly in the first instance) [#75](https://github.com/jet/FsCodec/pull/75)
+
 ### Changed
 
 - `NewtonsoftJson`: Rename `Settings` to `Options` [#60](https://github.com/jet/FsCodec/issues/60) [#76](https://github.com/jet/FsCodec/pull/76)
 - Updated build and tests to use `net6.0`, all test package dependencies
 - Updated `TypeShape` reference to v `10`, triggering min `FSharp.Core` target moving to `4.5.4` 
+- `SystemTextJson.Codec`: Switched Event body type from `JsonElement` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
+- `NewtonsoftJson.Codec`: Switched Event body type from `byte[]` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
+- `ToByteArrayCodec`: now adapts a `ReadOnlyMemory<byte>` encoder (was from `JsonElement`) (to `byte[]` bodies); Moved from `FsCodec.SystemTextJson` to `FsCodec.Box` [#75](https://github.com/jet/FsCodec/pull/75)
 
 ### Removed
 

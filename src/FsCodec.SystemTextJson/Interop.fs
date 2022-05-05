@@ -1,56 +1,32 @@
-namespace FsCodec.SystemTextJson
+namespace FsCodec.SystemTextJson.Interop
 
+open FsCodec.SystemTextJson
 open System.Runtime.CompilerServices
+open System
 open System.Text.Json
 
 [<Extension>]
 type InteropExtensions =
-    static member private Adapt<'From, 'To, 'Event, 'Context>
-        (   native : FsCodec.IEventCodec<'Event, 'From, 'Context>,
-            up : 'From -> 'To,
-            down : 'To -> 'From) : FsCodec.IEventCodec<'Event, 'To, 'Context> =
 
-        { new FsCodec.IEventCodec<'Event, 'To, 'Context> with
-            member _.Encode(context, event) =
-                let encoded = native.Encode(context, event)
-                { new FsCodec.IEventData<_> with
-                    member _.EventType = encoded.EventType
-                    member _.Data = up encoded.Data
-                    member _.Meta = up encoded.Meta
-                    member _.EventId = encoded.EventId
-                    member _.CorrelationId = encoded.CorrelationId
-                    member _.CausationId = encoded.CausationId
-                    member _.Timestamp = encoded.Timestamp }
+    static member private Utf8ToJsonElement(x : ReadOnlyMemory<byte>) : JsonElement =
+        if x.IsEmpty then JsonElement()
+        else JsonSerializer.Deserialize<JsonElement>(x.Span)
 
-            member _.TryDecode encoded =
-                let mapped =
-                    { new FsCodec.ITimelineEvent<_> with
-                        member _.Index = encoded.Index
-                        member _.IsUnfold = encoded.IsUnfold
-                        member _.Context = encoded.Context
-                        member _.EventType = encoded.EventType
-                        member _.Data = down encoded.Data
-                        member _.Meta = down encoded.Meta
-                        member _.EventId = encoded.EventId
-                        member _.CorrelationId = encoded.CorrelationId
-                        member _.CausationId = encoded.CausationId
-                        member _.Timestamp = encoded.Timestamp }
-                native.TryDecode mapped }
-
-    static member private MapFrom(x : byte[]) : JsonElement =
-        if x = null then JsonElement()
-        else JsonSerializer.Deserialize(System.ReadOnlySpan.op_Implicit x)
-    static member private MapTo(x: JsonElement) : byte[] =
-        if x.ValueKind = JsonValueKind.Undefined then null
+    static member private JsonElementToUtf8(x : JsonElement) : ReadOnlyMemory<byte> =
+        if x.ValueKind = JsonValueKind.Undefined then ReadOnlyMemory.Empty
         // Avoid introduction of HTML escaping for things like quotes etc (Options.Default uses Options.Create(), which defaults to unsafeRelaxedJsonEscaping=true)
-        else JsonSerializer.SerializeToUtf8Bytes(x, options = Options.Default)
+        else JsonSerializer.SerializeToUtf8Bytes(x, options = Options.Default) |> ReadOnlyMemory
 
+    /// Adapts an IEventCodec that's rendering to <c>JsonElement</c> Event Bodies to handle <c>ReadOnlyMemory<byte></c> bodies instead.<br/>
+    /// NOTE where possible, it's better to use <c>Codec</c> in preference to <c>CodecJsonElement</c> to encode directly in order to avoid this mapping process.
     [<Extension>]
-    static member ToByteArrayCodec<'Event, 'Context>(native : FsCodec.IEventCodec<'Event, JsonElement, 'Context>)
-        : FsCodec.IEventCodec<'Event, byte[], 'Context> =
-        InteropExtensions.Adapt(native, InteropExtensions.MapTo, InteropExtensions.MapFrom)
+    static member ToUtf8Codec<'Event, 'Context>(native : FsCodec.IEventCodec<'Event, JsonElement, 'Context>)
+        : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
+        FsCodec.Interop.InteropExtensions.Adapt(native, InteropExtensions.JsonElementToUtf8, InteropExtensions.Utf8ToJsonElement)
 
+    /// Adapts an IEventCodec that's rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to handle <c>JsonElement</c> bodies instead.<br/>
+    /// NOTE where possible, it's better to use <c>CodecJsonElement</c> in preference to <c>Codec/c> to encode directly in order to avoid this mapping process.
     [<Extension>]
-    static member ToJsonElementCodec<'Event, 'Context>(native : FsCodec.IEventCodec<'Event, byte[], 'Context>)
+    static member ToJsonElementCodec<'Event, 'Context>(native : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : FsCodec.IEventCodec<'Event, JsonElement, 'Context> =
-        InteropExtensions.Adapt(native, InteropExtensions.MapFrom, InteropExtensions.MapTo)
+        FsCodec.Interop.InteropExtensions.Adapt(native, InteropExtensions.Utf8ToJsonElement, InteropExtensions.JsonElementToUtf8)
