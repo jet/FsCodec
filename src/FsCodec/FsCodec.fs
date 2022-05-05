@@ -4,7 +4,7 @@ namespace FsCodec
 type IEventData<'Format> =
     /// The Event Type, used to drive deserialization
     abstract member EventType : string
-    /// Event body, as UTF-8 encoded JSON, protobuf etc, ready to be injected into the Store
+    /// Event body, as UTF-8 encoded JSON / protobuf etc, ready to be injected into the Store
     abstract member Data : 'Format
     /// Optional metadata (null, or same as Data, not written if missing)
     abstract member Meta : 'Format

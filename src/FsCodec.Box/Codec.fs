@@ -1,4 +1,4 @@
-// Equivalent of FsCodec.Newtonsoft/SystemTextJson.Codec intended to provide equivalent calls and functionality, without actually serializing/deserializing as JSON
+// Equivalent of FsCodec.NewtonsoftJson/SystemTextJson.Codec intended to provide equivalent calls and functionality, without actually serializing/deserializing as JSON
 // This is a useful facility for in-memory stores such as Equinox's MemoryStore as it enables you to
 // - efficiently test behaviors from an event sourced decision processing perspective (e.g. with Property Based Tests)
 // - without paying a serialization cost and/or having to deal with sanitization of generated data in order to make it roundtrippable through same

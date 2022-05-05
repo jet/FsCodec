@@ -15,13 +15,13 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in a serializer and/or Union Encoder of your choice (typically this is used to supply a pair `encode` and `tryDecode` functions)
   - [`FsCodec.StreamName`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs): strongly-typed wrapper for a Stream Name, together with factory functions and active patterns for parsing same
 - [![Box Codec NuGet](https://img.shields.io/nuget/v/FsCodec.Box.svg)](https://www.nuget.org/packages/FsCodec.Box/) `FsCodec.Box`: See [`FsCodec.Box.Codec`](#boxcodec); `IEventCodec<obj>` implementation that provides a null encode/decode step in order to enable decoupling of serialization/deserialization concerns from the encoding aspect, typically used together with  [`Equinox.MemoryStore`](https://www.fuget.org/packages/Equinox.MemoryStore)
-  - [depends](https://www.fuget.org/packages/FsCodec.Box) on `FsCodec.Box`
+  - [depends](https://www.fuget.org/packages/FsCodec.Box) on `FsCodec`, `TypeShape >= 10`
 - [![Newtonsoft.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.NewtonsoftJson.svg)](https://www.nuget.org/packages/FsCodec.NewtonsoftJson/) `FsCodec.NewtonsoftJson`: As described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/), enabled tagging of F# Discriminated Union cases in a versionable manner with low-dependencies using [TypeShape](https://github.com/eiriktsarpalis/TypeShape)'s [`UnionContractEncoder`](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores)
   - Uses the ubiquitous [`Newtonsoft.Json`](https://github.com/JamesNK/Newtonsoft.Json) library to serialize the event bodies.
   - Provides relevant Converters for common non-primitive types prevalent in F#
-  - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec`, `Newtonsoft.Json >= 11.0.2`, `Microsoft.IO.RecyclableMemoryStream >= 2.2.0`, `System.Buffers >= 4.5.1`
+  - [depends](https://www.fuget.org/packages/FsCodec.NewtonsoftJson) on `FsCodec.Box`, `Newtonsoft.Json >= 11.0.2`, `Microsoft.IO.RecyclableMemoryStream >= 2.2.0`, `System.Buffers >= 4.5.1`
 - [![System.Text.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.SystemTextJson.svg)](https://www.nuget.org/packages/FsCodec.SystemTextJson/) `FsCodec.SystemTextJson`: See [#38](https://github.com/jet/FsCodec/pulls/38): drop in replacement that allows one to retarget from `Newtonsoft.Json` to the .NET Core >= v 3.0 default serializer: `System.Text.Json`, solely by changing the referenced namespace.
-  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec`, `System.Text.Json >= 6.0.1`,
+  - [depends](https://www.fuget.org/packages/FsCodec.SystemTextJson) on `FsCodec.Box`, `System.Text.Json >= 6.0.1`,
 
 # Features: `FsCodec`
 
@@ -724,7 +724,7 @@ which yields the following output:
 <a name="boxcodec"></a>
 # Features: `FsCodec.Box.Codec`
 
-`FsCodec.Box.Codec` is a drop-in-equivalent for `FsCodec.(Newtonsoft|SystemText)Json.Codec` with equivalent `.Create` overloads that encode as `ITimelineEvent<obj>` (as opposed to `ITimelineEvent<byte[]>` / `ITimelineEvent<JsonElement>`).
+`FsCodec.Box.Codec` is a drop-in-equivalent for `FsCodec.(Newtonsoft|SystemText)Json.Codec` with equivalent `.Create` overloads that encode as `ITimelineEvent<obj>` (as opposed to `ITimelineEvent<ReadOnlyMemory<byte>>` / `ITimelineEvent<JsonElement>`).
 
 This is useful when storing events in a `MemoryStore` as it allows one to take the perf cost and ancillary yak shaving induced by round-tripping arbitrary event payloads to the concrete serialization format out of the picture when writing property based unit and integration tests.
 
