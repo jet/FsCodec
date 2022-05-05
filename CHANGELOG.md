@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.1"></a>
+## [3.0.0-rc.1] - 2022-05-05
+
+### Added
 
 - `SystemTextJson.CodecJsonElement`: Maps Unions to/from Events with `JsonElement` Bodies as `SystemTextJson.Codec` did in in `2.x` [#75](https://github.com/jet/FsCodec/pull/75)
 - `SystemTextJson.ToUtf8Codec`: Adapter to map from `JsonElement` to `ReadOnlyMemory<byte>` Event Bodies (for interop scenarios; ideally one uses `SystemTextJson.Codec` directly in the first instance) [#75](https://github.com/jet/FsCodec/pull/75)
@@ -17,7 +25,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 - `NewtonsoftJson`: Rename `Settings` to `Options` [#60](https://github.com/jet/FsCodec/issues/60) [#76](https://github.com/jet/FsCodec/pull/76)
 - Updated build and tests to use `net6.0`, all test package dependencies
-- Updated `TypeShape` reference to v `10`, triggering min `FSharp.Core` target moving to `4.5.4` 
+- Updated `TypeShape` reference to v `10`, triggering min `FSharp.Core` target moving to `4.5.4`
 - `SystemTextJson.Codec`: Switched Event body type from `JsonElement` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
 - `NewtonsoftJson.Codec`: Switched Event body type from `byte[]` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
 - `ToByteArrayCodec`: now adapts a `ReadOnlyMemory<byte>` encoder (was from `JsonElement`) (to `byte[]` bodies); Moved from `FsCodec.SystemTextJson` to `FsCodec.Box` [#75](https://github.com/jet/FsCodec/pull/75)
@@ -25,8 +33,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 
 - `net461` support [#60](https://github.com/jet/FsCodec/issues/60) [#76](https://github.com/jet/FsCodec/pull/76)
-
-### Fixed
 
 <a name="2.3.2"></a>
 ## [2.3.2] - 2022-03-10
@@ -256,7 +262,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/2.3.2...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.1...HEAD
+[3.0.0-rc.1]: https://github.com/jet/FsCodec/compare/2.3.2...3.0.0-rc.1
 [2.3.2]: https://github.com/jet/FsCodec/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/jet/FsCodec/compare/2.3.0...2.3.1
 [2.3.0]: https://github.com/jet/FsCodec/compare/2.3.0-rc.2...2.3.0
