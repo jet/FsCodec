@@ -21,16 +21,16 @@ open FsCodec.NewtonsoftJson
 open Swensen.Unquote
 open Xunit
 
-let ootb = Settings.CreateDefault() |> Serdes
-let serdes = Serdes Settings.Default
+let ootb = Options.CreateDefault() |> Serdes
+let serdes = Serdes Options.Default
 
-let [<Fact>] ``Settings.CreateDefault roundtrips null string option, but rendering is ugly`` () =
+let [<Fact>] ``Options.CreateDefault roundtrips null string option, but rendering is ugly`` () =
     let value : string option = Some null
     let ser = ootb.Serialize value
     test <@ ser = "{\"Case\":\"Some\",\"Fields\":[null]}" @>
     test <@ value = ootb.Deserialize ser @>
 
-let [<Fact>] ``Settings.Create does not roundtrip Some null`` () =
+let [<Fact>] ``Options.Create does not roundtrip Some null`` () =
     let value : string option = Some null
     let ser = serdes.Serialize value
     "null" =! ser
@@ -58,7 +58,7 @@ let [<Fact>] ``Workaround is to detect and/or substitute such non-roundtrippable
 type RecordWithStringOptions = { x : int; y : Nested }
 and Nested = { z : string option }
 
-let [<Fact>] ``Can detect and/or substitute null string option when using Options/Settings.Create`` () =
+let [<Fact>] ``Can detect and/or substitute null string option when using Options.Create`` () =
     let value : RecordWithStringOptions = { x = 9; y = { z = Some null } }
     test <@ hasSomeNull value @>
     let value = replaceSomeNullsWithNone value
@@ -72,7 +72,7 @@ let [<Fact>] ``Can detect and/or substitute null string option when using Option
     let ignoreNullsSerdes = Options.Create(ignoreNulls = true) |> Serdes
 #else
     // As one might expect, the ignoreNulls setting is also honored
-    let ignoreNullsSerdes = Settings.Create(ignoreNulls = true) |> Serdes
+    let ignoreNullsSerdes = Options.Create(ignoreNulls = true) |> Serdes
 #endif
     let ser = ignoreNullsSerdes.Serialize value
     ser =! """{"x":9,"y":{}}"""

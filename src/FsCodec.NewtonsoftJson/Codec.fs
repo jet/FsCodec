@@ -54,7 +54,7 @@ module Core =
 /// See <a href="https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs" /> for example usage.</summary>
 type Codec private () =
 
-    static let defaultSettings = lazy Settings.Create()
+    static let defaultSettings = lazy Options.Create()
 
     /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>Newtonsoft.Json</c> <c>settings</c>.<br/>
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion
@@ -70,7 +70,7 @@ type Codec private () =
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
             ///   and an Event Creation <c>timestamp</c>.</summary>
             down : 'Context option * 'Event -> 'Contract * 'Meta option * Guid * string * string * DateTimeOffset option,
-            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Default</c></summary>
+            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
@@ -116,7 +116,7 @@ type Codec private () =
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
             /// <summary>Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId</summary>
             mapCausation : 'Context option * 'Meta option -> 'Meta option * Guid * string * string,
-            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Default</c></summary>
+            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
@@ -142,7 +142,7 @@ type Codec private () =
             ///   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
             ///   and an Event Creation <c>timestamp</c>.</summary>
             down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
-            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Default</c></summary>
+            /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
@@ -155,7 +155,7 @@ type Codec private () =
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
-        (   /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Settings.Default</c></summary>
+        (   /// <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?settings,
             /// <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)

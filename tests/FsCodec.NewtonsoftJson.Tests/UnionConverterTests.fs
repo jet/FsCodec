@@ -88,7 +88,7 @@ let assertIgnoreNullsIs value (profile : JsonSerializerOptions) =
     profile.DefaultIgnoreCondition =! if value then JsonIgnoreCondition.Always else JsonIgnoreCondition.Never
 #else
 let serializeWith<'t> (profile : JsonSerializerSettings) (value : 't) = JsonConvert.SerializeObject(value, profile)
-let settings = Settings.Create(camelCase = false, ignoreNulls = true)
+let settings = Options.Create(camelCase = false, ignoreNulls = true)
 let serializeDefault<'t> value = serializeWith<'t> settings value
 
 let deserializeWith<'t> (profile : JsonSerializerSettings) serialized = JsonConvert.DeserializeObject<'t>(serialized, profile)
@@ -168,8 +168,8 @@ let ``deserializes properly`` () =
 #if SYSTEM_TEXT_JSON
     let requiredSettingsToHandleOptionalFields = Options.Default
 #else
-    // This is equivalent to Settings.Default, but we want absolutely minimal adjustment from the out-of-the-box Newtonsoft settings
-    let requiredSettingsToHandleOptionalFields = Settings.CreateDefault(OptionConverter())
+    // This is equivalent to Options.Default, but we want absolutely minimal adjustment from the out-of-the-box Newtonsoft settings
+    let requiredSettingsToHandleOptionalFields = Options.CreateDefault(OptionConverter())
 #endif
     let deserializeCustom s = deserializeWith<TestDU> requiredSettingsToHandleOptionalFields s
     test <@ CaseM (Some 1) = deserializeCustom """{"case":"CaseM","a":1}""" @>
@@ -186,8 +186,8 @@ module MissingFieldsHandling =
 
     let rejectMissingSettings =
         [   JsonSerializerSettings(MissingMemberHandling = MissingMemberHandling.Error)
-            Settings.CreateDefault(errorOnMissing=true)
-            Settings.Create(errorOnMissing=true)]
+            Options.CreateDefault(errorOnMissing=true)
+            Options.Create(errorOnMissing=true)]
 
     [<Fact>]
     let ``lets converters reject missing values by feeding them a null`` () =
@@ -235,7 +235,7 @@ let (|Q|) (s: string) = JsonSerializer.Serialize(s, defaultOptions)
 // Renderings when NullValueHandling=Include, which is used by the recommended Options.Create profile
 #else
 let (|Q|) (s: string) = Newtonsoft.Json.JsonConvert.SerializeObject s
-// Renderings when NullValueHandling=Include, which is the default for Json.net, and used by the recommended Settings.CreateCorrect profile
+// Renderings when NullValueHandling=Include, which is the default for Json.net, and used by the recommended Options.Create profile
 #endif
 let render ignoreNulls = function
     | CaseA { test = null } when ignoreNulls -> """{"case":"CaseA"}"""
@@ -323,7 +323,7 @@ let roundtripProperty ignoreNulls profile value =
 #if SYSTEM_TEXT_JSON
 let includeNullsProfile = Options.Create(ignoreNulls = false)
 #else
-let includeNullsProfile = Settings.CreateDefault(OptionConverter() (*, ignoreNulls=false*))
+let includeNullsProfile = Options.CreateDefault(OptionConverter() (*, ignoreNulls=false*))
 #endif
 [<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter includeNulls Profile roundtrip property test`` (x: TestDU) =
@@ -334,7 +334,7 @@ let ``UnionConverter includeNulls Profile roundtrip property test`` (x: TestDU) 
 #if SYSTEM_TEXT_JSON
 let defaultProfile = Options.Default
 #else
-let defaultProfile = Settings.Default
+let defaultProfile = Options.Default
 #endif
 [<DomainProperty(MaxTest=1000)>]
 let ``UnionConverter opinionated Profile roundtrip property test`` (x: TestDU) =
@@ -542,7 +542,7 @@ module ``Struct discriminated unions`` =
 #if SYSTEM_TEXT_JSON
 let serdes = Serdes Options.Default
 #else
-let serdes = Serdes Settings.Default
+let serdes = Serdes Options.Default
 #endif
 
 module Nested =

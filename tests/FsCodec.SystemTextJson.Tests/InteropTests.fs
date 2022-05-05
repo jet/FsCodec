@@ -32,7 +32,7 @@ type U =
     | N
     interface TypeShape.UnionContract.IUnionContract
 
-let defaultSettings = FsCodec.NewtonsoftJson.Settings.CreateDefault() // Test without converters, as that's what Equinox.Cosmos will do
+let defaultSettings = FsCodec.NewtonsoftJson.Options.CreateDefault() // Test without converters, as that's what Equinox.Cosmos will do
 let defaultEventCodec = FsCodec.NewtonsoftJson.Codec.Create<U>(defaultSettings)
 let indirectCodecU = FsCodec.SystemTextJson.Codec.Create<U>() |> FsCodec.SystemTextJson.InteropExtensions.ToByteArrayCodec
 
