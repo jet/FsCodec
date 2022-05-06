@@ -9,12 +9,16 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-
-- `Core.EventData/TimelineEvent/EventCodec.Map`: Exposed building blocks for mapping event envelopes and/or codecs over Body Format types [#77](https://github.com/jet/FsCodec/pull/77)
-
 ### Changed
 ### Removed
 ### Fixed
+
+<a name="3.0.0-rc.2"></a>
+## [3.0.0-rc.2] - 2022-05-07
+
+### Added
+
+- `Core.EventData/TimelineEvent/EventCodec.Map`: Exposed building blocks for mapping event envelopes and/or codecs over Body Format types [#77](https://github.com/jet/FsCodec/pull/77)
 
 <a name="3.0.0-rc.1"></a>
 ## [3.0.0-rc.1] - 2022-05-05
@@ -265,7 +269,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.2...HEAD
+[3.0.0-rc.2]: https://github.com/jet/FsCodec/compare/3.0.0-rc.1...3.0.0-rc.2
 [3.0.0-rc.1]: https://github.com/jet/FsCodec/compare/2.3.2...3.0.0-rc.1
 [2.3.2]: https://github.com/jet/FsCodec/compare/2.3.1...2.3.2
 [2.3.1]: https://github.com/jet/FsCodec/compare/2.3.0...2.3.1
