@@ -48,7 +48,7 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
         let eventId = match eventId with Some id -> id | None -> Guid.NewGuid()
         EventData(eventType, data, meta, eventId, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
 
-    interface FsCodec.IEventData<'Format> with
+    interface IEventData<'Format> with
         member _.EventType = eventType
         member _.Data = data
         member _.Meta = meta
@@ -56,6 +56,17 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
         member _.CorrelationId = correlationId
         member _.CausationId = causationId
         member _.Timestamp = timestamp
+
+    static member Map<'Mapped>(f : 'Format -> 'Mapped) : IEventData<'Format> -> IEventData<'Mapped> =
+        fun x ->
+            { new IEventData<'Mapped> with
+                member _.EventType = x.EventType
+                member _.Data = f x.Data
+                member _.Meta = f x.Meta
+                member _.EventId = x.EventId
+                member _.CorrelationId = x.CorrelationId
+                member _.CausationId = x.CausationId
+                member _.Timestamp = x.Timestamp }
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
@@ -78,3 +89,35 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eve
         member _.CorrelationId = correlationId
         member _.CausationId = causationId
         member _.Timestamp = timestamp
+
+    static member Map<'Mapped>(f : 'Format -> 'Mapped) : ITimelineEvent<'Format> -> ITimelineEvent<'Mapped> =
+        fun x ->
+            { new ITimelineEvent<'Mapped> with
+                member _.Index = x.Index
+                member _.IsUnfold = x.IsUnfold
+                member _.Context = x.Context
+                member _.EventType = x.EventType
+                member _.Data = f x.Data
+                member _.Meta = f x.Meta
+                member _.EventId = x.EventId
+                member _.CorrelationId = x.CorrelationId
+                member _.CausationId = x.CausationId
+                member _.Timestamp = x.Timestamp }
+
+[<NoComparison; NoEquality>]
+type EventCodec<'Event, 'Format, 'Context> private () =
+
+    static member Map<'TargetFormat>(native : IEventCodec<'Event, 'Format, 'Context>, up : 'Format -> 'TargetFormat, down : 'TargetFormat -> 'Format)
+        : IEventCodec<'Event, 'TargetFormat, 'Context> =
+
+        let upConvert = EventData.Map up
+        let downConvert = TimelineEvent.Map down
+
+        { new IEventCodec<'Event, 'TargetFormat, 'Context> with
+            member _.Encode(context, event) =
+                let encoded = native.Encode(context, event)
+                upConvert encoded
+
+            member _.TryDecode target =
+                let encoded = downConvert target
+                native.TryDecode encoded }

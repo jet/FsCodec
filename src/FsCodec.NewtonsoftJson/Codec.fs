@@ -35,6 +35,7 @@ module Core =
     type BytesEncoder(settings : JsonSerializerSettings) =
         let serializer = JsonSerializer.Create(settings)
         interface TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>> with
+
             member _.Empty = ReadOnlyMemory.Empty
 
             member _.Encode (value : 'T) =
