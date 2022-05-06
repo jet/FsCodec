@@ -11,7 +11,7 @@ type Batch = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.Batch
 type Union = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.Union
 let mkBatch = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.mkBatch
 
-let indirectCodec = FsCodec.SystemTextJson.CodecJsonElement.Create() |> FsCodec.SystemTextJson.Interop.InteropExtensions.ToUtf8Codec
+let indirectCodec = FsCodec.SystemTextJson.CodecJsonElement.Create() |> FsCodec.SystemTextJson.Interop.InteropHelpers.ToUtf8Codec
 let [<Fact>] ``encodes correctly`` () =
     let input = Union.A { embed = "\"" }
     let encoded = indirectCodec.Encode(None, input)
@@ -34,7 +34,7 @@ type U =
 
 let defaultSettings = FsCodec.NewtonsoftJson.Options.CreateDefault() // Test without converters, as that's what Equinox.Cosmos will do
 let defaultEventCodec = FsCodec.NewtonsoftJson.Codec.Create<U>(defaultSettings)
-let indirectCodecU = FsCodec.SystemTextJson.CodecJsonElement.Create<U>() |> FsCodec.SystemTextJson.Interop.InteropExtensions.ToUtf8Codec
+let indirectCodecU = FsCodec.SystemTextJson.CodecJsonElement.Create<U>() |> FsCodec.SystemTextJson.Interop.InteropHelpers.ToUtf8Codec
 
 let [<Property>] ``round-trips diverse bodies correctly`` (x: U, encodeDirect, decodeDirect) =
     let encoder = if encodeDirect then defaultEventCodec else indirectCodecU

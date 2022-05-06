@@ -119,7 +119,7 @@ des<Message2> """{"name":null,"outcome":"Discomfort"}"""
 module EventCodec =
 
     /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
-    let tryDecode (codec : FsCodec.IEventCodec<_, _, _>) (log : Serilog.ILogger) streamName (x : FsCodec.ITimelineEvent<byte[]>) =
+    let tryDecode (codec : FsCodec.IEventCodec<_, _, _>) (log : Serilog.ILogger) streamName (x : FsCodec.ITimelineEvent<ReadOnlyMemory<byte>>) =
         match codec.TryDecode x with
         | None ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
@@ -238,7 +238,7 @@ module Reactions =
     type Event = int64 * DateTimeOffset * Events.Event
 
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<byte[]>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
+        let up (raw : FsCodec.ITimelineEvent<ReadOnlyMemory<byte>>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
         let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
 

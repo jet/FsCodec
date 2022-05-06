@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `Core.EventData/TimelineEvent/EventCodec.Map`: Exposed building blocks for mapping event envelopes and/or codecs over Body Format types [#77](https://github.com/jet/FsCodec/pull/77)
+
 ### Changed
 ### Removed
 ### Fixed
@@ -27,8 +30,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - Updated build and tests to use `net6.0`, all test package dependencies
 - Updated `TypeShape` reference to v `10`, triggering min `FSharp.Core` target moving to `4.5.4`
 - `SystemTextJson.Codec`: Switched Event body type from `JsonElement` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
-- `NewtonsoftJson.Codec`: Switched Event body type from `byte[]` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
-- `ToByteArrayCodec`: now adapts a `ReadOnlyMemory<byte>` encoder (was from `JsonElement`) (to `byte[]` bodies); Moved from `FsCodec.SystemTextJson` to `FsCodec.Box` [#75](https://github.com/jet/FsCodec/pull/75)
+- `NewtonsoftJson.Codec`: Switched Event body type from `byte array` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
+- `ToByteArrayCodec`: now adapts a `ReadOnlyMemory<byte>` encoder (was from `JsonElement`) (to `byte array` bodies); Moved from `FsCodec.SystemTextJson` to `FsCodec.Box` [#75](https://github.com/jet/FsCodec/pull/75)
 
 ### Removed
 
@@ -199,7 +202,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Changed
 
-- Generalized `Codec.Create` to no longer presume `Data` and `Metadata` should always be `byte[]` [#24](https://github.com/jet/FsCodec/pull/24)
+- Generalized `Codec.Create` to no longer presume `Data` and `Metadata` should always be `byte array` [#24](https://github.com/jet/FsCodec/pull/24)
 
 ### Removed
 
