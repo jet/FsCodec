@@ -8,8 +8,6 @@
     <PackageLicense>Apache-2.0</PackageLicense>
     <Copyright>Copyright © 2016-22</Copyright>
 
-    <ThisDirAbsolute>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)"))</ThisDirAbsolute>
-
     <!-- Global Project config flags -->
     <WarningLevel>5</WarningLevel>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -17,7 +15,6 @@
     <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
   </PropertyGroup>
 
