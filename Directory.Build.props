@@ -11,11 +11,9 @@
     <!-- Global Project config flags -->
     <WarningLevel>5</WarningLevel>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-
-    <!-- SourceLink related properties https://github.com/dotnet/SourceLink#using-sourcelink -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-
   </PropertyGroup>
-
+  <ItemGroup>
+    <!-- SourceLink etc -->
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

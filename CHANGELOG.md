@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- Replaced `SourceLink` with `DotNet.ReproducibleBuilds` wrapper
+
 ### Removed
 ### Fixed
 
