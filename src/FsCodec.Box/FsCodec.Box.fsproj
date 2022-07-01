@@ -9,6 +9,7 @@
         <Compile Include="CoreCodec.fs" />
         <Compile Include="Codec.fs" />
         <Compile Include="Interop.fs" />
+        <Compile Include="Deflate.fs" />
     </ItemGroup>
 
     <ItemGroup>

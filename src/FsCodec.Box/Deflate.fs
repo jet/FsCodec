@@ -2,7 +2,6 @@ namespace FsCodec
 
 open System
 open System.Runtime.CompilerServices
-open FsCodec
 
 module private MaybeDeflatedBody =
 
