@@ -1,8 +1,7 @@
 namespace FsCodec.SystemTextJson.Interop
 
-open FsCodec.SystemTextJson
-open System.Runtime.CompilerServices
 open System
+open System.Runtime.CompilerServices
 open System.Text.Json
 
 [<Extension>]
@@ -15,7 +14,7 @@ type InteropHelpers =
     static member JsonElementToUtf8(x : JsonElement) : ReadOnlyMemory<byte> =
         if x.ValueKind = JsonValueKind.Undefined then ReadOnlyMemory.Empty
         // Avoid introduction of HTML escaping for things like quotes etc (Options.Default uses Options.Create(), which defaults to unsafeRelaxedJsonEscaping = true)
-        else JsonSerializer.SerializeToUtf8Bytes(x, options = Options.Default) |> ReadOnlyMemory
+        else JsonSerializer.SerializeToUtf8Bytes(x, options = FsCodec.SystemTextJson.Options.Default) |> ReadOnlyMemory
 
     /// Adapts an IEventCodec that's rendering to <c>JsonElement</c> Event Bodies to handle <c>ReadOnlyMemory<byte></c> bodies instead.<br/>
     /// NOTE where possible, it's better to use <c>Codec</c> in preference to <c>CodecJsonElement</c> to encode directly in order to avoid this mapping process.
