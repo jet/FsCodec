@@ -305,7 +305,6 @@ let render ignoreNulls = function
     | CaseZ (a, None) when ignoreNulls -> sprintf """{"case":"CaseZ","a":"%s"}""" (string a)
     | CaseZ (a, None) -> sprintf """{"case":"CaseZ","a":"%s","b":null}""" (string a)
     | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
-    | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
 
 type FsCheckGenerators =
     static member CartId = Arb.generate |> Gen.map CartId |> Arb.fromGen

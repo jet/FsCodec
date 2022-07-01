@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `EncodeWithTryDeflate/EncodeWithoutCompression`: Maps `ReadOnlyMemory<byte>` bodies to `int * ReadOnlyMemory<byte>` with a non-zero value indicating compression was applied [#78](https://github.com/jet/FsCodec/pull/78)
+
 ### Changed
 
 - Replaced `SourceLink` with `DotNet.ReproducibleBuilds` wrapper

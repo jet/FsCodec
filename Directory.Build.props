@@ -9,6 +9,7 @@
     <Copyright>Copyright © 2016-22</Copyright>
 
     <!-- Global Project config flags -->
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <WarningLevel>5</WarningLevel>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
