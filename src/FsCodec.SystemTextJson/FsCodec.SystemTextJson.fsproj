@@ -15,6 +15,7 @@
     <Compile Include="Codec.fs" />
     <Compile Include="CodecJsonElement.fs" />
     <Compile Include="Interop.fs" />
+    <Compile Include="Deflate.fs" />
   </ItemGroup>
 
   <ItemGroup>
