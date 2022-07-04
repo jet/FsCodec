@@ -9,15 +9,20 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
 
-- `EncodeWithTryDeflate/EncodeUncompressed`: Maps `ReadOnlyMemory<byte>` bodies to `int * ReadOnlyMemory<byte>` (with a non-zero value indicating compression was applied) [#80](https://github.com/jet/FsCodec/pull/80)
+<a name="3.0.0-rc.3"></a>
+## [3.0.0-rc.3] - 2022-07-04
+
+### Added
+
+- `EncodeWithTryDeflate/EncodeUncompressed`: Maps `ReadOnlyMemory<byte>` bodies to `int * ReadOnlyMemory<byte>` (with a non-zero value ~~~~indicating compression was applied) [#80](https://github.com/jet/FsCodec/pull/80)
 
 ### Changed
 
 - Replaced `SourceLink` with `DotNet.ReproducibleBuilds` wrapper
-
-### Removed
-### Fixed
 
 <a name="3.0.0-rc.2"></a>
 ## [3.0.0-rc.2] - 2022-05-07
@@ -275,7 +280,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.2...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.3...HEAD
+[3.0.0-rc.3]: https://github.com/jet/FsCodec/compare/3.0.0-rc.2...3.0.0-rc.3
 [3.0.0-rc.2]: https://github.com/jet/FsCodec/compare/3.0.0-rc.1...3.0.0-rc.2
 [3.0.0-rc.1]: https://github.com/jet/FsCodec/compare/2.3.2...3.0.0-rc.1
 [2.3.2]: https://github.com/jet/FsCodec/compare/2.3.1...2.3.2
