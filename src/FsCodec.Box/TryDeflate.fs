@@ -2,11 +2,15 @@ namespace FsCodec
 
 open System
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 
 module private MaybeDeflatedBody =
 
+    type Encoding =
+        | Direct = 0
+        | Deflate = 1
     type Encoded = (struct (int * ReadOnlyMemory<byte>))
-    let empty : Encoded = 0, ReadOnlyMemory.Empty
+    let empty : Encoded = int Encoding.Direct, ReadOnlyMemory.Empty
 
     (* EncodedBody can potentially hold compressed content, that we'll inflate on demand *)
 
@@ -17,7 +21,7 @@ module private MaybeDeflatedBody =
         decompressor.CopyTo(output)
         output.ToArray()
     let decode struct (encoding, data) : ReadOnlyMemory<byte> =
-        if encoding <> 0 then inflate data |> ReadOnlyMemory
+        if encoding = int Encoding.Deflate then inflate data |> ReadOnlyMemory
         else data
 
     (* Compression is conditional on the input meeting a minimum size, and the result meeting a required gain *)
@@ -32,7 +36,7 @@ module private MaybeDeflatedBody =
     let encode minSize minGain (raw : ReadOnlyMemory<byte>) : Encoded =
         if raw.Length < minSize then encodeUncompressed raw
         else match deflate raw with
-             | tmp when raw.Length > int tmp.Length + minGain -> 1, tmp.ToArray() |> ReadOnlyMemory
+             | tmp when raw.Length > int tmp.Length + minGain -> int Encoding.Deflate, tmp.ToArray() |> ReadOnlyMemory
              | _ -> encodeUncompressed raw
 
 type [<Struct>] CompressionOptions = { minSize : int; minGain : int } with
@@ -42,8 +46,8 @@ type [<Struct>] CompressionOptions = { minSize : int; minGain : int } with
     // so preventing or delaying that is of critical significance
     // Empirically not much JSON below 48 bytes actually compresses - while we don't assume that, it is what is guiding the derivation of the default
     static member Default = { minSize = 48; minGain = 4 }
-    /// Encode the data without attempting to Deflate, regardless of size
-    static member NoCompression = { minSize = Int32.MaxValue; minGain = 0 }
+    /// Encode the data without attempting to compress, regardless of size
+    static member Uncompressed = { minSize = Int32.MaxValue; minGain = 0 }
 
 [<Extension>]
 type DeflateHelpers =
@@ -54,16 +58,18 @@ type DeflateHelpers =
     static member EncodedToUtf8(x) : ReadOnlyMemory<byte> =
         MaybeDeflatedBody.decode x
 
-    /// Adapts an IEventCodec that's rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to attempt to compress the UTF-8 data.<br/>
+    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to attempt to compress the UTF-8 data.<br/>
+    /// If sufficient compression, as defined by <c>options</c> is not achieved, the body is saved as-is.<br/>
+    /// The <c>int</c> conveys a flag indicating whether compression was applied.</summary>
     [<Extension>]
-    static member EncodeWithTryDeflate<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, ?options)
+    static member EncodeWithTryDeflate<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
         let opts = defaultArg options CompressionOptions.Default
         FsCodec.Core.EventCodec.Map(native, DeflateHelpers.Utf8ToMaybeDeflateEncoded opts, DeflateHelpers.EncodedToUtf8)
 
-    /// Adapts an IEventCodec that's rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to attempt to compress the UTF-8 data.<br/>
+    /// Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to encode as per <c>EncodeWithTryDeflate</c>, but without attempting compression.<br/>
     [<Extension>]
-    static member EncodeWithoutCompression<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
+    static member EncodeUncompressed<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
-        let opts = CompressionOptions.NoCompression
-        FsCodec.Core.EventCodec.Map(native, DeflateHelpers.Utf8ToMaybeDeflateEncoded opts, DeflateHelpers.EncodedToUtf8)
+        let nullOpts = CompressionOptions.Uncompressed
+        DeflateHelpers.EncodeWithTryDeflate(native, nullOpts)
