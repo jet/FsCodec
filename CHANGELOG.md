@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `TryDeflate`:`ToByteArrayCodec`/`ToUtf8ArrayCodec`: Maps `int * ReadOnlyMemory<byte>` encodings to (uncompressed) `byte array`/`ReadOnlyMemory<byte>`  [#81](https://github.com/jet/FsCodec/pull/81)
+
 ### Changed
 ### Removed
 ### Fixed
@@ -18,7 +21,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-- `EncodeWithTryDeflate/EncodeUncompressed`: Maps `ReadOnlyMemory<byte>` bodies to `int * ReadOnlyMemory<byte>` (with a non-zero value ~~~~indicating compression was applied) [#80](https://github.com/jet/FsCodec/pull/80)
+- `EncodeTryDeflate/EncodeUncompressed`: Maps `ReadOnlyMemory<byte>` bodies to `int * ReadOnlyMemory<byte>` (with a non-zero value indicating compression was applied) [#80](https://github.com/jet/FsCodec/pull/80)
 
 ### Changed
 

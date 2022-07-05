@@ -8,7 +8,7 @@
     <ItemGroup>
         <Compile Include="CoreCodec.fs" />
         <Compile Include="Codec.fs" />
-        <Compile Include="Interop.fs" />
+        <Compile Include="ByteArray.fs" />
         <Compile Include="TryDeflate.fs" />
     </ItemGroup>
 
