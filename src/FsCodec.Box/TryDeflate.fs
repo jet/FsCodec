@@ -4,7 +4,7 @@ open System
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
-module private MaybeDeflatedBody =
+module private EncodedMaybeDeflated =
 
     type Encoding =
         | Direct = 0
@@ -32,7 +32,7 @@ module private MaybeDeflatedBody =
         compressor.Write(eventBody.Span)
         compressor.Flush()
         output
-    let private encodeUncompressed (raw : ReadOnlyMemory<byte>) : Encoded = 0, raw
+    let encodeUncompressed (raw : ReadOnlyMemory<byte>) : Encoded = 0, raw
     let encode minSize minGain (raw : ReadOnlyMemory<byte>) : Encoded =
         if raw.Length < minSize then encodeUncompressed raw
         else match deflate raw with
@@ -50,26 +50,42 @@ type [<Struct>] CompressionOptions = { minSize : int; minGain : int } with
     static member Uncompressed = { minSize = Int32.MaxValue; minGain = 0 }
 
 [<Extension>]
-type DeflateHelpers =
+type Deflate =
 
-    static member Utf8ToMaybeDeflateEncoded options (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
-        MaybeDeflatedBody.encode options.minSize options.minGain x
-
+    static member Utf8ToEncodedDirect (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
+        EncodedMaybeDeflated.encodeUncompressed x
+    static member Utf8ToEncodedTryDeflate options (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
+        EncodedMaybeDeflated.encode options.minSize options.minGain x
     static member EncodedToUtf8(x) : ReadOnlyMemory<byte> =
-        MaybeDeflatedBody.decode x
+        EncodedMaybeDeflated.decode x
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to attempt to compress the UTF-8 data.<br/>
     /// If sufficient compression, as defined by <c>options</c> is not achieved, the body is saved as-is.<br/>
     /// The <c>int</c> conveys a flag indicating whether compression was applied.</summary>
     [<Extension>]
-    static member EncodeWithTryDeflate<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
+    static member EncodeTryDeflate<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
         let opts = defaultArg options CompressionOptions.Default
-        FsCodec.Core.EventCodec.Map(native, DeflateHelpers.Utf8ToMaybeDeflateEncoded opts, DeflateHelpers.EncodedToUtf8)
+        FsCodec.Core.EventCodec.Map(native, Deflate.Utf8ToEncodedTryDeflate opts, Deflate.EncodedToUtf8)
 
-    /// Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to encode as per <c>EncodeWithTryDeflate</c>, but without attempting compression.<br/>
+    /// Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to encode as per <c>EncodeTryDeflate</c>, but without attempting compression.<br/>
     [<Extension>]
     static member EncodeUncompressed<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
-        let nullOpts = CompressionOptions.Uncompressed
-        DeflateHelpers.EncodeWithTryDeflate(native, nullOpts)
+        FsCodec.Core.EventCodec.Map(native, Deflate.Utf8ToEncodedDirect, Deflate.EncodedToUtf8)
+
+    /// Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory<byte></c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory<byte></c>.
+    [<Extension>]
+    static member ToUtf8Codec<'Event, 'Context>(native : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context>)
+        : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
+        let encode (x : ReadOnlyMemory<byte>) = EncodedMaybeDeflated.encodeUncompressed x
+        let decode x = Deflate.EncodedToUtf8(x)
+        FsCodec.Core.EventCodec.Map(native, decode, encode)
+
+    /// Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory<byte></c> Event Bodies to render and/or consume from Uncompressed <c>byte array</c>.
+    [<Extension>]
+    static member ToByteArrayCodec<'Event, 'Context>(native : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context>)
+        : IEventCodec<'Event, byte[], 'Context> =
+        let encode (x : byte array) = Deflate.Utf8ToEncodedDirect (ReadOnlyMemory.op_Implicit x)
+        let decode x = let u8 = Deflate.EncodedToUtf8(x) in u8.ToArray()
+        FsCodec.Core.EventCodec.Map(native, decode, encode)

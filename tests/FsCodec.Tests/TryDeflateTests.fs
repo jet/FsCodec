@@ -28,9 +28,9 @@ module StringUtf8 =
         let res' = roundtrip sut value
         res' =! Some value
 
-module WithTryDeflate =
+module TryDeflate =
 
-    let sut = FsCodec.DeflateHelpers.EncodeWithTryDeflate(StringUtf8.sut)
+    let sut = FsCodec.Deflate.EncodeTryDeflate(StringUtf8.sut)
 
     let compressibleValue = String('x', 5000)
 
@@ -50,12 +50,12 @@ module WithTryDeflate =
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)
 
-module WithoutCompression =
+module Uncompressed =
 
-    let sut = FsCodec.DeflateHelpers.EncodeUncompressed(StringUtf8.sut)
+    let sut = FsCodec.Deflate.EncodeUncompressed(StringUtf8.sut)
 
     // Borrow a demonstrably compressible value
-    let value = WithTryDeflate.compressibleValue
+    let value = TryDeflate.compressibleValue
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut value
