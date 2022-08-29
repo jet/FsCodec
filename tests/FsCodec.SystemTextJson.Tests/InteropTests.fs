@@ -20,7 +20,7 @@ let [<Fact>] ``encodes correctly`` () =
     test <@ res.Contains """"d":{"embed":"\""}""" @>
     let des = JsonConvert.DeserializeObject<Batch>(res)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
-    let decoded = indirectCodec.TryDecode loaded |> Option.get
+    let decoded = indirectCodec.TryDecode loaded |> ValueOption.get
     input =! decoded
 
 type EmbeddedString = { embed : string }
@@ -44,5 +44,5 @@ let [<Property>] ``round-trips diverse bodies correctly`` (x: U, encodeDirect, d
     let ser = JsonConvert.SerializeObject(e, defaultSettings)
     let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
-    let decoded = decoder.TryDecode loaded |> Option.get
+    let decoded = decoder.TryDecode loaded |> ValueOption.get
     x =! decoded

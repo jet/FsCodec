@@ -57,7 +57,7 @@ let [<Property>] roundtrips value =
 
     let des = serdes.Deserialize<Envelope> ser
     let wrapped = FsCodec.Core.TimelineEvent<JsonElement>.Create(-1L, eventType, des.d)
-    let decoded = eventCodec.TryDecode wrapped |> Option.get
+    let decoded = eventCodec.TryDecode wrapped |> ValueOption.get
 
     let expected =
         match value with
@@ -67,5 +67,5 @@ let [<Property>] roundtrips value =
     test <@ expected = decoded @>
 
     // Also validate the adapters work when put in series (NewtonsoftJson tests are responsible for covering the individual hops)
-    let decodedMultiHop = multiHopCodec.TryDecode wrapped |> Option.get
+    let decodedMultiHop = multiHopCodec.TryDecode wrapped |> ValueOption.get
     test <@ expected = decodedMultiHop @>

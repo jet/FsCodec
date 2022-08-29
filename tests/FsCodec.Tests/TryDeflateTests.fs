@@ -17,8 +17,8 @@ module StringUtf8 =
     let enc (s : string) : ReadOnlyMemory<byte> = System.Text.Encoding.UTF8.GetBytes s |> ReadOnlyMemory
     let dec (b : ReadOnlySpan<byte>) : string = System.Text.Encoding.UTF8.GetString b
     let stringUtf8Encoder =
-        let encode e = eventType, enc e
-        let tryDecode (s, b : ReadOnlyMemory<byte>) = if s = eventType then Some (dec b.Span) else invalidOp "Invalid eventType value"
+        let encode e = struct (eventType, enc e)
+        let tryDecode struct (s, b : ReadOnlyMemory<byte>) = if s = eventType then ValueSome (dec b.Span) else invalidOp "Invalid eventType value"
         FsCodec.Codec.Create(encode, tryDecode)
 
     let sut = stringUtf8Encoder
@@ -26,7 +26,7 @@ module StringUtf8 =
     let [<Fact>] roundtrips () =
         let value = "TestValue"
         let res' = roundtrip sut value
-        res' =! Some value
+        res' =! ValueSome value
 
 module TryDeflate =
 
@@ -36,7 +36,7 @@ module TryDeflate =
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut compressibleValue
-        res' =! Some compressibleValue
+        res' =! ValueSome compressibleValue
 
     let [<Fact>] ``compresses when possible`` () =
         let encoded = sut.Encode(context = None, value = compressibleValue)
@@ -59,7 +59,7 @@ module Uncompressed =
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut value
-        res' =! Some value
+        res' =! ValueSome value
 
     let [<Fact>] ``does not compress, even if it was possible to`` () =
         let directResult = StringUtf8.sut.Encode(None, value).Data

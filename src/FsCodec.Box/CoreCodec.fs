@@ -44,8 +44,8 @@ type Codec private () =
 
             member _.TryDecode encoded =
                 match dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } with
-                | None -> None
-                | Some contract -> up (encoded, contract) |> Some }
+                | None -> ValueNone
+                | Some contract -> up (encoded, contract) |> ValueSome }
 
     /// <summary>Generate an <c>IEventCodec</c> using the supplied <c>encoder</c>.<br/>
     /// Uses <c>up</c>, <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and eventId/correlationId/causationId/timestamp mapping

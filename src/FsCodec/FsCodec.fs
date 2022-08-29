@@ -33,7 +33,7 @@ type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
     abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
-    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event option
+    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 
 namespace FsCodec.Core
 
@@ -43,10 +43,11 @@ open System
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
 type EventData<'Format> private (eventType, data, meta, eventId, correlationId, causationId, timestamp) =
-    static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp) : IEventData<'Format> =
-        let meta, correlationId, causationId = defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null
+    static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp : DateTimeOffset) : IEventData<'Format> =
         let eventId = match eventId with Some id -> id | None -> Guid.NewGuid()
-        EventData(eventType, data, meta, eventId, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
+        let meta = match meta with Some x -> x | None -> Unchecked.defaultof<'Format>
+        let ts = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        EventData(eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts) :> _
 
     interface IEventData<'Format> with
         member _.EventType = eventType
@@ -72,11 +73,11 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
 [<NoComparison; NoEquality>]
 type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) =
     static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
-        let isUnfold, context = defaultArg isUnfold false, defaultArg context null
-        let meta, eventId = defaultArg meta Unchecked.defaultof<_>, match eventId with Some x -> x | None -> Guid.Empty
-        let timestamp = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
-        let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
-        TimelineEvent(index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) :> _
+        let isUnfold = defaultArg isUnfold false
+        let eventId = match eventId with Some x -> x | None -> Guid.Empty
+        let meta = defaultArg meta Unchecked.defaultof<_>
+        let ts = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        TimelineEvent(index, isUnfold, eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts, Option.toObj context) :> _
 
     interface ITimelineEvent<'Format> with
         member _.Index = index

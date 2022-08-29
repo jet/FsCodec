@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `Option/Tuple`: Replace with `ValueOption`/`ValueTuple` [#82](https://github.com/jet/FsCodec/pull/82)
+
 ### Removed
 ### Fixed
 
