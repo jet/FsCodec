@@ -3,7 +3,7 @@
 
 #if USE_LOCAL_BUILD
 (* Rider's FSI is not happy without the explicit references :shrug: *)
-#I "bin/Debug/net5.0"
+#I "bin/Debug/net6.0"
 #r "FsCodec.dll"
 //#r "System.Text.Json.dll" // Does not work atm :(
 #r "FsCodec.SystemTextJson.dll"
@@ -12,7 +12,7 @@
 #r "Serilog.dll"
 #r "Serilog.Sinks.Console.dll"
 #else
-#r "nuget: FsCodec.SystemTextJson"
+#r "nuget: FsCodec.SystemTextJson, *-*"
 #r "nuget: Serilog.Sinks.Console"
 #endif
 
@@ -124,11 +124,11 @@ module EventCodec =
     /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
     let tryDecode (codec : FsCodec.IEventCodec<_, _, _>) (log : Serilog.ILogger) streamName (x : FsCodec.ITimelineEvent<JsonElement>) =
         match codec.TryDecode x with
-        | None ->
+        | ValueNone ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
                 log.ForContext("event", string x.Data, true)
                     .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, streamName)
-            None
+            ValueNone
         | x -> x
 
 open FSharp.UMX
@@ -158,8 +158,8 @@ module Events =
         | Removed of Removed
         interface TypeShape.UnionContract.IUnionContract
 
-    let codec = FsCodec.SystemTextJson.Codec.Create<Event>()
-    let (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+    let codec = FsCodec.SystemTextJson.CodecJsonElement.Create<Event>()
+    let [<return: Struct>] (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 
     /// Yields decoded event and relevant strongly typed ids if the category of the Stream Name is correct
     let (|Match|_|) (streamName, span) =
@@ -231,26 +231,25 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 
 module Reactions =
 
-    type Event = int64 * DateTimeOffset * Events.Event
+    type Event = (struct (int64 * DateTimeOffset * Events.Event))
 
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<JsonElement>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
-        let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
-        FsCodec.SystemTextJson.Codec.Create(up, down)
+        let up struct (raw : FsCodec.ITimelineEvent<JsonElement>, contract : Events.Event) : Event = struct (raw.Index, raw.Timestamp, contract)
+        let down ((_index, timestamp, event) : Event) = struct (event, ValueNone, ValueSome timestamp)
+        FsCodec.SystemTextJson.CodecJsonElement.Create(up, down)
 
-    let (|TryDecode|_|) stream event : Event option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
-    let (|Match|_|) (streamName, span) =
+    let [<return: Struct>] (|TryDecode|_|) stream event : Event voption = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    let [<return: Struct>] (|Match|_|) (streamName, span) =
         match streamName, span with
-        | Events.StreamName clientId, TryDecode streamName event -> Some (clientId, event)
-
-        | _ -> None
+        | Events.StreamName clientId, TryDecode streamName event -> ValueSome (clientId, event)
+        | _ -> ValueNone
 
 let runWithContext () =
     for stream, event in events do
         match stream, event with
         | Reactions.Match (clientId, (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
-        | FsCodec.StreamName.CategoryAndId (cat, id), e ->
+        | StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
 
 runWithContext ()

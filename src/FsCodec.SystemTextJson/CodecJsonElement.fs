@@ -39,11 +39,11 @@ type CodecJsonElement private () =
     static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   // <summary>Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             // to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.</summary>
-            up : FsCodec.ITimelineEvent<JsonElement> * 'Contract -> 'Event,
+            up : struct (FsCodec.ITimelineEvent<JsonElement> * 'Contract) -> 'Event,
             // <summary>Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c><br/>
             // The function is also expected to derive an optional <c>meta</c> object that will be serialized with the same <c>encoder</c>,
             // and <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and an Event Creation<c>timestamp</c></summary>.
-            down : 'Context option * 'Event -> 'Contract * 'Meta option * Guid * string * string * DateTimeOffset option,
+            down : struct ('Context voption * 'Event) -> struct ('Contract * 'Meta voption * Guid * string * string * DateTimeOffset voption),
             // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
@@ -59,14 +59,14 @@ type CodecJsonElement private () =
     static member Create<'Event, 'Contract, 'Meta, 'Context when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   // <summary>Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             // to the representation (typically a Discriminated Union) that is to be presented to the programming model.</summary>
-            up : FsCodec.ITimelineEvent<JsonElement> * 'Contract -> 'Event,
+            up : struct (FsCodec.ITimelineEvent<JsonElement> * 'Contract) -> 'Event,
             // <summary>Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             // The function is also expected to derive
             //   a <c>meta</c> object that will be serialized with the same options (if it's not <c>None</c>)
             //   and an Event Creation <c>timestamp</c>.</summary>
-            down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
+            down : 'Event -> struct ('Contract * 'Meta voption * DateTimeOffset voption),
             // <summary>Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>eventId</c> c) the <c>correlationId</c> and d) the <c>causationId</c></summary>
-            mapCausation : 'Context option * 'Meta option -> 'Meta option * Guid * string * string,
+            mapCausation : struct ('Context voption * 'Meta voption) -> struct ('Meta voption * Guid * string * string),
             // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
@@ -82,12 +82,12 @@ type CodecJsonElement private () =
     static member Create<'Event, 'Contract, 'Meta when 'Contract :> TypeShape.UnionContract.IUnionContract>
         (   // <summary>Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             // to the representation (typically a Discriminated Union) that is to be presented to the programming model.</summary>
-            up : FsCodec.ITimelineEvent<JsonElement> * 'Contract -> 'Event,
+            up : struct (FsCodec.ITimelineEvent<JsonElement> * 'Contract) -> 'Event,
             // <summary>Maps a fresh <c>'Event</c> resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             // The function is also expected to derive
             //   a <c>meta</c> object that will be serialized with the same options (if it's not <c>None</c>)
             //   and an Event Creation <c>timestamp</c>.</summary>
-            down : 'Event -> 'Contract * 'Meta option * DateTimeOffset option,
+            down : 'Event -> struct ('Contract * 'Meta voption * DateTimeOffset voption),
             // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>

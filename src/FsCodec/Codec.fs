@@ -13,7 +13,7 @@ type Codec =
     static member private Create<'Event, 'Format, 'Context>
         (   // <summary>Maps an 'Event to: an Event Type Name, a pair of <c>'Format</c>'s representing the <c>Data</c> and <c>Meta</c> together with the
             // <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.</summary>
-            encode : struct ('Context option * 'Event) -> struct (string * 'Format * 'Format * Guid * string * string * DateTimeOffset option),
+            encode : struct ('Context voption * 'Event) -> struct (string * 'Format * 'Format * Guid * string * string * DateTimeOffset voption),
             // <summary>Attempts to map from an Event's stored data to <c>Some 'Event</c>, or <c>None</c> if not mappable.</summary>
             tryDecode : ITimelineEvent<'Format> -> 'Event voption)
         : IEventCodec<'Event, 'Format, 'Context> =
@@ -21,7 +21,8 @@ type Codec =
         { new IEventCodec<'Event, 'Format, 'Context> with
             member _.Encode(context, event) =
                 let struct (eventType, data, metadata, eventId, correlationId, causationId, timestamp) = encode struct (context, event)
-                Core.EventData.Create(eventType, data, metadata, eventId, correlationId, causationId, ?timestamp = timestamp)
+                let ts = match timestamp with ValueNone -> None | ValueSome x -> Some x
+                Core.EventData.Create(eventType, data, metadata, eventId, correlationId, causationId, ?timestamp = ts)
 
             member _.TryDecode encoded =
                 tryDecode encoded }
@@ -33,12 +34,12 @@ type Codec =
             // The function is also expected to derive
             //   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
             //   and an Event Creation <c>timestamp</c>.
-            encode : 'Event -> struct (string * 'Format * DateTimeOffset option),
+            encode : 'Event -> struct (string * 'Format * DateTimeOffset voption),
             // Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             // to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
             tryDecode : ITimelineEvent<'Format> -> 'Event voption,
             // Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
-            mapCausation : struct ('Context option * 'Event) -> struct ('Format * Guid * string * string))
+            mapCausation : struct ('Context voption * 'Event) -> struct ('Format * Guid * string * string))
         : IEventCodec<'Event, 'Format, 'Context> =
 
         let encode struct (context, event) =
@@ -55,8 +56,8 @@ type Codec =
             tryDecode : struct (string * 'Format) -> 'Event voption)
         : IEventCodec<'Event, 'Format, obj> =
 
-        let encode' struct (_context : obj option, event) =
+        let encode' struct (_context : obj voption, event) =
             let struct (eventType, data : 'Format) = encode event
-            struct (eventType, data, Unchecked.defaultof<'Format> (* metadata *), Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), None (* timestamp *))
+            struct (eventType, data, Unchecked.defaultof<'Format> (* metadata *), Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), ValueNone (* timestamp *))
         let tryDecode' (encoded : ITimelineEvent<'Format>) = tryDecode struct (encoded.EventType, encoded.Data)
         Codec.Create(encode', tryDecode')

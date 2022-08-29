@@ -5,7 +5,7 @@ open Swensen.Unquote
 open Xunit
 
 let inline roundtrip (sut : FsCodec.IEventCodec<_, _, _>) value =
-    let encoded = sut.Encode(context = None, value = value)
+    let encoded = sut.Encode(context = ValueNone, value = value)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data)
     sut.TryDecode loaded
 
@@ -39,14 +39,14 @@ module TryDeflate =
         res' =! ValueSome compressibleValue
 
     let [<Fact>] ``compresses when possible`` () =
-        let encoded = sut.Encode(context = None, value = compressibleValue)
+        let encoded = sut.Encode(context = ValueNone, value = compressibleValue)
         let struct (encoding, encodedValue) = encoded.Data
         encodedValue.Length <! compressibleValue.Length
 
     let [<Fact>] ``uses raw value where compression not possible`` () =
         let value = "NotCompressible"
-        let directResult = StringUtf8.sut.Encode(None, value).Data
-        let encoded = sut.Encode(context = None, value = value)
+        let directResult = StringUtf8.sut.Encode(ValueNone, value).Data
+        let encoded = sut.Encode(context = ValueNone, value = value)
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)
 
@@ -62,7 +62,7 @@ module Uncompressed =
         res' =! ValueSome value
 
     let [<Fact>] ``does not compress, even if it was possible to`` () =
-        let directResult = StringUtf8.sut.Encode(None, value).Data
-        let encoded = sut.Encode(context = None, value = value)
+        let directResult = StringUtf8.sut.Encode(ValueNone, value).Data
+        let encoded = sut.Encode(context = ValueNone, value = value)
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)

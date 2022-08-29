@@ -61,7 +61,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
 
     let [<Fact>] ``encodes correctly`` () =
         let input = Union.A { embed = "\"" }
-        let encoded = eventCodec.Encode(None, input)
+        let encoded = eventCodec.Encode(ValueNone, input)
         let e : Batch = mkBatch encoded
         let res = JsonConvert.SerializeObject(e)
         test <@ res.Contains """"d":{"embed":"\""}""" @>
@@ -74,7 +74,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
     let defaultEventCodec = Codec.Create<U>(defaultSettings)
 
     let [<Property>] ``round-trips diverse bodies correctly`` (x: U) =
-        let encoded = defaultEventCodec.Encode(None,x)
+        let encoded = defaultEventCodec.Encode(ValueNone, x)
         let e : Batch = mkBatch encoded
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
@@ -85,7 +85,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
     // https://github.com/JamesNK/Newtonsoft.Json/issues/862 // doesnt apply to this case
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
-        let encoded = defaultEventCodec.Encode(None,x)
+        let encoded = defaultEventCodec.Encode(ValueNone, x)
         let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data, encoded.Meta, timestamp = encoded.Timestamp)
         let decoded = defaultEventCodec.TryDecode adapted |> ValueOption.get
         test <@ x = decoded @>

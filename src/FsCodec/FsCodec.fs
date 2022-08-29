@@ -31,7 +31,7 @@ type ITimelineEvent<'Format> =
 /// <summary>Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category</summary>
 type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
-    abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
+    abstract Encode : context: 'Context voption * value: 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 
