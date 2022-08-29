@@ -71,7 +71,7 @@ type Codec private () =
 
         let down struct (context, union) =
             let struct (c, m, t) = down union
-            let struct (m', eventId, correlationId, causationId) = mapCausation struct (context, m)
+            let struct (m', eventId, correlationId, causationId) = mapCausation (context, m)
             struct (c, m', eventId, correlationId, causationId, t)
         Codec.Create(encoder, up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
 
