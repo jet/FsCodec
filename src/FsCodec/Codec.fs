@@ -21,7 +21,7 @@ type Codec =
         { new IEventCodec<'Event, 'Format, 'Context> with
             member _.Encode(context, event) =
                 let struct (eventType, data, metadata, eventId, correlationId, causationId, timestamp) = encode struct (context, event)
-                let ts = match timestamp with ValueNone -> None | ValueSome x -> Some x
+                let ts = match timestamp with ValueSome x -> Some x | ValueNone -> None
                 Core.EventData.Create(eventType, data, metadata, eventId, correlationId, causationId, ?timestamp = ts)
 
             member _.TryDecode encoded =
@@ -59,5 +59,5 @@ type Codec =
         let encode' struct (_context : obj voption, event) =
             let struct (eventType, data : 'Format) = encode event
             struct (eventType, data, Unchecked.defaultof<'Format> (* metadata *), Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), ValueNone (* timestamp *))
-        let tryDecode' (encoded : ITimelineEvent<'Format>) = tryDecode struct (encoded.EventType, encoded.Data)
+        let tryDecode' (encoded : ITimelineEvent<'Format>) = tryDecode (encoded.EventType, encoded.Data)
         Codec.Create(encode', tryDecode')

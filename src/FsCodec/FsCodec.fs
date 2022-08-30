@@ -31,7 +31,7 @@ type ITimelineEvent<'Format> =
 /// <summary>Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category</summary>
 type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
-    abstract Encode : context: 'Context voption * value: 'Event -> IEventData<'Format>
+    abstract Encode : context: 'Context voption * value : 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 
@@ -43,10 +43,11 @@ open System
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
 type EventData<'Format> private (eventType, data, meta, eventId, correlationId, causationId, timestamp) =
+
     static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp : DateTimeOffset) : IEventData<'Format> =
-        let eventId = match eventId with Some id -> id | None -> Guid.NewGuid()
-        let meta = match meta with Some x -> x | None -> Unchecked.defaultof<'Format>
-        let ts = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
+        let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
+        let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
         EventData(eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts) :> _
 
     interface IEventData<'Format> with
@@ -58,8 +59,8 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f : 'Format -> 'Mapped) : IEventData<'Format> -> IEventData<'Mapped> =
-        fun x ->
+    static member Map<'Mapped>(f : 'Format -> 'Mapped)
+        (x : IEventData<'Format>) : IEventData<'Mapped> =
             { new IEventData<'Mapped> with
                 member _.EventType = x.EventType
                 member _.Data = f x.Data
@@ -72,11 +73,12 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
 type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) =
+
     static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
         let isUnfold = defaultArg isUnfold false
-        let eventId = match eventId with Some x -> x | None -> Guid.Empty
-        let meta = defaultArg meta Unchecked.defaultof<_>
-        let ts = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
+        let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
+        let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
         TimelineEvent(index, isUnfold, eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts, Option.toObj context) :> _
 
     interface ITimelineEvent<'Format> with
@@ -91,8 +93,8 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eve
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f : 'Format -> 'Mapped) : ITimelineEvent<'Format> -> ITimelineEvent<'Mapped> =
-        fun x ->
+    static member Map<'Mapped>(f : 'Format -> 'Mapped)
+        (x : ITimelineEvent<'Format>) : ITimelineEvent<'Mapped> =
             { new ITimelineEvent<'Mapped> with
                 member _.Index = x.Index
                 member _.IsUnfold = x.IsUnfold

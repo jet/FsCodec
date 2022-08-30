@@ -160,14 +160,15 @@ module Events =
 
     let [<return: Struct>] (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
     /// Yields decoded event and relevant strongly typed id if the category of the Stream Name is correct
-    let [<return: Struct>] (|Match|_|) (streamName, event) =
+    let [<return: Struct>] (|Match|_|) struct (streamName, event) =
         match streamName, event with
         | StreamName clientId, TryDecode streamName e -> ValueSome struct (clientId, e)
         | _ -> ValueNone
 
-    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream >> function ValueSome x -> Some x | ValueNone -> None)
+    module ValueOption = let toOption = function ValueSome x -> Some x | ValueNone -> None
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream >> ValueOption.toOption)
     /// Yields decoded events and relevant strongly typed id if the category of the StreamName is correct
-    let [<return: Struct>] (|Parse|_|) (streamName, span) =
+    let [<return: Struct>] (|Parse|_|) struct (streamName, span) =
         match streamName, span with
         | StreamName clientId, Decode streamName es -> ValueSome struct (clientId, es)
         | _ -> ValueNone
@@ -198,10 +199,10 @@ runCodec ()
 
 let runCodecCleaner () =
     for stream, event in events do
-        match stream, event with
+        match struct (stream, event) with
         | Events.Match (clientId, event) ->
             printfn "Client %s, event %A" (ClientId.toString clientId) event
-        | FsCodec.StreamName.CategoryAndId (cat, id), e ->
+        | StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
 
 runCodecCleaner ()
@@ -253,7 +254,8 @@ module Reactions =
 
     (* Helpers for parsing spans of events (as presented by Propulsion) *)
 
-    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream >> function ValueNone -> None | ValueSome x -> Some x)
+    module ValueOption = let toOption = function ValueSome x -> Some x | ValueNone -> None
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream >> ValueOption.toOption)
     let [<return: Struct>] (|Parse|_|) (streamName, span) =
         match streamName, span with
         | Events.StreamName clientId, Decode streamName es -> ValueSome struct (clientId, es)
