@@ -338,7 +338,7 @@ _See [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJ
 /// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
 type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
-    abstract Encode : context: 'Context voption * value: 'Event -> IEventData<'Format>
+    abstract Encode : context: 'Context * value: 'Event -> IEventData<'Format>
     /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 ```

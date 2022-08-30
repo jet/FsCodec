@@ -74,7 +74,7 @@ type Codec private () =
             // <summary>Maps a fresh Event resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c><br/>
             // The function is also expected to derive an optional <c>meta</c> object that will be serialized with the same <c>encoder</c>,
             // and <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and an Event Creation<c>timestamp</c></summary>.
-            down : struct ('Context voption * 'Event) -> struct ('Contract * 'Meta voption * Guid * string * string * DateTimeOffset voption),
+            down : struct ('Context * 'Event) -> struct ('Contract * 'Meta voption * Guid * string * string * DateTimeOffset voption),
             // <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
@@ -97,7 +97,7 @@ type Codec private () =
             //   and an Event Creation <c>timestamp</c>.</summary>
             down : 'Event -> struct ('Contract * 'Meta voption * DateTimeOffset voption),
             // <summary>Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>eventId</c> c) the <c>correlationId</c> and d) the <c>causationId</c></summary>
-            mapCausation : struct ('Context voption * 'Meta voption) -> struct ('Meta voption * Guid * string * string),
+            mapCausation : struct ('Context * 'Meta voption) -> struct ('Meta voption * Guid * string * string),
             // <summary>Configuration to be used by the underlying <c>Newtonsoft.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>

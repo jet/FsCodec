@@ -23,15 +23,17 @@ type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
     abstract member Index : int64
-    /// Application-supplied context related to the origin of this event
-    abstract member Context : obj
     /// <summary>Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c></summary>
     abstract member IsUnfold : bool
+    /// Application-supplied context related to the origin of this event. Can be null.
+    abstract member Context : obj
+    /// The stored size of the Event
+    abstract member Size : int
 
 /// <summary>Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category</summary>
 type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
-    abstract Encode : context: 'Context voption * value : 'Event -> IEventData<'Format>
+    abstract Encode : context: 'Context * value : 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
     abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 
@@ -72,19 +74,21 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
-type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) =
+type TimelineEvent<'Format> private (index, eventType, data, meta, eventId, correlationId, causationId, timestamp, isUnfold, context, size) =
 
-    static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
+    static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context, ?size) : ITimelineEvent<'Format> =
         let isUnfold = defaultArg isUnfold false
         let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
         let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
         let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
-        TimelineEvent(index, isUnfold, eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts, Option.toObj context) :> _
+        let size =    defaultArg size 0
+        TimelineEvent(index, eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts, isUnfold, Option.toObj context, size) :> _
 
     interface ITimelineEvent<'Format> with
         member _.Index = index
         member _.IsUnfold = isUnfold
         member _.Context = context
+        member _.Size = size
         member _.EventType = eventType
         member _.Data = data
         member _.Meta = meta
@@ -97,8 +101,9 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eve
         (x : ITimelineEvent<'Format>) : ITimelineEvent<'Mapped> =
             { new ITimelineEvent<'Mapped> with
                 member _.Index = x.Index
-                member _.IsUnfold = x.IsUnfold
                 member _.Context = x.Context
+                member _.IsUnfold = x.IsUnfold
+                member _.Size = x.Size
                 member _.EventType = x.EventType
                 member _.Data = f x.Data
                 member _.Meta = f x.Meta

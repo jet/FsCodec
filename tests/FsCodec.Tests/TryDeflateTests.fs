@@ -5,7 +5,7 @@ open Swensen.Unquote
 open Xunit
 
 let inline roundtrip (sut : FsCodec.IEventCodec<_, _, _>) value =
-    let encoded = sut.Encode(context = ValueNone, value = value)
+    let encoded = sut.Encode(context = null, value = value)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data)
     sut.TryDecode loaded
 
