@@ -23,23 +23,32 @@ module StreamName =
 
     /// Recommended way to specify a stream identifier; a category identifier and an aggregate identity
     /// category is separated from id by `-`
-    let create (category : string) (aggregateId : string) : StreamName =
+    let createRaw struct (category : string, aggregateId : string) : string =
         if category.IndexOf '-' <> -1 then invalidArg "category" "may not contain embedded '-' symbols"
-        UMX.tag (System.String.Concat(category, "-", aggregateId))
+        System.String.Concat(category, "-", aggregateId)
+
+    /// Recommended way to specify a stream identifier; a category identifier and an aggregate identity
+    /// category is separated from id by `-`
+    let create (category : string) (aggregateId : string) : StreamName =
+        createRaw (category, aggregateId) |> UMX.tag
+
+    /// Generates AggregateId from name elements; elements are separated from each other by '_'
+    let createAggregateId (elements : string seq) : string =
+        for x in elements do
+            if System.String.IsNullOrEmpty x then invalidArg "elements" "may not contain null or empty components"
+            if x.IndexOf '_' <> -1 then invalidArg "elements" "may not contain embedded '_' symbols"
+        System.String.Join("_", elements)
 
     /// Composes a StreamName from a category and > 1 name elements.
     /// category is separated from the aggregateId by '-'; elements are separated from each other by '_'
     let compose (category : string) (aggregateIdElements : string seq) : StreamName =
-        for x in aggregateIdElements do
-            if System.String.IsNullOrEmpty x then invalidArg "subElements" "may not contain null or empty components"
-            if x.IndexOf '_' <> -1 then invalidArg "subElements" "may not contain embedded '_' symbols"
-        create category (System.String.Join("_", aggregateIdElements))
+        create category (createAggregateId aggregateIdElements)
 
     /// <summary>Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-' (dash).<br/>
     /// Throws <c>InvalidArgumentException</c> if it does not adhere to that form.</summary>
     let parse (rawStreamName : string) : StreamName =
         if rawStreamName.IndexOf('-') = -1 then
-            invalidArg "streamName" (sprintf "Stream Name '%s' must contain a '-' separator" rawStreamName)
+            invalidArg "rawStreamName" (sprintf "Stream Name '%s' must contain a '-' separator" rawStreamName)
         UMX.tag rawStreamName
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
@@ -63,7 +72,7 @@ module StreamName =
     (* Rendering *)
 
     /// Strip off the strong typing (It's recommended to pattern match as below in the general case)
-    let toString (streamName : StreamName) : string =
+    let inline toString (streamName : StreamName) : string =
         UMX.untag streamName
 
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
@@ -76,7 +85,7 @@ module StreamName =
         let rawName = toString streamName
         match trySplitCategoryAndId rawName with
         | ValueSome catAndId -> catAndId
-        | ValueNone -> invalidArg (sprintf "Stream Name '%s' must contain a '-' separator" rawName) "streamName"
+        | ValueNone -> invalidArg "streamName" (sprintf "Stream Name '%s' must contain a '-' separator" rawName)
 
     /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{id}</c> into its two elements.<br/>
     /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed.</summary>
@@ -95,7 +104,7 @@ module StreamName =
         let rawName = toString streamName
         match trySplitCategoryAndId rawName with
         | ValueSome (cat, IdElements ids) -> (cat, ids)
-        | ValueNone -> invalidArg (sprintf "Stream Name '%s' did not contain exactly one '-' separator" rawName) "streamName"
+        | ValueNone -> invalidArg "streamName" (sprintf "Stream Name '%s' did not contain exactly one '-' separator" rawName)
 
     /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{id}</c> into the two elements.<br/>
     /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed</summary>

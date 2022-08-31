@@ -70,7 +70,7 @@ type Codec private () =
             down : 'Event -> struct ('Contract * 'Meta voption * DateTimeOffset voption),
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event, obj, obj> =
+        : FsCodec.IEventCodec<'Event, obj, unit> =
         FsCodec.Core.Codec.Create(DefaultEncoder, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>obj</c> (boxed .NET <c>Object</c>) Event Bodies.<br/>
@@ -79,5 +79,5 @@ type Codec private () =
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
         (   // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Union, obj, obj> =
+        : FsCodec.IEventCodec<'Union, obj, unit> =
         FsCodec.Core.Codec.Create(DefaultEncoder, ?rejectNullaryCases = rejectNullaryCases)

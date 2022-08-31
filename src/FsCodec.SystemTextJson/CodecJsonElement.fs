@@ -92,7 +92,7 @@ type CodecJsonElement private () =
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event, JsonElement, obj> =
+        : FsCodec.IEventCodec<'Event, JsonElement, unit> =
         FsCodec.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <code>IEventCodec</code> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
@@ -103,5 +103,5 @@ type CodecJsonElement private () =
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Union, JsonElement, obj> =
+        : FsCodec.IEventCodec<'Union, JsonElement, unit> =
         FsCodec.Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)

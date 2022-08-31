@@ -54,7 +54,7 @@ type Codec =
             encode : 'Event -> struct (string * 'Format),
             // Attempts to map an Event Type Name and a UTF-8 array <c>Data</c> to <c>Some 'Event</c> case, or <c>None</c> if not mappable.
             tryDecode : struct (string * 'Format) -> 'Event voption)
-        : IEventCodec<'Event, 'Format, obj> =
+        : IEventCodec<'Event, 'Format, unit> =
 
         let encode' struct (_context, event) =
             let struct (eventType, data : 'Format) = encode event

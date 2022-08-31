@@ -101,8 +101,8 @@ type TimelineEvent<'Format> private (index, eventType, data, meta, eventId, corr
         (x : ITimelineEvent<'Format>) : ITimelineEvent<'Mapped> =
             { new ITimelineEvent<'Mapped> with
                 member _.Index = x.Index
-                member _.Context = x.Context
                 member _.IsUnfold = x.IsUnfold
+                member _.Context = x.Context
                 member _.Size = x.Size
                 member _.EventType = x.EventType
                 member _.Data = f x.Data

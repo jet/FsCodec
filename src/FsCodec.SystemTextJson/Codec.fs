@@ -93,7 +93,7 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, obj> =
+        : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, unit> =
         FsCodec.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
@@ -104,5 +104,5 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?options,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
-        : FsCodec.IEventCodec<'Union, ReadOnlyMemory<byte>, obj> =
+        : FsCodec.IEventCodec<'Union, ReadOnlyMemory<byte>, unit> =
         FsCodec.Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)
