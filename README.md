@@ -338,9 +338,9 @@ _See [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJ
 /// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
 type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
-    abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
+    abstract Encode : context: 'Context * value: 'Event -> IEventData<'Format>
     /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
-    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event option
+    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 ```
 
 `IEventCodec` represents a standard contract for the encoding and decoding of events used in event sourcing and event based notification scenarios:
@@ -416,7 +416,7 @@ module Events =
     let codec = FsCodec.NewtonsoftJson.Codec.Create<Event>()
 
     // See "logging unmatched events" later in this section for information about this wrapping using an EventCodec helper
-    let (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
+    let [<return: Struct>] (|TryDecode|_|) stream = EventCodec.tryDecode codec Serilog.Log.Logger stream
 ```
 
 <a name="umx"></a>
@@ -478,19 +478,18 @@ module StreamName =
 
     (* Rendering *)
 
-
     let toString (streamName : StreamName) : string = UMX.untag streamName
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
 
     // Attempts to split a Stream Name in the form {category}-{id} into its two elements.
     // The {id} segment is permitted to include embedded '-' (dash) characters
-    let trySplitCategoryAndId (rawStreamName : string) : (string * string) option = ...
+    let trySplitCategoryAndId (rawStreamName : string) : (string * string) voption = ...
 
     // Attempts to split a Stream Name in the form {category}-{id} into its two elements.
     // The {id} segment is permitted to include embedded '-' (dash) characters
     // Yields <code>NotCategorized</code> if it does not adhere to that form.
-    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<string*string,unit> = ...
+    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<struct (string*string), unit> = ...
 
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
@@ -498,8 +497,8 @@ module StreamName =
     // Splits a well-formed Stream Name of the form {category}-{id} into its two elements.
     // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
     // <remarks>Inverse of <code>create</code>
-    let splitCategoryAndId (streamName : StreamName) : string * string = ...
-    let (|CategoryAndId|) : StreamName -> (string * string) = splitCategoryAndId
+    let splitCategoryAndId (streamName : StreamName) : struct (string * string) = ...
+    let (|CategoryAndId|) : StreamName -> struct (string * string) = splitCategoryAndId
 
     // Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.
     // <remarks>Inverse of what <code>compose</code> does to the subElements
@@ -508,8 +507,8 @@ module StreamName =
     // Splits a well-formed Stream Name of the form {category}-{id1}_{id2}_{idN} into a pair of category and ids
     // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
     // <remarks>Inverse of <code>create</code>
-    let splitCategoryAndIds (streamName : StreamName) : string * string[] = ...
-    let (|CategoryAndIds|) : StreamName -> (string * string[]) = splitCategoryAndIds
+    let splitCategoryAndIds (streamName : StreamName) : struct (string * string)[] = ...
+    let (|CategoryAndIds|) : StreamName -> struct (string * string[]) = splitCategoryAndIds
 ```
 
 ## Decoding events
@@ -534,7 +533,7 @@ and the helpers defined above, we can route and/or filter them as follows:
 ```fsharp
 let runCodec () =
     for stream, event in events do
-        match stream, event with
+        match struct (stream, event) with
         | StreamName.Category (Events.Category, ClientId.Parse id), (Events.Decode stream e) ->
             printfn "Client %s, event %A" (ClientId.toString id) e
         | StreamName.Category (cat, id), e ->
@@ -562,6 +561,7 @@ There are two events that we were not able to decode, for varying reasons:
 _Note however, that we don't have a clean way to trap the data and log it. See [Logging unmatched events](#logging-unmatched-events) for an example of how one might log such unmatched events_
 
 ### Handling introduction of new fields in JSON
+
 The below example demonstrates the addition of a `CartId` property in a newer version of `CreateCart`. It's worth noting that
 deserializing `CartV1.CreateCart` into `CartV2.CreateCart` requires `CartId` to be an optional property or the property will
 deserialize into `null` which is an invalid state for the `CartV2.CreateCart` record in F# (F# `type`s are assumed to never be `null`).
@@ -587,6 +587,7 @@ order to provide an F# only experience.
 
 The aim is to provide helpers to smooth the way for using reflection based serialization in a way that would not surprise
 people coming from a C# background and/or in mixed C#/F# codebases.
+
 ## Adding Matchers to the Event Contract
 
 We can clarify the consuming code a little by adding further helper Active Patterns alongside the event contract :-
@@ -598,23 +599,24 @@ module Events =
 
     // Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
     // Yields a strongly typed id from the aggregateId if the Category does match
-    let (|StreamName|_|) = function
+    let [<return: Struct>] (|StreamName|_|) = function
         | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
         | _ -> None
 
     // ... (as above)
 
     // Yields decoded events and relevant strongly typed ids if the category of the Stream Name is correct
-    let (|Match|_|) (streamName, event) =
-        match streamName, event with
-        | MatchesCategory clientId, TryDecode streamName e -> Some (clientId, e)
-        | _ -> None
+    let [<return: Struct>] (|Match|_|) (streamName, event) =
+        match struct (streamName, event) with
+        | MatchesCategory clientId, TryDecode streamName e -> ValueSome struct (clientId, e)
+        | _ -> ValueNone
         
-    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
-    let (|Parse|_|) (streamName, span) =
+    module ValueOption = let toOption = function ValueSome x -> Some x | ValueNone -> None
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream >> ValueOption.toOption)
+    let [<return: Struct>] (|Parse|_|) struct (streamName, span) =
         match streamName, span with
-        | Events.MatchesCategory clientId, Decode streamName es -> Some (clientId, es)
-        | _ -> None
+        | Events.MatchesCategory clientId, Decode streamName es -> ValueSome struct (clientId, es)
+        | _ -> ValueNone
 ```
 
 That boxes off the complex pattern matching close to the contract itself, and lets us match on the events in a handler as follows:
@@ -622,7 +624,7 @@ That boxes off the complex pattern matching close to the contract itself, and le
 ```fsharp
 let runCodecCleaner () =
     for stream, event in events do
-        match stream, event with
+        match struct (stream, event) with
         | Events.Match (clientId, event) ->
             printfn "Client %s, event %A" (ClientId.toString clientId) event
         | StreamName.CategoryAndId (cat, id), e ->
@@ -679,34 +681,35 @@ A clean way to wrap such a set of transitions is as follows:
 ```fsharp
 module Reactions =
 
-    type Event = int64 * DateTimeOffset * Events.Event
+    type Event = (struct (int64 * DateTimeOffset * Events.Event))
     let codec =
-        let up (raw : FsCodec.ITimelineEvent<ReadOnlyMemory<byte>>, contract : Events.Event) : Event = raw.Index, raw.Timestamp, contract
-        let down ((_index, timestamp, event) : Event) = event, None, Some timestamp
+        let up (raw : FsCodec.ITimelineEvent<ReadOnlyMemory<byte>>, contract : Events.Event) : Event = (raw.Index, raw.Timestamp, contract)
+        let down ((_index, timestamp, event) : Event) = struct (event, ValueNone, ValueSome timestamp)
         FsCodec.NewtonsoftJson.Codec.Create(up, down)
         
-    let (|TryDecode|_|) stream event : Event option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
-    let (|Match|_|) (streamName, event) =
+    let [<return: Struct>] (|TryDecode|_|) stream event : Event option = EventCodec.tryDecode codec Serilog.Log.Logger stream event
+    let [<return: Struct>] (|Match|_|) (streamName, event) =
         match streamName, event with
         | Events.MatchesCategory clientId, TryDecode streamName event -> Some (clientId, event)
         | _ -> None
         
-    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream)
-    let (|Parse|_|) (streamName, span) =
+    module ValueOption = let toOption = function ValueSome x -> Some x | ValueNone -> None
+    let (|Decode|) stream = Seq.choose ((|TryDecode|_|) stream >> ValueOption.toOption)
+    let [<return: Struct>] (|Parse|_|) struct (streamName, span) =
         match streamName, span with
-        | Events.MatchesCategory clientId, Decode streamName es -> Some (clientId, es)
-        | _ -> None        
+        | Events.MatchesCategory clientId, Decode streamName es -> ValueSome struct (clientId, es)
+        | _ -> ValueNone        
 ```
 
 This allows us to tweak the `runCodec` above as follows to also surface additional contextual information:
 
 ```fsharp
 let runWithContext () =
-    for stream, event in events do
+    for struct (stream, event) in events do
         match stream, event with
         | Reactions.Match (clientId, (index, ts, e)) ->
             printfn "Client %s index %d time %O event %A" (ClientId.toString clientId) index (ts.ToString "u") e
-        | FsCodec.StreamName.CategoryAndId (cat, id), e ->
+        | StreamName.CategoryAndId (cat, id), e ->
             printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
 ```
 

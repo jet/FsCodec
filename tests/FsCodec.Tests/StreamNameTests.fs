@@ -33,5 +33,5 @@ let [<Fact>] ``Can roundtrip single aggregateIds with embedded dashes and unders
 let [<Fact>] ``StreamName parse throws given 0 separators`` () =
     raisesWith <@ StreamName.parse "Cat" @> <|
         fun (e : System.ArgumentException) ->
-            <@  e.ParamName = "streamName"
+            <@  e.ParamName = "rawStreamName"
                 && e.Message.StartsWith "Stream Name 'Cat' must contain a '-' separator" @>

@@ -61,33 +61,33 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
 
     let [<Fact>] ``encodes correctly`` () =
         let input = Union.A { embed = "\"" }
-        let encoded = eventCodec.Encode(None, input)
+        let encoded = eventCodec.Encode((), input)
         let e : Batch = mkBatch encoded
         let res = JsonConvert.SerializeObject(e)
         test <@ res.Contains """"d":{"embed":"\""}""" @>
         let des = JsonConvert.DeserializeObject<Batch>(res)
         let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
-        let decoded = eventCodec.TryDecode loaded |> Option.get
+        let decoded = eventCodec.TryDecode loaded |> ValueOption.get
         input =! decoded
 
     let defaultSettings = Options.CreateDefault()
     let defaultEventCodec = Codec.Create<U>(defaultSettings)
 
     let [<Property>] ``round-trips diverse bodies correctly`` (x: U) =
-        let encoded = defaultEventCodec.Encode(None,x)
+        let encoded = defaultEventCodec.Encode((), x)
         let e : Batch = mkBatch encoded
         let ser = JsonConvert.SerializeObject(e, defaultSettings)
         let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
         let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
-        let decoded = defaultEventCodec.TryDecode loaded |> Option.get
+        let decoded = defaultEventCodec.TryDecode loaded |> ValueOption.get
         x =! decoded
 
     // https://github.com/JamesNK/Newtonsoft.Json/issues/862 // doesnt apply to this case
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
-        let encoded = defaultEventCodec.Encode(None,x)
+        let encoded = defaultEventCodec.Encode((), x)
         let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data, encoded.Meta, timestamp = encoded.Timestamp)
-        let decoded = defaultEventCodec.TryDecode adapted |> Option.get
+        let decoded = defaultEventCodec.TryDecode adapted |> ValueOption.get
         test <@ x = decoded @>
 
     //// NB while this aspect works, we don't support it as it gets messy when you then use the VerbatimUtf8Converter

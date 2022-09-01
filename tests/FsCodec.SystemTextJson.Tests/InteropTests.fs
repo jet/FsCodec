@@ -14,13 +14,13 @@ let mkBatch = FsCodec.NewtonsoftJson.Tests.VerbatimUtf8ConverterTests.mkBatch
 let indirectCodec = FsCodec.SystemTextJson.CodecJsonElement.Create() |> FsCodec.SystemTextJson.Interop.InteropHelpers.ToUtf8Codec
 let [<Fact>] ``encodes correctly`` () =
     let input = Union.A { embed = "\"" }
-    let encoded = indirectCodec.Encode(None, input)
+    let encoded = indirectCodec.Encode((), input)
     let e : Batch = mkBatch encoded
     let res = JsonConvert.SerializeObject(e)
     test <@ res.Contains """"d":{"embed":"\""}""" @>
     let des = JsonConvert.DeserializeObject<Batch>(res)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
-    let decoded = indirectCodec.TryDecode loaded |> Option.get
+    let decoded = indirectCodec.TryDecode loaded |> ValueOption.get
     input =! decoded
 
 type EmbeddedString = { embed : string }
@@ -39,10 +39,10 @@ let indirectCodecU = FsCodec.SystemTextJson.CodecJsonElement.Create<U>() |> FsCo
 let [<Property>] ``round-trips diverse bodies correctly`` (x: U, encodeDirect, decodeDirect) =
     let encoder = if encodeDirect then defaultEventCodec else indirectCodecU
     let decoder = if decodeDirect then defaultEventCodec else indirectCodecU
-    let encoded = encoder.Encode(None,x)
+    let encoded = encoder.Encode((), x)
     let e : Batch = mkBatch encoded
     let ser = JsonConvert.SerializeObject(e, defaultSettings)
     let des = JsonConvert.DeserializeObject<Batch>(ser, defaultSettings)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, des.e[0].c, ReadOnlyMemory des.e[0].d)
-    let decoded = decoder.TryDecode loaded |> Option.get
+    let decoded = decoder.TryDecode loaded |> ValueOption.get
     x =! decoded

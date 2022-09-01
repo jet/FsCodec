@@ -9,7 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `TimelineEvent.Size`: Enables stores to surface the stored size at the point of loading [#82](https://github.com/jet/FsCodec/pull/82)
+
 ### Changed
+
+- `Option/Tuple`: Replace with `ValueOption`/`ValueTuple` [#82](https://github.com/jet/FsCodec/pull/82)
+- `Codec 'Context`: replace `'Context option` with `Context` [#82](https://github.com/jet/FsCodec/pull/82)
+
 ### Removed
 ### Fixed
 

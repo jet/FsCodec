@@ -23,17 +23,19 @@ type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
     abstract member Index : int64
-    /// Application-supplied context related to the origin of this event
-    abstract member Context : obj
     /// <summary>Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c></summary>
     abstract member IsUnfold : bool
+    /// Application-supplied context related to the origin of this event. Can be null.
+    abstract member Context : obj
+    /// The stored size of the Event
+    abstract member Size : int
 
 /// <summary>Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category</summary>
 type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
-    abstract Encode : context: 'Context option * value: 'Event -> IEventData<'Format>
+    abstract Encode : context: 'Context * value : 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
-    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event option
+    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
 
 namespace FsCodec.Core
 
@@ -43,10 +45,12 @@ open System
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
 type EventData<'Format> private (eventType, data, meta, eventId, correlationId, causationId, timestamp) =
-    static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp) : IEventData<'Format> =
-        let meta, correlationId, causationId = defaultArg meta Unchecked.defaultof<_>, defaultArg correlationId null, defaultArg causationId null
-        let eventId = match eventId with Some id -> id | None -> Guid.NewGuid()
-        EventData(eventType, data, meta, eventId, correlationId, causationId, match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow) :> _
+
+    static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp : DateTimeOffset) : IEventData<'Format> =
+        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
+        let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
+        let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        EventData(eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts) :> _
 
     interface IEventData<'Format> with
         member _.EventType = eventType
@@ -57,8 +61,8 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f : 'Format -> 'Mapped) : IEventData<'Format> -> IEventData<'Mapped> =
-        fun x ->
+    static member Map<'Mapped>(f : 'Format -> 'Mapped)
+        (x : IEventData<'Format>) : IEventData<'Mapped> =
             { new IEventData<'Mapped> with
                 member _.EventType = x.EventType
                 member _.Data = f x.Data
@@ -70,18 +74,21 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
-type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) =
-    static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context) : ITimelineEvent<'Format> =
-        let isUnfold, context = defaultArg isUnfold false, defaultArg context null
-        let meta, eventId = defaultArg meta Unchecked.defaultof<_>, match eventId with Some x -> x | None -> Guid.Empty
-        let timestamp = match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
-        let correlationId, causationId = defaultArg correlationId null, defaultArg causationId null
-        TimelineEvent(index, isUnfold, eventType, data, meta, eventId, correlationId, causationId, timestamp, context) :> _
+type TimelineEvent<'Format> private (index, eventType, data, meta, eventId, correlationId, causationId, timestamp, isUnfold, context, size) =
+
+    static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context, ?size) : ITimelineEvent<'Format> =
+        let isUnfold = defaultArg isUnfold false
+        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
+        let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
+        let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        let size =    defaultArg size 0
+        TimelineEvent(index, eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts, isUnfold, Option.toObj context, size) :> _
 
     interface ITimelineEvent<'Format> with
         member _.Index = index
         member _.IsUnfold = isUnfold
         member _.Context = context
+        member _.Size = size
         member _.EventType = eventType
         member _.Data = data
         member _.Meta = meta
@@ -90,12 +97,13 @@ type TimelineEvent<'Format> private (index, isUnfold, eventType, data, meta, eve
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f : 'Format -> 'Mapped) : ITimelineEvent<'Format> -> ITimelineEvent<'Mapped> =
-        fun x ->
+    static member Map<'Mapped>(f : 'Format -> 'Mapped)
+        (x : ITimelineEvent<'Format>) : ITimelineEvent<'Mapped> =
             { new ITimelineEvent<'Mapped> with
                 member _.Index = x.Index
                 member _.IsUnfold = x.IsUnfold
                 member _.Context = x.Context
+                member _.Size = x.Size
                 member _.EventType = x.EventType
                 member _.Data = f x.Data
                 member _.Meta = f x.Meta

@@ -5,7 +5,7 @@ open Swensen.Unquote
 open Xunit
 
 let inline roundtrip (sut : FsCodec.IEventCodec<_, _, _>) value =
-    let encoded = sut.Encode(context = None, value = value)
+    let encoded = sut.Encode((), value = value)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data)
     sut.TryDecode loaded
 
@@ -17,8 +17,8 @@ module StringUtf8 =
     let enc (s : string) : ReadOnlyMemory<byte> = System.Text.Encoding.UTF8.GetBytes s |> ReadOnlyMemory
     let dec (b : ReadOnlySpan<byte>) : string = System.Text.Encoding.UTF8.GetString b
     let stringUtf8Encoder =
-        let encode e = eventType, enc e
-        let tryDecode (s, b : ReadOnlyMemory<byte>) = if s = eventType then Some (dec b.Span) else invalidOp "Invalid eventType value"
+        let encode e = struct (eventType, enc e)
+        let tryDecode struct (s, b : ReadOnlyMemory<byte>) = if s = eventType then ValueSome (dec b.Span) else invalidOp "Invalid eventType value"
         FsCodec.Codec.Create(encode, tryDecode)
 
     let sut = stringUtf8Encoder
@@ -26,7 +26,7 @@ module StringUtf8 =
     let [<Fact>] roundtrips () =
         let value = "TestValue"
         let res' = roundtrip sut value
-        res' =! Some value
+        res' =! ValueSome value
 
 module TryDeflate =
 
@@ -36,17 +36,17 @@ module TryDeflate =
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut compressibleValue
-        res' =! Some compressibleValue
+        res' =! ValueSome compressibleValue
 
     let [<Fact>] ``compresses when possible`` () =
-        let encoded = sut.Encode(context = None, value = compressibleValue)
+        let encoded = sut.Encode((), value = compressibleValue)
         let struct (encoding, encodedValue) = encoded.Data
         encodedValue.Length <! compressibleValue.Length
 
     let [<Fact>] ``uses raw value where compression not possible`` () =
         let value = "NotCompressible"
-        let directResult = StringUtf8.sut.Encode(None, value).Data
-        let encoded = sut.Encode(context = None, value = value)
+        let directResult = StringUtf8.sut.Encode((), value).Data
+        let encoded = sut.Encode((), value = value)
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)
 
@@ -59,10 +59,10 @@ module Uncompressed =
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut value
-        res' =! Some value
+        res' =! ValueSome value
 
     let [<Fact>] ``does not compress, even if it was possible to`` () =
-        let directResult = StringUtf8.sut.Encode(None, value).Data
-        let encoded = sut.Encode(context = None, value = value)
+        let directResult = StringUtf8.sut.Encode((), value).Data
+        let encoded = sut.Encode((), value)
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)

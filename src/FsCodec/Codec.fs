@@ -13,15 +13,16 @@ type Codec =
     static member private Create<'Event, 'Format, 'Context>
         (   // <summary>Maps an 'Event to: an Event Type Name, a pair of <c>'Format</c>'s representing the <c>Data</c> and <c>Meta</c> together with the
             // <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.</summary>
-            encode : 'Context option * 'Event -> string * 'Format * 'Format * Guid * string * string * DateTimeOffset option,
+            encode : struct ('Context * 'Event) -> struct (string * 'Format * 'Format * Guid * string * string * DateTimeOffset voption),
             // <summary>Attempts to map from an Event's stored data to <c>Some 'Event</c>, or <c>None</c> if not mappable.</summary>
-            tryDecode : ITimelineEvent<'Format> -> 'Event option)
+            tryDecode : ITimelineEvent<'Format> -> 'Event voption)
         : IEventCodec<'Event, 'Format, 'Context> =
 
         { new IEventCodec<'Event, 'Format, 'Context> with
             member _.Encode(context, event) =
-                let eventType, data, metadata, eventId, correlationId, causationId, timestamp = encode (context, event)
-                Core.EventData.Create(eventType, data, metadata, eventId, correlationId, causationId, ?timestamp = timestamp)
+                let struct (eventType, data, metadata, eventId, correlationId, causationId, timestamp) = encode struct (context, event)
+                let ts = match timestamp with ValueSome x -> Some x | ValueNone -> None
+                Core.EventData.Create(eventType, data, metadata, eventId, correlationId, causationId, ?timestamp = ts)
 
             member _.TryDecode encoded =
                 tryDecode encoded }
@@ -33,30 +34,30 @@ type Codec =
             // The function is also expected to derive
             //   a <c>meta</c> object that will be serialized with the same settings (if it's not <c>None</c>)
             //   and an Event Creation <c>timestamp</c>.
-            encode : 'Event -> string * 'Format * DateTimeOffset option,
+            encode : 'Event -> struct (string * 'Format * DateTimeOffset voption),
             // Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             // to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
-            tryDecode : ITimelineEvent<'Format> -> 'Event option,
+            tryDecode : ITimelineEvent<'Format> -> 'Event voption,
             // Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
-            mapCausation : 'Context option * 'Event -> 'Format * Guid * string * string)
+            mapCausation : struct ('Context * 'Event) -> struct ('Format * Guid * string * string))
         : IEventCodec<'Event, 'Format, 'Context> =
 
-        let encode (context, event) =
-            let et, d, t = encode event
-            let m, eventId, correlationId, causationId = mapCausation (context, event)
-            et, d, m, eventId, correlationId, causationId, t
+        let encode struct (context, event) =
+            let struct (et, d, t) = encode event
+            let struct (m, eventId, correlationId, causationId) = mapCausation (context, event)
+            struct (et, d, m, eventId, correlationId, causationId, t)
         Codec.Create(encode, tryDecode)
 
     /// Generate an <code>IEventCodec</code> using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
     static member Create<'Event, 'Format>
         (   // Maps a <c>'Event</c> to an Event Type Name and a UTF-8 array representing the <c>Data</c>.
-            encode : 'Event -> string * 'Format,
+            encode : 'Event -> struct (string * 'Format),
             // Attempts to map an Event Type Name and a UTF-8 array <c>Data</c> to <c>Some 'Event</c> case, or <c>None</c> if not mappable.
-            tryDecode : string * 'Format -> 'Event option)
-        : IEventCodec<'Event, 'Format, obj> =
+            tryDecode : struct (string * 'Format) -> 'Event voption)
+        : IEventCodec<'Event, 'Format, unit> =
 
-        let encode' (_context : obj, event) =
-            let (eventType, data : 'Format) = encode event
-            eventType, data, Unchecked.defaultof<'Format> (* metadata *), Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), None (* timestamp *)
+        let encode' struct (_context, event) =
+            let struct (eventType, data : 'Format) = encode event
+            struct (eventType, data, Unchecked.defaultof<'Format> (* metadata *), Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), ValueNone (* timestamp *))
         let tryDecode' (encoded : ITimelineEvent<'Format>) = tryDecode (encoded.EventType, encoded.Data)
         Codec.Create(encode', tryDecode')
