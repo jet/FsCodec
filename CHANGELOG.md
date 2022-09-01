@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.5"></a>
+## [3.0.0-rc.5] - 2022-09-01
+
+### Added
 
 - `TimelineEvent.Size`: Enables stores to surface the stored size at the point of loading [#82](https://github.com/jet/FsCodec/pull/82)
 
@@ -16,9 +24,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 - `Option/Tuple`: Replace with `ValueOption`/`ValueTuple` [#82](https://github.com/jet/FsCodec/pull/82)
 - `Codec 'Context`: replace `'Context option` with `Context` [#82](https://github.com/jet/FsCodec/pull/82)
-
-### Removed
-### Fixed
 
 <a name="3.0.0-rc.4"></a>
 ## [3.0.0-rc.4] - 2022-07-05
@@ -294,7 +299,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.4...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.5...HEAD
+[3.0.0-rc.5]: https://github.com/jet/FsCodec/compare/3.0.0-rc.4...3.0.0-rc.5
 [3.0.0-rc.4]: https://github.com/jet/FsCodec/compare/3.0.0-rc.3...3.0.0-rc.4
 [3.0.0-rc.3]: https://github.com/jet/FsCodec/compare/3.0.0-rc.2...3.0.0-rc.3
 [3.0.0-rc.2]: https://github.com/jet/FsCodec/compare/3.0.0-rc.1...3.0.0-rc.2
