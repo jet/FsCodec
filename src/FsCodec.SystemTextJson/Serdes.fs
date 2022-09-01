@@ -1,7 +1,7 @@
 namespace FsCodec.SystemTextJson
 
-open System.Text.Json
 open System.IO
+open System.Text.Json
 
 /// Serializes to/from strings using the supplied Options
 type Serdes(options : JsonSerializerOptions) =

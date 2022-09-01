@@ -6,9 +6,9 @@ module FsCodec.NewtonsoftJson.Tests.StreamTests
 open FsCodec.NewtonsoftJson
 #endif
 
-open Swensen.Unquote
 open Xunit
 open System.IO
+open Swensen.Unquote
 
 let serdes = Serdes Options.Default
 
