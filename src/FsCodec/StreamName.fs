@@ -15,20 +15,30 @@ and [<Measure>] streamName
 /// 2. {category}-{id1}_{id2}_...{idN}
 module StreamName =
 
+    (* Validation helpers *)
+
+    /// Throws if a candidate category includes a '-', is null, or is empty
+    let inline validateCategory (rawCategory : string) =
+        if rawCategory |> System.String.IsNullOrEmpty then invalidArg "rawCategory" "may not be null or empty"
+        if rawCategory.IndexOf '-' <> -1 then invalidArg "rawCategory" "may not contain embedded '-' symbols"
+
+    /// Throws if a candidate id element includes a '_', is null, or is empty
+    let inline validateElement (rawElement : string) =
+        if rawElement |> System.String.IsNullOrEmpty then invalidArg "rawElement" "may not contain null or empty components"
+        if rawElement.IndexOf '_' <> -1 then invalidArg "rawElement" "may not contain embedded '_' symbols"
+
     (* Creators: Building from constituent parts
        Guards against malformed category, aggregateId and/or aggregateId elements with exceptions *)
 
     /// Generates AggregateId from name elements; elements are separated from each other by '_'
     let createAggregateId (elements : string seq) : string =
-        for x in elements do
-            if System.String.IsNullOrEmpty x then invalidArg "elements" "may not contain null or empty components"
-            if x.IndexOf '_' <> -1 then invalidArg "elements" "may not contain embedded '_' symbols"
+        for x in elements do validateElement x
         System.String.Join("_", elements)
 
     /// Recommended way to specify a stream identifier; a category identifier and an aggregate identity
     /// category is separated from id by `-`
     let createRaw struct (category : string, aggregateId : string) : string =
-        if category.IndexOf '-' <> -1 then invalidArg "category" "may not contain embedded '-' symbols"
+        validateCategory category
         System.String.Concat(category, "-", aggregateId)
 
     /// Recommended way to specify a stream identifier; a category identifier and an aggregate identity
