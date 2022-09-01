@@ -6,7 +6,13 @@ open System.Text
 
 /// Serializes to/from strings using the supplied JsonSerializerSettings
 type Serdes(options : JsonSerializerSettings) =
+    // Why are we creating a serializer here instead of using JsonConvert.Serialize?
+    // Because, under the hood, JsonConvert creates a serializer instance for *each* call
+    // Source:
+    // https://github.com/JamesNK/Newtonsoft.Json/blob/4dc9af66e07dea321ad101bfb379326127251a80/Src/Newtonsoft.Json/JsonConvert.cs#L817
+    // It's consistent with the stream implementation
     let serializer = JsonSerializer.Create(options)
+
     /// <summary>The <c>JsonSerializerSettings</c> used by this instance.</summary>
     member _.Options : JsonSerializerSettings = options
 
