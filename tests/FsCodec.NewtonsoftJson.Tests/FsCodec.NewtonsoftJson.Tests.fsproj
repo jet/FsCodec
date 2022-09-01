@@ -12,6 +12,7 @@
     <Compile Include="UnionConverterTests.fs" />
     <Compile Include="VerbatimUtf8ConverterTests.fs" />
     <Compile Include="SomeNullHandlingTests.fs" />
+    <Compile Include="StreamTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
