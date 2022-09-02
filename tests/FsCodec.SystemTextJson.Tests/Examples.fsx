@@ -145,8 +145,8 @@ module Events =
     // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
     let [<Literal>] Category = "Favorites"
 
-    /// Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
-    /// Yields a strongly typed id from the aggregateId if the Category does match
+    /// Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
+    /// Yields a strongly typed id from the streamId if the Category does match
     let (|StreamName|_|) = function
         | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
         | _ -> None

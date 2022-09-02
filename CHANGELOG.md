@@ -9,11 +9,21 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-- Add `SerializeToStream` and `DeserializeFromStream` methods to Serdes [#83](https://github.com/jet/FsCodec/pull/83)
-
 ### Changed
 ### Removed
 ### Fixed
+
+<a name="3.0.0-rc.6"></a>
+## [3.0.0-rc.6] - 2022-09-02
+
+### Added
+
+- `StreamName.createStreamId`: Helper to compose a streamId (for use with Equinox V4 categoryName/streamId representation) [#82](https://github.com/jet/FsCodec/pull/82)
+- `Serdes`: Add `SerializeToStream` and `DeserializeFromStream` [#83](https://github.com/jet/FsCodec/pull/83) :pray: [@deviousasti](https://github.com/deviousasti)
+
+### Changed
+
+- `StreamName.trySplitCategoryAndId`: renamed to `trySplitCategoryAndStreamId` to align with `createStreamId` [#82](https://github.com/jet/FsCodec/pull/82)
 
 <a name="3.0.0-rc.5"></a>
 ## [3.0.0-rc.5] - 2022-09-01
@@ -301,7 +311,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.5...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...HEAD
+[3.0.0-rc.6]: https://github.com/jet/FsCodec/compare/3.0.0-rc.5...3.0.0-rc.6
 [3.0.0-rc.5]: https://github.com/jet/FsCodec/compare/3.0.0-rc.4...3.0.0-rc.5
 [3.0.0-rc.4]: https://github.com/jet/FsCodec/compare/3.0.0-rc.3...3.0.0-rc.4
 [3.0.0-rc.3]: https://github.com/jet/FsCodec/compare/3.0.0-rc.2...3.0.0-rc.3

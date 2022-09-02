@@ -17,7 +17,7 @@ let [<Fact>] ``Can roundtrip composed multi-ids with embedded dashes`` () =
     test <@ let (StreamName.CategoryAndId (scat, aggId)) = sn
             scat = cat && aggId = "a-b_c-d" @>
 
-let [<Fact>] ``Can roundtrip single aggregateIds with embedded dashes and underscores`` () =
+let [<Fact>] ``Can roundtrip streamId with embedded dashes and underscores`` () =
     let cat, aggId = "Cat", "a-b_c-d"
 
     let sn = StreamName.create cat aggId

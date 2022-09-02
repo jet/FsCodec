@@ -440,13 +440,13 @@ module ClientId =
 
 The de-facto standard Event Store [EventStore.org](https://eventstore.org) and its documentation codifies the following convention for the naming of streams:-
 
-    {CategoryName}-{Identifier}
+    {Category}-{StreamId}
 
 Where:
 
-- `{CategoryName}` represents a high level contract/grouping; all stream names starting with `Category-` are the same category. Must not contain any `-` characters.
+- `{Category}` represents a high level contract/grouping; all stream names starting with `{Category}-` are the same category. Must not contain any `-` characters.
 - `-` (hyphen/minus) represents the by-convention standard separator between category and identifier
-- `{Identifier}` represents the identity of the Aggregate / Aggregate Root instance for which we're storing the events within this stream. The `_` character is used to separate composite ids; see [the code](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs).
+- `{StreamId}` represents the identity of the Aggregate / Aggregate Root instance for which we're storing the events within this stream. The `_` character is used to separate composite ids; see [the code](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs).
 
 The `StreamName` module will reject invalid values by throwing exceptions when fields have erroneously embedded `-` or `_` values.
 
@@ -462,15 +462,15 @@ type StreamName = string<streamName>
 module StreamName =
 
     (* Creators: Building from constituent parts
-       Guards against malformed category, aggregateId and/or aggregateIdElements with exceptions *)
+       Guards against malformed category, streamId and/or streamIdElements with exceptions *)
 
-    // Recommended way to specify a stream identifier; a category identifier and an aggregate identity
+    // Recommended way to specify a stream identifier; a category identifier and a streamId representing the aggregate's identity
     // category is separated from id by `-`
-    let create (category : string) aggregateId : StreamName = ...
+    let create (category : string) streamId : StreamName = ...
 
     // Composes a StreamName from a category and > 1 name elements.
-    // category is separated from the aggregateId by '-'; elements are separated from each other by '_'
-    let compose (category : string) (aggregateIdElements : string seq) : StreamName = ...
+    // category is separated from the streamId by '-'; elements are separated from each other by '_'
+    let compose (category : string) (streamIdElements : string seq) : StreamName = ...
 
     // Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-` (dash)
     // Throws <code>InvalidArgumentException</code> if it does not adhere to that form
@@ -482,27 +482,27 @@ module StreamName =
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
 
-    // Attempts to split a Stream Name in the form {category}-{id} into its two elements.
-    // The {id} segment is permitted to include embedded '-' (dash) characters
+    // Attempts to split a Stream Name in the form {category}-{streamId} into its two elements.
+    // The {streamId} segment is permitted to include embedded '-' (dash) characters
     let trySplitCategoryAndId (rawStreamName : string) : (string * string) voption = ...
 
-    // Attempts to split a Stream Name in the form {category}-{id} into its two elements.
-    // The {id} segment is permitted to include embedded '-' (dash) characters
+    // Attempts to split a Stream Name in the form {category}-{streamId} into its two elements.
+    // The {streamId} segment is permitted to include embedded '-' (dash) characters
     // Yields <code>NotCategorized</code> if it does not adhere to that form.
     let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<struct (string*string), unit> = ...
 
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
 
-    // Splits a well-formed Stream Name of the form {category}-{id} into its two elements.
+    // Splits a well-formed Stream Name of the form {category}-{streamId} into its two elements.
     // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
     // <remarks>Inverse of <code>create</code>
-    let splitCategoryAndId (streamName : StreamName) : struct (string * string) = ...
+    let splitCategoryAndStreamId (streamName : StreamName) : struct (string * string) = ...
     let (|CategoryAndId|) : StreamName -> struct (string * string) = splitCategoryAndId
 
     // Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.
-    // <remarks>Inverse of what <code>compose</code> does to the subElements
-    let (|IdElements|) (aggregateId : string) : string[] = ...
+    // <remarks>Inverse of what <code>compose</code> does to the streamIdElements
+    let (|IdElements|) (streamId : string) : string[] = ...
 
     // Splits a well-formed Stream Name of the form {category}-{id1}_{id2}_{idN} into a pair of category and ids
     // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
@@ -597,8 +597,8 @@ module Events =
 
     // ... (as above)
 
-    // Pattern to determine whether a given {category}-{aggregateId} StreamName represents the stream associated with this Aggregate
-    // Yields a strongly typed id from the aggregateId if the Category does match
+    // Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
+    // Yields a strongly typed id from the streamId if the Category does match
     let [<return: Struct>] (|StreamName|_|) = function
         | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
         | _ -> None
