@@ -28,6 +28,7 @@
     <Compile Include="SerdesTests.fs" />
     <Compile Include="UmxInteropTests.fs" />
     <Compile Include="TypeSafeEnumConverterTests.fs" />
+    <Compile Include="..\FsCodec.NewtonsoftJson.Tests\StreamTests.fs" Link="StreamTests.fs" />
     <Compile Include="..\FsCodec.NewtonsoftJson.Tests\Fixtures.fs">
       <Link>Fixtures.fs</Link>
     </Compile>

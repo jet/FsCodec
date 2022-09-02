@@ -9,6 +9,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+- Add `SerializeToStream` and `DeserializeFromStream` methods to Serdes [#83](https://github.com/jet/FsCodec/pull/83)
+
 ### Changed
 ### Removed
 ### Fixed
