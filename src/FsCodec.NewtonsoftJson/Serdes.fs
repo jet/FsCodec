@@ -18,7 +18,7 @@ type Serdes(options : JsonSerializerSettings) =
 
     /// Serializes given value to a JSON string.
     member _.Serialize<'T>(value : 'T) : string =
-        use sw = new StringWriter()
+        use sw = new StringWriter(System.Globalization.CultureInfo.InvariantCulture)
         use writer = new JsonTextWriter(sw)
         serializer.Serialize(writer, value)
         sw.ToString()
@@ -30,10 +30,12 @@ type Serdes(options : JsonSerializerSettings) =
 
     /// Serializes and writes given value to a stream.
     member _.SerializeToStream<'T>(value : 'T, utf8Stream : Stream) =
+        // We're setting CloseOutput = false, because that's the default behavior in STJ
+        // but also mostly because it's rude to close without asking
         use writer = new JsonTextWriter(new StreamWriter(utf8Stream, Encoding.UTF8), CloseOutput = false)
         serializer.Serialize(writer, value)
 
     /// Deserializes by reading from a stream.
-    member x.DeserializeFromStream<'T>(utf8Stream : Stream) =
+    member _.DeserializeFromStream<'T>(utf8Stream : Stream) =
         use reader = new JsonTextReader(new StreamReader(utf8Stream, Encoding.UTF8))
         serializer.Deserialize<'T>(reader)
