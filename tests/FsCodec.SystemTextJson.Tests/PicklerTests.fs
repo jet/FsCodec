@@ -60,4 +60,4 @@ let [<Fact>] ``Global GuidConverter roundtrips`` () =
     // With the converter, things roundtrip either way
     for result in [defaultHandlingHasDashes; resNoDashes] do
         let des = serdesWithConverter.Deserialize result
-        test <@ value= des @>
+        test <@ value = des @>

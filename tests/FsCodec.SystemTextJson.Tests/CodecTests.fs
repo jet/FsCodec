@@ -57,8 +57,10 @@ let [<Property>] roundtrips value =
 
     let des = serdes.Deserialize<Envelope> ser
     let wrapped = FsCodec.Core.TimelineEvent<JsonElement>.Create(-1L, eventType, des.d)
+    test <@ wrapped.EventId = System.Guid.Empty
+            && (let d = System.DateTimeOffset.UtcNow - wrapped.Timestamp
+                abs d.TotalMinutes < 1) @>
     let decoded = eventCodec.TryDecode wrapped |> ValueOption.get
-
     let expected =
         match value with
         | AO ({ opt = Some null } as v) -> AO { v with opt = None }
@@ -69,3 +71,22 @@ let [<Property>] roundtrips value =
     // Also validate the adapters work when put in series (NewtonsoftJson tests are responsible for covering the individual hops)
     let decodedMultiHop = multiHopCodec.TryDecode wrapped |> ValueOption.get
     test <@ expected = decodedMultiHop @>
+
+let [<Xunit.Fact>] ``EventData.Create basics`` () =
+    let e = FsCodec.Core.EventData.Create("et", "data")
+
+    test <@ e.EventId <> System.Guid.Empty
+            && e.EventType = "et"
+            && e.Data = "data"
+            && (let d = System.DateTimeOffset.UtcNow - e.Timestamp
+                abs d.TotalMinutes < 1) @>
+
+let [<Xunit.Fact>] ``TimelineEvent.Create basics`` () =
+    let e = FsCodec.Core.TimelineEvent.Create(42, "et", "data")
+
+    test <@ e.EventId = System.Guid.Empty
+            && not e.IsUnfold
+            && e.EventType = "et"
+            && e.Data = "data"
+            && (let d = System.DateTimeOffset.UtcNow - e.Timestamp
+                abs d.TotalMinutes < 1) @>
