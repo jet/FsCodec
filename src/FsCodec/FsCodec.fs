@@ -44,7 +44,7 @@ open System
 
 /// An Event about to be written, see <c>IEventData<c> for further information
 [<NoComparison; NoEquality>]
-type EventData<'Format> private (eventType, data, meta, eventId, correlationId, causationId, timestamp) =
+type EventData<'Format>(eventType, data, meta, eventId, correlationId, causationId, timestamp) =
 
     static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp : DateTimeOffset) : IEventData<'Format> =
         let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<'Format>
@@ -74,7 +74,7 @@ type EventData<'Format> private (eventType, data, meta, eventId, correlationId, 
 
 /// An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline
 [<NoComparison; NoEquality>]
-type TimelineEvent<'Format> private (index, eventType, data, meta, eventId, correlationId, causationId, timestamp, isUnfold, context, size) =
+type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId, causationId, timestamp, isUnfold, context, size) =
 
     static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context, ?size) : ITimelineEvent<'Format> =
         let isUnfold = defaultArg isUnfold false
