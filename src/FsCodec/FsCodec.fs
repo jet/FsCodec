@@ -47,8 +47,8 @@ open System
 type EventData<'Format> private (eventType, data, meta, eventId, correlationId, causationId, timestamp) =
 
     static member Create(eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp : DateTimeOffset) : IEventData<'Format> =
-        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
-        let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
+        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<'Format>
+        let eventId = match eventId   with Some x -> x   | None -> Guid.NewGuid()
         let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
         EventData(eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts) :> _
 
