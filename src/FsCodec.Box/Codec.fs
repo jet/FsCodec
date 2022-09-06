@@ -1,4 +1,4 @@
-// Equivalent of FsCodec.NewtonsoftJson/SystemTextJson.Codec intended to provide equivalent calls and functionality, without actually serializing/deserializing as JSON
+// Mirror of FsCodec.NewtonsoftJson/SystemTextJson.Codec intended to provide equivalent calls and functionality, without actually serializing/deserializing as JSON
 // This is a useful facility for in-memory stores such as Equinox's MemoryStore as it enables you to
 // - efficiently test behaviors from an event sourced decision processing perspective (e.g. with Property Based Tests)
 // - without paying a serialization cost and/or having to deal with sanitization of generated data in order to make it roundtrippable through same
@@ -66,7 +66,7 @@ type Codec private () =
             // <summary>Maps a fresh <c>'Event</c> resulting from a Decision in the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
             // The function is also expected to derive
             //   a <c>meta</c> object that will be serialized with the same options (if it's not <c>None</c>)
-            //   and an Event Creation <c>timestamp</c>.</summary>
+            //   and an Event Creation <c>timestamp</c> (Default: DateTimeOffset.UtcNow).</summary>
             down : 'Event -> struct ('Contract * 'Meta voption * DateTimeOffset voption),
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)

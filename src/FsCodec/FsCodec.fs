@@ -122,6 +122,7 @@ type EventCodec<'Event, 'Format, 'Context> private () =
         let downConvert = TimelineEvent.Map down
 
         { new IEventCodec<'Event, 'TargetFormat, 'Context> with
+
             member _.Encode(context, event) =
                 let encoded = native.Encode(context, event)
                 upConvert encoded
