@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.7"></a>
+## [3.0.0-rc.7] - 2022-09-06
+
+### Added
 
 - `Core.EventData/TimelineEvent`: Exposed default ctors [#83](https://github.com/jet/FsCodec/pull/83)
 
@@ -16,7 +24,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 - `Codec.Create`: Made timestamp mandatory in low level `up` / `down` signature [#83](https://github.com/jet/FsCodec/pull/83)
 
-### Removed
 ### Fixed
 
 - `EventData.Create`: restored defaulting of `EventId` to `Guid.NewGuid` broken in [#82](https://github.com/jet/FsCodec/pull/82) [#83](https://github.com/jet/FsCodec/pull/83)
@@ -319,7 +326,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.7...HEAD
+[3.0.0-rc.7]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...3.0.0-rc.7
 [3.0.0-rc.6]: https://github.com/jet/FsCodec/compare/3.0.0-rc.5...3.0.0-rc.6
 [3.0.0-rc.5]: https://github.com/jet/FsCodec/compare/3.0.0-rc.4...3.0.0-rc.5
 [3.0.0-rc.4]: https://github.com/jet/FsCodec/compare/3.0.0-rc.3...3.0.0-rc.4
