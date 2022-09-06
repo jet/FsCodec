@@ -9,9 +9,17 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `Core.EventData/TimelineEvent`: Exposed default ctors [#83](https://github.com/jet/FsCodec/pull/83)
+
 ### Changed
+
+- `Codec.Create`: Made timestamp mandatory in low level `up` / `down` signature [#83](https://github.com/jet/FsCodec/pull/83)
+
 ### Removed
 ### Fixed
+
+- `EventData.Create`: restored defaulting of `EventId` to `Guid.NewGuid` broken in [#82](https://github.com/jet/FsCodec/pull/82) [#83](https://github.com/jet/FsCodec/pull/83)
 
 <a name="3.0.0-rc.6"></a>
 ## [3.0.0-rc.6] - 2022-09-02
