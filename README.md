@@ -494,6 +494,10 @@ module StreamName =
     (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
        Will throw if presented with malformed strings [generated via alternate means] *)
 
+    /// Extracts the category portion of the StreamName
+    let category (x : StreamName) : string = ...
+    let (|Category|) = category
+    
     // Splits a well-formed Stream Name of the form {category}-{streamId} into its two elements.
     // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
     // <remarks>Inverse of <code>create</code>

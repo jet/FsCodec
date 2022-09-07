@@ -145,9 +145,9 @@ module Events =
 
     /// Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the streamId if the Category does match
-    let (|StreamName|_|) = function
-        | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> Some clientId
-        | _ -> None
+    let [<return: Struct>] (|StreamName|_|) = function
+        | FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> ValueSome clientId
+        | _ -> ValueNone
 
     type Added = { item : string }
     type Removed = { name : string }
