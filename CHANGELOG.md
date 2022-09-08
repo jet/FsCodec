@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `StreamName.Category` + `category`: Extracts the category portion of a streamName [#85](https://github.com/jet/FsCodec/pull/85)
+
 ### Changed
 ### Removed
 ### Fixed
