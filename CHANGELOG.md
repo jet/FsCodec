@@ -9,15 +9,20 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.8"></a>
+## [3.0.0-rc.8] - 2022-11-16
+
+### Added
 
 - `StreamName.Category` + `category`: Extracts the category portion of a streamName [#85](https://github.com/jet/FsCodec/pull/85)
 
-### Changed
 ### Removed
 
 - `StreamName.createStreamId`: Equinox `4.0.0-rc.3` provides a `StreamId` for this purpose [#86](https://github.com/jet/FsCodec/pull/86)
-
-### Fixed
 
 <a name="3.0.0-rc.7"></a>
 ## [3.0.0-rc.7] - 2022-09-06
@@ -332,7 +337,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.7...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.8...HEAD
+[3.0.0-rc.8]: https://github.com/jet/FsCodec/compare/3.0.0-rc.7...3.0.0-rc.8
 [3.0.0-rc.7]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...3.0.0-rc.7
 [3.0.0-rc.6]: https://github.com/jet/FsCodec/compare/3.0.0-rc.5...3.0.0-rc.6
 [3.0.0-rc.5]: https://github.com/jet/FsCodec/compare/3.0.0-rc.4...3.0.0-rc.5
