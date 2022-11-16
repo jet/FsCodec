@@ -35,13 +35,13 @@ module StreamName =
             validateCategory category
             System.String.Concat(category, "-", streamId)
 
+        /// Generates a StreamId from name elements; elements are separated from each other by '_'
+        let createStreamId (elements : string seq) : string =
+            for x in elements do validateElement x
+            System.String.Join("_", elements)
+
     (* Creators: Building from constituent parts
        Guards against malformed category, streamId and/or streamId elements with exceptions *)
-
-    /// Generates a StreamId from name elements; elements are separated from each other by '_'
-    let createStreamId (elements : string seq) : string =
-        for x in elements do Internal.validateElement x
-        System.String.Join("_", elements)
 
     /// Recommended way to specify a stream identifier; a category identifier and an streamId representing the aggregate's identity
     /// category is separated from id by `-`
@@ -51,7 +51,7 @@ module StreamName =
     /// Composes a StreamName from a category and > 1 name elements.
     /// category is separated from the streamId by '-'; elements are separated from each other by '_'
     let compose (category : string) (streamIdElements : string seq) : StreamName =
-        create category (createStreamId streamIdElements)
+        create category (Internal.createStreamId streamIdElements)
 
     (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
 
@@ -110,7 +110,7 @@ module StreamName =
     /// <remarks>Inverse of <c>create</c></remarks>
     let (|CategoryAndId|) : StreamName -> struct (string * string) = splitCategoryAndStreamId
 
-    let private underscore = [|'_'|] // separates {category}-{subId1_subId2_subId3_..._subIdN}
+    let private underscore = [|'_'|] // separates {category}-{subId1_subId2_..._subIdN}
 
     /// <summary>Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.</summary>
     /// <remarks>Inverse of what <code>compose</code> does to the subElements</remarks>
