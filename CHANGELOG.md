@@ -14,6 +14,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Changed
 ### Removed
+
+- `StreamName.createStreamId`: Equinox `4.0.0-rc.3` provides a `StreamId` for this purpose [#86](https://github.com/jet/FsCodec/pull/86)
+
 ### Fixed
 
 <a name="3.0.0-rc.7"></a>
