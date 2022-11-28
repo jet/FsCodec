@@ -8,7 +8,7 @@
     <Compile Include="Pickler.fs" />
     <Compile Include="UnionConverter.fs" />
     <Compile Include="TypeSafeEnumConverter.fs" />
-    <Compile Include="NullConverter.fs" />
+    <Compile Include="StringConverter.fs" />
     <Compile Include="UnionOrTypeSafeEnumConverterFactory.fs" />
     <Compile Include="Options.fs" />
     <Compile Include="Serdes.fs" />

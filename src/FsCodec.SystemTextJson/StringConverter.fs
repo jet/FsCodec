@@ -1,4 +1,4 @@
-module FsCodec.SystemTextJson.RecordConverter
+namespace FsCodec.SystemTextJson
 
 open System.Text.Json.Serialization
 

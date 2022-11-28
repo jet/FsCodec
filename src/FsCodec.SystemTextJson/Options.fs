@@ -4,7 +4,6 @@ open System
 open System.Runtime.InteropServices
 open System.Text.Json
 open System.Text.Json.Serialization
-open FsCodec.SystemTextJson.RecordConverter
 
 #nowarn "44" // see IgnoreNullValues below
 
