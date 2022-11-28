@@ -7,11 +7,12 @@ open System.Text.Json.Serialization
 #else
 module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
 
+open FsCheck.FSharp
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 #endif
 
-open FsCheck
+open FsCheck.FSharp
 open Swensen.Unquote.Assertions
 open System
 open System.IO
@@ -151,8 +152,8 @@ let ``deserializes properly`` () =
     test <@ CaseE ("hi", 0) = deserialize """{"case":"CaseE","Item1":"hi","Item2":0}""" @>
 #if !SYSTEM_TEXT_JSON
     // NB this only passes by virtue of MissingMemberHandling=Ignore and NullValueHandling=Ignore in default settings
-#endif
     test <@ CaseE (null, 0) = deserialize """{"case":"CaseE","Item1":null,"Item2":0,"Item3":"hi","Item4":"0"}""" @>
+#endif
     test <@ CaseF ("hi", 0) = deserialize """{"case":"CaseF","a":"hi","b":0}""" @>
 
     test <@ CaseG {Item = "hi"} = deserialize """{"case":"CaseG","Item":"hi"}""" @>
@@ -307,8 +308,8 @@ let render ignoreNulls = function
     | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
 
 type FsCheckGenerators =
-    static member CartId = Arb.generate |> Gen.map CartId |> Arb.fromGen
-    static member SkuId = Arb.generate |> Gen.map SkuId |> Arb.fromGen
+    static member CartId = ArbMap.defaults |> ArbMap.generate |> Gen.map CartId |> Arb.fromGen
+    static member SkuId = ArbMap.defaults |> ArbMap.generate |> Gen.map SkuId |> Arb.fromGen
 
 type DomainPropertyAttribute() =
     inherit FsCheck.Xunit.PropertyAttribute(QuietOnSuccess = true, Arbitrary=[| typeof<FsCheckGenerators> |])

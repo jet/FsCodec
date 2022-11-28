@@ -4,6 +4,7 @@ open System
 open System.Runtime.InteropServices
 open System.Text.Json
 open System.Text.Json.Serialization
+open FsCodec.SystemTextJson.RecordConverter
 
 #nowarn "44" // see IgnoreNullValues below
 
@@ -59,12 +60,14 @@ type Options private () =
             /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool) =
 
+        let defaultConverters: JsonConverter array  = [| StringConverter() |]
+        let converters = if converters = null then defaultConverters else Array.append converters defaultConverters
+
         Options.CreateDefault(
             converters =
                 (   match autoTypeSafeEnumToJsonString = Some true, autoUnionToJsonObject = Some true with
                     | tse, u when tse || u ->
-                        let converter : JsonConverter array = [| UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = tse, union = u) |]
-                        if converters = null then converter else Array.append converters converter
+                        Array.append converters [| UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = tse, union = u) |]
                     | _ -> converters),
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
