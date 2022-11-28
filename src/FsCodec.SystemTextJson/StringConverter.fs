@@ -1,6 +1,5 @@
 namespace FsCodec.SystemTextJson
 
-open System.Text.Json
 open System.Text.Json.Serialization
 
 type StringConverter() =
