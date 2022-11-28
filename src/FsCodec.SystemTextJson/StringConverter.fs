@@ -14,8 +14,4 @@ type StringConverter() =
         if value = null then failwith "Expected string, got null."
         value
 
-    override this.Write(writer, value, options) =
-        writer.WriteStringValue(value)
-
-
-
+    override this.Write(writer, value, options) = writer.WriteStringValue(value)
