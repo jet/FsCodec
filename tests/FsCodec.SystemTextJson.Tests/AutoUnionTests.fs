@@ -22,10 +22,6 @@ let [<Xunit.Fact>] ``Basic characteristics`` () =
     test <@ Not { body = "A"; opt = None; list = [] } = serdes.Deserialize "{\"case\":\"Not\",\"body\":\"A\",\"list\":[]}" @>
     test <@ Not { body = "A"; opt = None; list = ["A"] } = serdes.Deserialize "{\"case\":\"Not\",\"body\":\"A\",\"list\":[\"A\"]}" @>
 
-let [<Xunit.Fact>] ``It throws on null strings`` () =
-    raises <@ serdes.Deserialize<string> "null" @>
-    raises <@ serdes.Deserialize<NotAUnion> "{\"body\": null, \"opt\": null, \"list\": []}" @>
-
 let [<Xunit.Fact>] ``Opting out`` () =
     let serdesDef = Serdes Options.Default
     let serdesT = Options.Create(autoTypeSafeEnumToJsonString = true) |> Serdes

@@ -7,7 +7,6 @@ open System.Text.Json.Serialization
 #else
 module FsCodec.NewtonsoftJson.Tests.UnionConverterTests
 
-open FsCheck.FSharp
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 #endif

@@ -57,9 +57,12 @@ type Options private () =
             /// <summary>Apply <c>TypeSafeEnumConverter</c> if possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoTypeSafeEnumToJsonString : bool,
             /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
-            [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool) =
+            [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool,
+            /// <summary>When set to <c>false</c> the codec will throw on <c>null</c> strings. Use <c>string option</c> to allow nulls.
+            [<Optional; DefaultParameterValue(null)>] ?allowNullStrings : bool) =
 
-        let defaultConverters: JsonConverter array  = [| StringConverter() |]
+        let defaultConverters: JsonConverter array =
+            if allowNullStrings = Some false then [| RejectNullStringConverter() |] else Array.empty
         let converters = if converters = null then defaultConverters else Array.append converters defaultConverters
 
         Options.CreateDefault(

@@ -2,7 +2,7 @@ namespace FsCodec.SystemTextJson
 
 open System.Text.Json.Serialization
 
-type StringConverter() =
+type RejectNullStringConverter() =
     inherit JsonConverter<string>()
 
     override _.HandleNull = true

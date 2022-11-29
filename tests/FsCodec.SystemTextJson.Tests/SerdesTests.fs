@@ -8,6 +8,7 @@ open Xunit
 type Record = { a : int }
 
 type RecordWithOption = { a : int; b : string option }
+type RecordWithString = { c : int; d : string }
 
 /// Characterization tests for OOTB JSON.NET
 /// The aim here is to characterize the gaps that we'll shim; we only want to do that as long as it's actually warranted
@@ -121,3 +122,27 @@ let [<Fact>] ``Switches off the HTML over-escaping mechanism`` () =
     test <@ ser = """{"a":1,"b":"\"+"}""" @>
     let des = serdes.Deserialize ser
     test <@ value = des @>
+
+let [<Fact>] ``Rejects null strings`` () =
+    let serdes = Serdes(Options.Create(allowNullStrings = false))
+    let value: string = null
+    raises <@ serdes.Serialize value @>
+
+    let value = [| "A"; null |]
+    raises <@ serdes.Serialize value @>
+
+    let value = [| Some "A"; None |]
+    let res = serdes.Serialize value
+    test <@ res = """["A",null]""" @>
+    let des = serdes.Deserialize res
+    test <@ des = value @>
+
+    let value = { c = 1; d = null }
+    raises <@ serdes.Serialize value @>
+
+    let value = { c = 1; d = "some string" }
+    let res = serdes.Serialize value
+    test <@ res = """{"c":1,"d":"some string"}""" @>
+    let des = serdes.Deserialize res
+    test <@ des = value @>
+

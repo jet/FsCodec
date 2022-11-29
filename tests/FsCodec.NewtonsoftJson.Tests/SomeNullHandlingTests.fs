@@ -9,7 +9,10 @@ let serdes = Serdes Options.Default
 
 let [<Fact>] ``Options.Create does not roundtrip Some null`` () =
     let value : string option = Some null
-    raises <@ serdes.Serialize value @>
+    let ser = serdes.Serialize value
+    "null" =! ser
+    // But it doesn't roundtrip
+    value <>! serdes.Deserialize ser
 
 #else
 module FsCodec.NewtonsoftJson.Tests.SomeNullHandlingTests
