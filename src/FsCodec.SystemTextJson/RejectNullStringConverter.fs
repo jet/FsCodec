@@ -2,9 +2,9 @@ namespace FsCodec.SystemTextJson
 
 open System.Text.Json.Serialization
 
-module private Error =
+module internal Error =
     [<Literal>]
-    let private message = "Expected string, got null. When allowNullStrings is false you must explicitly type optional strings as 'string option'"
+    let message = "Expected string, got null. When allowNullStrings is false you must explicitly type optional strings as 'string option'"
 
 type RejectNullStringConverter() =
     inherit JsonConverter<string>()
