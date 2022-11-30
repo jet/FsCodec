@@ -78,11 +78,16 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
 
     static member Create(index, eventType, data, ?meta, ?eventId, ?correlationId, ?causationId, ?timestamp, ?isUnfold, ?context, ?size) : ITimelineEvent<'Format> =
         let isUnfold = defaultArg isUnfold false
-        let meta =    match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
-        let eventId = match eventId   with Some x -> x   | None -> Guid.Empty
-        let ts =      match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
-        let size =    defaultArg size 0
+        let meta =     match meta      with Some x -> x   | None -> Unchecked.defaultof<_>
+        let eventId =  match eventId   with Some x -> x   | None -> Guid.Empty
+        let ts =       match timestamp with Some ts -> ts | None -> DateTimeOffset.UtcNow
+        let size =     defaultArg size 0
         TimelineEvent(index, eventType, data, meta, eventId, Option.toObj correlationId, Option.toObj causationId, ts, isUnfold, Option.toObj context, size) :> _
+
+    static member Create(index, inner : IEventData<'Format>, ?isUnfold, ?context, ?size) : ITimelineEvent<'Format> =
+        let isUnfold = defaultArg isUnfold false
+        let size =     defaultArg size 0
+        TimelineEvent(index, inner.EventType, inner.Data, inner.Meta, inner.EventId, inner.CorrelationId, inner.CausationId, inner.Timestamp, isUnfold, Option.toObj context, size) :> _
 
     interface ITimelineEvent<'Format> with
         member _.Index = index

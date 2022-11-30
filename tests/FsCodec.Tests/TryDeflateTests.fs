@@ -6,7 +6,7 @@ open Xunit
 
 let inline roundtrip (sut : FsCodec.IEventCodec<_, _, _>) value =
     let encoded = sut.Encode((), value = value)
-    let loaded = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data)
+    let loaded = FsCodec.Core.TimelineEvent.Create(-1L, encoded)
     sut.TryDecode loaded
 
 (* Base Fixture Round-trips a String encoded as ReadOnlyMemory<byte> UTF-8 blob *)

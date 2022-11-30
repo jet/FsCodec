@@ -86,7 +86,7 @@ module VerbatimUtf8Tests = // not a module or CI will fail for net461
     let [<Fact>] ``Codec does not fall prey to Date-strings being mutilated`` () =
         let x = ES { embed = "2016-03-31T07:02:00+07:00" }
         let encoded = defaultEventCodec.Encode((), x)
-        let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded.EventType, encoded.Data, encoded.Meta, timestamp = encoded.Timestamp)
+        let adapted = FsCodec.Core.TimelineEvent.Create(-1L, encoded)
         let decoded = defaultEventCodec.TryDecode adapted |> ValueOption.get
         test <@ x = decoded @>
 
