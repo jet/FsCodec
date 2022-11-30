@@ -58,7 +58,7 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?autoTypeSafeEnumToJsonString : bool,
             /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool,
-            /// <summary>When set to <c>false</c> the codec will throw on <c>null</c> strings. Use <c>string option</c> to allow nulls.
+            /// <summary>Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings. Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
             [<Optional; DefaultParameterValue(null)>] ?allowNullStrings : bool) =
 
         let defaultConverters: JsonConverter array =
