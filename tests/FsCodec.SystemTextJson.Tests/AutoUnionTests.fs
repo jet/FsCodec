@@ -48,11 +48,7 @@ let [<FsCheck.Xunit.Property>] ``auto-encodes Unions and non-unions`` (x : Any) 
 
     test <@ decoded = x @>
 
-(* 🙈 *)
-
-let (|ReplaceSomeNullWithNone|) value = TypeShape.Generic.map (function Some (null : string) -> None | x -> x) value
-
-let [<FsCheck.Xunit.Property>] ``Some null roundtripping hack for tests`` (ReplaceSomeNullWithNone (x : Any)) =
+let [<FsCheck.Xunit.Property>] ``It round trips`` (x: Any) =
     let encoded = serdes.Serialize x
     let decoded : Any = serdes.Deserialize encoded
     test <@ decoded = x @>

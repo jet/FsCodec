@@ -11,7 +11,7 @@ open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 #endif
 
-open FsCheck
+open FsCheck.FSharp
 open Swensen.Unquote.Assertions
 open System
 open System.IO
@@ -307,8 +307,8 @@ let render ignoreNulls = function
     | CaseZ (a, Some b) -> sprintf """{"case":"CaseZ","a":"%s","b":"%s"}""" (string a) (string b)
 
 type FsCheckGenerators =
-    static member CartId = Arb.generate |> Gen.map CartId |> Arb.fromGen
-    static member SkuId = Arb.generate |> Gen.map SkuId |> Arb.fromGen
+    static member CartId = ArbMap.defaults |> ArbMap.generate |> Gen.map CartId |> Arb.fromGen
+    static member SkuId = ArbMap.defaults |> ArbMap.generate |> Gen.map SkuId |> Arb.fromGen
 
 type DomainPropertyAttribute() =
     inherit FsCheck.Xunit.PropertyAttribute(QuietOnSuccess = true, Arbitrary=[| typeof<FsCheckGenerators> |])

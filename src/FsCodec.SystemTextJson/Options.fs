@@ -57,15 +57,21 @@ type Options private () =
             /// <summary>Apply <c>TypeSafeEnumConverter</c> if possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoTypeSafeEnumToJsonString : bool,
             /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
-            [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool) =
+            [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool,
+            /// <summary>Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings. Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullStrings: bool) =
+
+        let autoTypeSafeEnumToJsonString = defaultArg autoTypeSafeEnumToJsonString false
+        let autoUnionToJsonObject = defaultArg autoUnionToJsonObject false
+        let rejectNullStrings = defaultArg rejectNullStrings false
 
         Options.CreateDefault(
-            converters =
-                (   match autoTypeSafeEnumToJsonString = Some true, autoUnionToJsonObject = Some true with
-                    | tse, u when tse || u ->
-                        let converter : JsonConverter array = [| UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = tse, union = u) |]
-                        if converters = null then converter else Array.append converters converter
-                    | _ -> converters),
+            converters = [|
+                if converters <> null then yield! converters
+                if rejectNullStrings then yield RejectNullStringConverter()
+                if autoTypeSafeEnumToJsonString || autoUnionToJsonObject then
+                    yield UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
+            |],
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
             ?camelCase = camelCase,
