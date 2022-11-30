@@ -59,18 +59,19 @@ type Options private () =
             /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool,
             /// <summary>Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings. Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
-            [<Optional; DefaultParameterValue(null)>] ?allowNullStrings : bool) =
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullStrings: bool) =
 
-        let defaultConverters: JsonConverter array =
-            if allowNullStrings = Some false then [| RejectNullStringConverter() |] else Array.empty
-        let converters = if converters = null then defaultConverters else Array.append converters defaultConverters
+        let autoTypeSafeEnumToJsonString = defaultArg autoTypeSafeEnumToJsonString false
+        let autoUnionToJsonObject = defaultArg autoUnionToJsonObject false
+        let rejectNullStrings = defaultArg rejectNullStrings false
 
         Options.CreateDefault(
-            converters =
-                (   match autoTypeSafeEnumToJsonString = Some true, autoUnionToJsonObject = Some true with
-                    | tse, u when tse || u ->
-                        Array.append converters [| UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = tse, union = u) |]
-                    | _ -> converters),
+            converters = [|
+                if converters <> null then yield! converters
+                if rejectNullStrings then yield RejectNullStringConverter()
+                if autoTypeSafeEnumToJsonString || autoUnionToJsonObject then
+                    yield UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
+            |],
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
             ?camelCase = camelCase,

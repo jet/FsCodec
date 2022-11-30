@@ -1,5 +1,6 @@
 module FsCodec.SystemTextJson.Tests.SerdesTests
 
+open System
 open System.Collections.Generic
 open FsCodec.SystemTextJson
 open Swensen.Unquote
@@ -66,6 +67,36 @@ module StjCharacterization =
         let des = serdes.Deserialize ser
         test <@ value = des @>
 
+let [<Fact>] ``RejectNullStringConverter rejects null strings`` () =
+    let serdes = Serdes(Options.Create(rejectNullStrings = true))
+
+    let value: string = null
+    raises<ArgumentNullException> <@ serdes.Serialize value @>
+
+    let value = [| "A"; null |]
+    raises<ArgumentNullException> <@ serdes.Serialize value @>
+
+    let value = { c = 1; d = null }
+    raises<ArgumentNullException> <@ serdes.Serialize value @>
+
+let [<Fact>] ``RejectNullStringConverter serializes strings correctly`` () =
+    let serdes = Serdes(Options.Create(rejectNullStrings = true))
+    let value = { c = 1; d = "some string" }
+    let res = serdes.Serialize value
+    test <@ res = """{"c":1,"d":"some string"}""" @>
+    let des = serdes.Deserialize res
+    test <@ des = value @>
+
+[<Theory; InlineData(true); InlineData(false)>]
+let ``string options are supported regardless of "rejectNullStrings" value`` rejectNullStrings =
+    let serdes = Serdes(Options.Create(rejectNullStrings = rejectNullStrings))
+    let value = [| Some "A"; None |]
+    let res = serdes.Serialize value
+    test <@ res = """["A",null]""" @>
+    let des = serdes.Deserialize res
+    test <@ des = value @>
+
+
 (* Serdes + default Options behavior, i.e. the stuff we do *)
 
 let serdes = Serdes Options.Default
@@ -122,27 +153,3 @@ let [<Fact>] ``Switches off the HTML over-escaping mechanism`` () =
     test <@ ser = """{"a":1,"b":"\"+"}""" @>
     let des = serdes.Deserialize ser
     test <@ value = des @>
-
-let [<Fact>] ``Rejects null strings`` () =
-    let serdes = Serdes(Options.Create(allowNullStrings = false))
-    let value: string = null
-    raises <@ serdes.Serialize value @>
-
-    let value = [| "A"; null |]
-    raises <@ serdes.Serialize value @>
-
-    let value = [| Some "A"; None |]
-    let res = serdes.Serialize value
-    test <@ res = """["A",null]""" @>
-    let des = serdes.Deserialize res
-    test <@ des = value @>
-
-    let value = { c = 1; d = null }
-    raises <@ serdes.Serialize value @>
-
-    let value = { c = 1; d = "some string" }
-    let res = serdes.Serialize value
-    test <@ res = """{"c":1,"d":"some string"}""" @>
-    let des = serdes.Deserialize res
-    test <@ des = value @>
-
