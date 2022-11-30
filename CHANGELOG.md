@@ -13,6 +13,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="3.0.0-rc.9"></a>
+## [3.0.0-rc.9] - 2022-11-30
+
+### Added
+
+- `SystemTextJson.Options.Create`: Add `rejectNullStrings` option, which wires in a `RejectNullStringConverter` [#87](https://github.com/jet/FsCodec/pull/87) :pray: [@nordfjord](https://github.com/nordfjord)
+- `FsCodec.Core.TimelineEvent.Create`: Add overload to create an `ITimelineEvent` given the additional properties to go with a set of baseline data from an `IEventData`
+
 <a name="3.0.0-rc.8"></a>
 ## [3.0.0-rc.8] - 2022-11-16
 
@@ -337,7 +345,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.8...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...HEAD
+[3.0.0-rc.9]: https://github.com/jet/FsCodec/compare/3.0.0-rc.8...3.0.0-rc.9
 [3.0.0-rc.8]: https://github.com/jet/FsCodec/compare/3.0.0-rc.7...3.0.0-rc.8
 [3.0.0-rc.7]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...3.0.0-rc.7
 [3.0.0-rc.6]: https://github.com/jet/FsCodec/compare/3.0.0-rc.5...3.0.0-rc.6

@@ -99,7 +99,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 ### `System.Text.Json`-specific low level converters
 
 - `UnionOrTypeSafeEnumConverterFactory`: Global converter that can apply `TypeSafeEnumConverter` to all Discriminated Unions that do not have cases with values, and `UnionConverter` to ones that have values. See [this `System.Text.Json` issue](https://github.com/dotnet/runtime/issues/55744) for background information as to the reasoning behind and tradeoffs involved in applying such a policy.  
-- `RejectNullStringConverter`: Global converter that can reject `null` as a valid string value
+- `RejectNullStringConverter`: Global converter that rejects `null` string values, forcing explicit use of `string option` where there is a need to represent a `null` value
  
 ## `FsCodec.NewtonsoftJson.Options`
 
@@ -120,7 +120,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
   - `(camelCase = true)`: opts into camel case conversion for `PascalCased` properties and `Dictionary` keys
   - `(autoTypeSafeEnumToJsonString = true)`: triggers usage of `TypeSafeEnumConverter` for any F# Discriminated Unions that only contain nullary cases. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples  
   - `(autoUnionToJsonObject = true)`: triggers usage of a `UnionConverter` to round-trip F# Discriminated Unions (with at least a single case that has a body) as JSON Object structures. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples
-  - `(rejectNullStrings = true)`: triggers usage of [`RejectNullStringConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/RejectNullStringConverter.fs) to reject `null` as a value for strings (`string option` is still supported).
+  - `(rejectNullStrings = true)`: triggers usage of [`RejectNullStringConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/RejectNullStringConverter.fs) to reject `null` as a value for strings (`string option` can be used to handle them explicitly).
 - `Default`: Default settings; same as calling `Create()` produces (same intent as [`JsonSerializerOptions.Default`](https://github.com/dotnet/runtime/pull/61434)) 
 
 ## `Serdes`
@@ -132,15 +132,15 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 
 # Usage of Converters with ASP.NET Core
 
-ASP.NET Core's out-of-the-box behavior is to use `System.Text.Json`. One can explicitly opt to use the more ubiquitous `Newtonsoft.Json` via the `Microsoft.AspNetCore.Mvc.NewtonsoftJson` package's `AddNewtonsoftJson` by adjusting one's `.AddMvc)`.
+ASP.NET Core's out-of-the-box behavior is to use `System.Text.Json`. One can explicitly opt to use `Newtonsoft.Json` via the `Microsoft.AspNetCore.Mvc.NewtonsoftJson` package's `AddNewtonsoftJson` by adjusting one's `.AddMvc()`.
 
 If you follow the policies covered in the rest of the documentation here, your DTO types (and/or types in your `module Events` that you surface while you are scaffolding and/or hacking without an anti-corruption layer) will fall into one of two classifications:
 
 1. Types that have an associated Converter explicitly annotated (e.g., DU types bear an associated `UnionConverter`, `TypeSafeEnumConverter` or `JsonIsomorphism`-based custom converter, custom types follow the conventions or define a `JsonIsomorphism`-based converter)
 2. Types that require a global converter to be registered. _While it may seem that the second set is open-ended and potentially vast, experience teaches that you want to keep it minimal._. This boils down to:
-  - records arrays and all other good choices for types Just Work already
+  - records, arrays and all other good choices for types Just Work already
   - `Nullable<MyType>`: Handled out of the box by both NSJ and STJ - requires no converters, provides excellent interop with other CLR languages. Would recommend.
-  - `MyType option`: Covered by the global `OptionConverter` for Newtonsoft, handled intrinsically by `System.Text.Json` versions `>= 6` (see below for a clean way to add them to the default MVC view rendering configuration). Note that while this works well with ASP.NET Core, it may be problematic if you share contracts (yes, not saying you should) or rely on things like Swashbuckle which will need to be aware of the types when they reflect over them.
+  - `MyType option`: Covered by the global `OptionConverter` for Newtonsoft, handled intrinsically by `System.Text.Json` versions `>= 6` (see below for a clean way to add them to the default MVC view rendering configuration). Note that while this works well with ASP.NET Core, it may be problematic if you share contracts (yes, not saying you should) or rely on things like Swashbuckle that will need to be aware of the types when they reflect over them.
 
 **The bottom line is that using exotic types in DTOs is something to think very hard about before descending into. The next sections are thus only relevant if you decide to add that extra complexity to your system...**
 
@@ -165,17 +165,17 @@ This adds all the converters used by the `serdes` serialization/deserialization 
 
 The equivalent for the native `System.Text.Json`, as v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), is presently a no-op.
 
-The following illustrates how opt into [`autoTypeSafeEnumToJsonString` and/or `autoUnionToJsonObject` modes](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for the rendering of View Models by ASP.NET:
+The following illustrates how opt into [`autoTypeSafeEnumToJsonString` and/or `autoUnionToJsonObject` modes](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs), and `rejectNullStrings` for the rendering of View Models by ASP.NET:
 
     // Default behavior throws an exception if you attempt to serialize a DU or TypeSafeEnum without an explicit JsonConverterAttribute
     // let serdes = FsCodec.SystemTextJson.Options.Default |> FsCodec.SystemTextJson.Serdes
 
     // If you use autoTypeSafeEnumToJsonString = true or autoUnionToJsonObject = true, serdes.Serialize / Deserialize applies the relevant converters
-    let serdes = FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true) |> FsCodec.SystemTextJson.Serdes
+    let serdes = FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true, rejectNullString = true) |> FsCodec.SystemTextJson.Serdes
 
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->
-        // Register the converters (actually a single JsonConverterFactory) from the Options passed to the `serdes` above
+        // Register the converters from the Options passed to the `serdes` above
         serdes.Options.Converters |> Seq.iter options.JsonSerializerOptions.Converters.Add
     ) |> ignore
 
