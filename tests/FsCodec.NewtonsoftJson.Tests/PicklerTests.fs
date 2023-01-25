@@ -109,7 +109,7 @@ module ``Upconversion example`` =
         type State = unit
         // evolve functions
         let evolve state = function
-        | Events.Event.PropertiesUpdated e -> state
+        | EventsUpDown.Event.PropertiesUpdated e -> state
 
 module ``Upconversion active patterns`` =
 
@@ -119,11 +119,12 @@ module ``Upconversion active patterns`` =
         module PropertiesV2 =
             let defaultB = 2
         type Event =
-            | PropertiesUpdated of {| properties:Properties |}
-            | PropertiesUpdatedV2 of {| properties:PropertiesV2 |}
+            | PropertiesUpdated of {| properties: Properties |}
+            | PropertiesUpdatedV2 of {| properties: PropertiesV2 |}
         let (|Updated|) = function
-            | PropertiesUpdated e -> Updated e
-            | PropertiesUpdatedV2 e -> Updated {| properties = { a = e.a; b = PropertiesV2.defaultB } |}
+            | PropertiesUpdated e -> {| properties = { a = e.properties.a; b = PropertiesV2.defaultB } |}
+            | PropertiesUpdatedV2 e -> e
     module Fold =
-        let evolve state = function
-        | Events.Updated e -> state
+        type State = { b : int }
+        let evolve state : Events.Event -> State = function
+        | Events.Updated e -> { state with b = e.properties.b }
