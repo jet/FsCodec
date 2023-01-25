@@ -163,15 +163,17 @@ This adds all the converters used by the `serdes` serialization/deserialization 
 <a name="aspnetstj"></a>
 ## ASP.NET Core with `System.Text.Json`
 
-The equivalent for the native `System.Text.Json`, as v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), is presently a no-op.
+The equivalent for the native `System.Text.Json`, as of  v6, thanks [to the great work of the .NET team](https://github.com/dotnet/runtime/pull/55108), is presently a no-op.
 
-The following illustrates how opt into [`autoTypeSafeEnumToJsonString` and/or `autoUnionToJsonObject` modes](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs), and `rejectNullStrings` for the rendering of View Models by ASP.NET:
+The following illustrates how to opt into [`autoTypeSafeEnumToJsonString` and/or `autoUnionToJsonObject` modes](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs), and `rejectNullStrings` for the rendering of View Models by ASP.NET:
 
     // Default behavior throws an exception if you attempt to serialize a DU or TypeSafeEnum without an explicit JsonConverterAttribute
     // let serdes = FsCodec.SystemTextJson.Options.Default |> FsCodec.SystemTextJson.Serdes
 
     // If you use autoTypeSafeEnumToJsonString = true or autoUnionToJsonObject = true, serdes.Serialize / Deserialize applies the relevant converters
-    let serdes = FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true, rejectNullString = true) |> FsCodec.SystemTextJson.Serdes
+    let serdes =
+        FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true, rejectNullString = true)
+        |> FsCodec.SystemTextJson.Serdes
 
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->
@@ -566,33 +568,147 @@ There are two events that we were not able to decode, for varying reasons:
 
 _Note however, that we don't have a clean way to trap the data and log it. See [Logging unmatched events](#logging-unmatched-events) for an example of how one might log such unmatched events_
 
-### Handling introduction of new fields in JSON
+<a name="upconversion"></a>
+### Handling versioning of events in F# with FsCodec
 
-The below example demonstrates the addition of a `CartId` property in a newer version of `CreateCart`. It's worth noting that
-deserializing `CartV1.CreateCart` into `CartV2.CreateCart` requires `CartId` to be an optional property or the property will
-deserialize into `null` which is an invalid state for the `CartV2.CreateCart` record in F# (F# `type`s are assumed to never be `null`).
+As a system evolves, the types used for events will inevitably undergo changes too. There are thorough guides such as
+[Versioning in an Event Sourced System by Greg Young](https://leanpub.com/esversioning); this will only scratch the surface,
+with some key F# snippets.
 
-```
+High level rules:
+  1. The most important rule of all is that you never want to relinquish Total Matching, i.e. never add a `_` catch all case
+to a match expression.
+  2. The simplest way to add a new field in a backward compatible manner is by adding it as an `option` and then using
+     pattern matching to handle presence or absence of the value. 
+  3. Where it becomes impossible to use the serialization-time conversion mechanisms such as [`JsonIsomorphism`](#jsonisimorphism)
+     the next step is to mint a new Event Type with a different body type. e.g. if we have a `Properties`, but it becomes
+     necessary to use a instead `PropertiesV2`:
+      ```fsharp
+      type Properties = { a: string }
+      type PropertiesV2 = { a: string; b: int }
+      type Event =
+          | PropertiesUpdated of {| properties: Properties |}
+          | PropertiesUpdatedV2 of {| properties: PropertiesV2 |}
+      ```
+     The migration steps would be:
+     - update all decision functions to only produce `PropertiesUpdatedV2`
+     - pull out helper functions for pattern matches and do the upconversion inline in the fold
+        ```fsharp
+        module Fold =
+            let applyUpdate state (e : PrppertiesV2) = ...
+            let evolve state = function
+            | Events.PropertiesUpdated e -> applyUpdate state e
+            | Events.PropertiesUpdatedV2 e -> applyUpdate state { a = e.a; b = PropertiesV2.defaultB }
+        ```
+       
+### Avoiding versioning by optional or nullable fields
+
+The following demonstrates the addition of a `CartId` property (which is an F# `type`) in a newer version of `CreateCart`.
+```fsharp
 module CartV1 =
-    type CreateCart = { name: string }
+    type CreateCart = { Name: string }
 
-    type Events =
-        | Created of CreateCart
-        interface IUnionContract
+module CartV2Null =
+    type CreateCart = { Name: string; CartId: CartId }
 
-module CartV2 =
-    type CreateCart = { name: string; cartId: CartId option }
-    type Events =
-        | Created of CreateCart
-        interface IUnionContract
+module CartV2Option =
+    type CreateCart = { Name: string; CartId: CartId option }
+
+module CartV2Nullable =
+    type CreateCart = { Name: string; Count: Nullable<int> }
 ```
 
-FsCodec.SystemTextJson looks to provide an analogous mechanism. In general, FsCodec is seeking to provide a pragmatic middle way of
-using NewtonsoftJson or SystemTextJson in F# without completely changing what one might expect to happen when using JSON.NET in
-order to provide an F# only experience.
+While the `CartV2Null` form can be coerced into working by using `Unchecked.defaultof<_>` mechanism (or, even worse,
+by using the `AllowNullLiteral` attribute), this is not recommended.
 
-The aim is to provide helpers to smooth the way for using reflection based serialization in a way that would not surprise
-people coming from a C# background and/or in mixed C#/F# codebases.
+Instead, it's recommended to follow normal F# conventions, wrapping the new field as an `option` as per `CartV2Option`.
+
+For Value Types, you could also use `Nullable`, but `option` is recommended even for value types, for two reasons:
+- it works equally for Value Types (`struct` in C#, `type [<Struct>]` in F#)
+  and Reference Types (`class` in C#, `type` in F#) without requiring different code treatment when switching
+- F# has much stronger built-in support for pattern matching and otherwise operation on `option`s
+
+See the [`Adding Fields Example`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.NewtonsoftJson.Tests/PicklerTests.fs#L45) for further examples
+
+### Upconversion by mapping Event Types
+
+The preceding `option`al fields mechanism is the recommended default approach for handling versioning of event records.
+Of course, there are cases where that becomes insufficient. In such cases, the next level up is to add a new Event Type.
+
+```fsharp
+module EventsV0 =
+    type Properties = { a: string }
+    type PropertiesV2 = { a: string; b: int }
+    type Event =
+        | PropertiesUpdated of {| properties: Properties |}
+        | PropertiesUpdatedV2 of {| properties: PropertiesV2 |}
+```
+
+In such a situation, you'll frequently be able to express instances of the older event body type in terms of the new one.
+For instance, if we had a default ([Null object pattern](https://en.wikipedia.org/wiki/Null_object_pattern) value for `b`
+you can upconvert from one event body to the other, and allow the domain to only concern itself with one of them. 
+
+```fsharp
+module EventsUpDown =
+    type Properties = { a: string }
+    type PropertiesV2 = { a: string; b: int }
+    module PropertiesV2 =
+        let defaultB = 2
+    /// The possible representations within the store
+    [<RequireQualifiedAccess>]
+    type Contract =
+        | PropertiesUpdated of {| properties: Properties |}
+        | PropertiesUpdatedV2 of {| properties: PropertiesV2 |}
+        interface TypeShape.UnionContract.IUnionContract
+    /// Used in the model - all decisions and folds are in terms of this
+    type Event =
+        | PropertiesUpdated of {| properties: Properties |}
+
+    let up : Contract -> Event = function
+        | Contract.PropertiesUpdated e -> Event.PropertiesUpdated e
+        | Contract.PropertiesUpdatedV2 e -> Event.PropertiesUpdated {| properties = { a = e.a; b = PropertiesV2.defaultB } |}
+    let down : Event -> Contract = function
+        | Event.PropertiesUpdated e -> Contract.PropertiesUpdated e
+    let codec = Codec.Create<Event, Contract, _>(up = (fun struct (_, c) -> up c),
+                                                 down = fun e -> struct (down e, ValueNone, ValueNone))
+
+module Fold =
+
+    type State = unit
+    // evolve functions
+    let evolve state = function
+    | EventsUpDown.Event.PropertiesUpdated e -> state
+```
+
+The main weakness of such a solution is that the `upconvert` and `downconvert` functions can get long (if your Event Types list is long).
+
+See the [`Upconversion example`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.NewtonsoftJson.Tests/PicklerTests.fs#75).
+
+#### Upconversion via Active Patterns
+
+Here are some techniques that can be used to bridge the gap if you don't go with full upconversion from a
+Contract DU type to a Domain one.
+
+```fsharp
+module Events =
+    type Properties = { a: string }
+    type PropertiesV2 = { a: string; b: int }
+    module PropertiesV2 =
+        let defaultB = 2
+    type Event =
+        | PropertiesUpdated of {| properties:Properties |}
+        | PropertiesUpdatedV2 of {| properties:PropertiesV2 |}
+    let (|Updated|) = function
+        | PropertiesUpdated e -> Updated e
+        | PropertiesUpdatedV2 e -> Updated {| properties = { a = e.a; b = PropertiesV2.defaultB } |}
+module Fold =
+    let evolve state = function
+    | Events.Updated e -> state
+```
+
+The main reason this is not a universal solution is that such Active Patterns are currently limited to 7 cases.
+
+See the [`Upconversion active patterns`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.NewtonsoftJson.Tests/PicklerTests.fs#L114).
 
 ## Adding Matchers to the Event Contract
 
