@@ -45,16 +45,16 @@ let [<Fact>] ``Global GuidConverter`` () =
 module ``Adding Fields Example`` =
 
     module CartV1 =
-        type CreateCart = { Name: string }
+        type CreateCart = { name: string }
 
     module CartV2Null =
-        type CreateCart = { Name: string; CartId: CartId }
+        type CreateCart = { name: string; CartId: CartId }
 
     module CartV2 =
-        type CreateCart = { Name: string; CartId: CartId option }
+        type CreateCart = { name: string; CartId: CartId option }
 
     let [<Fact>] ``Deserialize missing field as null value`` () =
-        let createCartV1: CartV1.CreateCart =  { Name = "cartName" }
+        let createCartV1: CartV1.CreateCart =  { name = "cartName" }
         // let expectedCreateCartV2: CartV2Null.CreateCart =  { Name = "cartName"; CartId = null } // The type 'CartId' does not have 'null' as a proper value
 
         let createCartV1Json = JsonConvert.SerializeObject createCartV1
@@ -64,7 +64,7 @@ module ``Adding Fields Example`` =
         test <@ Unchecked.defaultof<_> = createCartV2.CartId @> // isNull or `null =` will be rejected
 
     let [<Fact>] ``Deserialize missing field as an optional property None value`` () =
-        let createCartV1: CartV1.CreateCart =  { Name = "cartName" }
+        let createCartV1: CartV1.CreateCart =  { name = "cartName" }
 
         let createCartV1Json = JsonConvert.SerializeObject createCartV1
 

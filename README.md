@@ -606,16 +606,16 @@ to a match expression.
 The following demonstrates the addition of a `CartId` property (which is an F# `type`) in a newer version of `CreateCart`.
 ```fsharp
 module CartV1 =
-    type CreateCart = { Name: string }
+    type CreateCart = { name: string }
 
 module CartV2Null =
-    type CreateCart = { Name: string; CartId: CartId }
+    type CreateCart = { name: string; cartId: CartId }
 
 module CartV2Option =
-    type CreateCart = { Name: string; CartId: CartId option }
+    type CreateCart = { name: string; cartId: CartId option }
 
 module CartV2Nullable =
-    type CreateCart = { Name: string; Count: Nullable<int> }
+    type CreateCart = { name: string; count: Nullable<int> }
 ```
 
 While the `CartV2Null` form can be coerced into working by using `Unchecked.defaultof<_>` mechanism (or, even worse,
