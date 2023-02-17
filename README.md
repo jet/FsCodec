@@ -580,7 +580,8 @@ High level rules:
 to a match expression.
   2. The simplest way to add a new field in a backward compatible manner is by adding it as an `option` and then using
      pattern matching to handle presence or absence of the value. 
-  3. Where it becomes impossible to use the serialization-time conversion mechanisms such as [`JsonIsomorphism`](#jsonisimorphism)
+  3. Where it becomes impossible to use the serialization-time conversion mechanisms such as
+     [`JsonIsomorphism`](#jsonisimorphism) ([See example in Propulsion](https://github.com/jet/propulsion/blob/master/src/Propulsion.DynamoStore/AppendsIndex.fs#L17))
      the next step is to mint a new Event Type with a different body type. e.g. if we have a `Properties`, but it becomes
      necessary to use a instead `PropertiesV2`:
       ```fsharp
