@@ -42,25 +42,89 @@ let [<Fact>] ``Global GuidConverter`` () =
     test <@ "\"00000000-0000-0000-0000-000000000000\"" = resDashes
             && "\"00000000000000000000000000000000\"" = resNoDashes @>
 
-module CartV1 =
-    type CreateCart = { Name: string }
+module ``Adding Fields Example`` =
 
-    type Events =
-        | Create of CreateCart
-        interface TypeShape.UnionContract.IUnionContract
+    module CartV1 =
+        type CreateCart = { name: string }
 
-module CartV2 =
-    type CreateCart = { Name: string; CartId: CartId option }
-    type Events =
-        | Create of CreateCart
-        interface TypeShape.UnionContract.IUnionContract
+    module CartV2Null =
+        type CreateCart = { name: string; CartId: CartId }
 
-let [<Fact>] ``Deserialize missing field a as optional property None value`` () =
-    let expectedCreateCartV2: CartV2.CreateCart =  { Name = "cartName"; CartId = None }
-    let createCartV1: CartV1.CreateCart =  { Name = "cartName" }
+    module CartV2 =
+        type CreateCart = { name: string; CartId: CartId option }
 
-    let createCartV1JSON = JsonConvert.SerializeObject createCartV1
+    let [<Fact>] ``Deserialize missing field as null value`` () =
+        let createCartV1: CartV1.CreateCart =  { name = "cartName" }
+        // let expectedCreateCartV2: CartV2Null.CreateCart =  { Name = "cartName"; CartId = null } // The type 'CartId' does not have 'null' as a proper value
 
-    let createCartV2 = JsonConvert.DeserializeObject<CartV2.CreateCart>(createCartV1JSON)
+        let createCartV1Json = JsonConvert.SerializeObject createCartV1
 
-    test <@ expectedCreateCartV2 = createCartV2 @>
+        let createCartV2 = JsonConvert.DeserializeObject<CartV2Null.CreateCart>(createCartV1Json)
+
+        test <@ Unchecked.defaultof<_> = createCartV2.CartId @> // isNull or `null =` will be rejected
+
+    let [<Fact>] ``Deserialize missing field as an optional property None value`` () =
+        let createCartV1: CartV1.CreateCart =  { name = "cartName" }
+
+        let createCartV1Json = JsonConvert.SerializeObject createCartV1
+
+        let createCartV2 = JsonConvert.DeserializeObject<CartV2.CreateCart>(createCartV1Json)
+
+        test <@ Option.isNone createCartV2.CartId @>
+
+module ``Upconversion example`` =
+
+    module Events =
+        type Properties = { a: string }
+        type PropertiesV2 = { a: string; b: int }
+        type Event =
+            | PropertiesUpdated of {| properties:Properties |}
+            | PropertiesUpdatedV2 of {| properties:PropertiesV2 |}
+
+    module EventsUpDown =
+        type Properties = { a: string }
+        type PropertiesV2 = { a: string; b: int }
+        module PropertiesV2 =
+            let defaultB = 2
+        /// The possible representations within the store
+        [<RequireQualifiedAccess>]
+        type Contract =
+            | PropertiesUpdated of {| properties: Properties |}
+            | PropertiesUpdatedV2 of {| properties: PropertiesV2 |}
+            interface TypeShape.UnionContract.IUnionContract
+        /// Used in the model - all decisions and folds are in terms of this
+        type Event =
+            | PropertiesUpdated of {| properties: PropertiesV2 |}
+
+        let up : Contract -> Event = function
+            | Contract.PropertiesUpdated e -> PropertiesUpdated  {| properties = { a = e.properties.a; b = PropertiesV2.defaultB } |}
+            | Contract.PropertiesUpdatedV2 e -> PropertiesUpdated e
+        let down : Event -> Contract = function
+            | Event.PropertiesUpdated e -> Contract.PropertiesUpdatedV2 e
+        let codec = Codec.Create<Event, Contract, _>(up = (fun struct (_, c) -> up c),
+                                                     down = fun e -> struct (down e, ValueNone, ValueNone))
+
+    module Fold =
+
+        type State = unit
+        // evolve functions
+        let evolve state = function
+        | EventsUpDown.Event.PropertiesUpdated e -> state
+
+module ``Upconversion active patterns`` =
+
+    module Events =
+        type Properties = { a: string }
+        type PropertiesV2 = { a: string; b: int }
+        module PropertiesV2 =
+            let defaultB = 2
+        type Event =
+            | PropertiesUpdated of {| properties: Properties |}
+            | PropertiesUpdatedV2 of {| properties: PropertiesV2 |}
+        let (|Updated|) = function
+            | PropertiesUpdated e -> {| properties = { a = e.properties.a; b = PropertiesV2.defaultB } |}
+            | PropertiesUpdatedV2 e -> e
+    module Fold =
+        type State = { b : int }
+        let evolve state : Events.Event -> State = function
+        | Events.Updated e -> { state with b = e.properties.b }
