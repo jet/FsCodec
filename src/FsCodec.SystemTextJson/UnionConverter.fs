@@ -50,7 +50,7 @@ module private Union =
                 |> Option.map (fun a -> a :?> IUnionConverterOptions) }
     let getInfo : Type -> Union = memoize createInfo
 
-    /// Allows us to distinguish between Unions that have bodies and hence should UnionConverter
+    /// Allows us to distinguish Unions that do not have bodies and hence should use a TypeSafeEnumConverter
     let hasOnlyNullaryCases (t : Type) =
         let union = getInfo t
         union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
@@ -69,8 +69,8 @@ type UnionConverter<'T>() =
         let union = Union.getInfo typeof<'T>
         let unionOptions = getOptions union
         let tag = union.tagReader value
-        let case = union.cases.[tag]
-        let fieldValues = union.fieldReader.[tag] value
+        let case = union.cases[tag]
+        let fieldValues = union.fieldReader[tag] value
         let fieldInfos = case.GetFields()
 
         writer.WriteStartObject()
@@ -111,7 +111,7 @@ type UnionConverter<'T>() =
                         inputCaseNameValue catchAllCaseName t.FullName |> invalidOp
                 | Some foundIndex -> foundIndex
 
-        let targetCaseFields, targetCaseCtor = union.cases.[targetCaseIndex].GetFields(), union.caseConstructor.[targetCaseIndex]
+        let targetCaseFields, targetCaseCtor = union.cases[targetCaseIndex].GetFields(), union.caseConstructor[targetCaseIndex]
         let ctorArgs =
             [| for fieldInfo in targetCaseFields ->
                 let t = fieldInfo.PropertyType

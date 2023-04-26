@@ -20,7 +20,7 @@ module private Union =
     let isUnion = memoize (fun t -> FSharpType.IsUnion(t, true))
     let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
 
-    let private createUnion t =
+    let private createInfo t =
         let cases = getUnionCases t
         {
             cases = cases
@@ -28,7 +28,12 @@ module private Union =
             fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
             caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
         }
-    let getUnion = memoize createUnion
+    let getInfo = memoize createInfo
+
+    /// Allows us to distinguish Unions that do not have bodies and hence should use a TypeSafeEnumConverter
+    let hasOnlyNullaryCases (t : Type) =
+        let union = getInfo t
+        union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
 
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
     let inline isInlinedIntoUnionItem (t : Type) =
@@ -53,7 +58,7 @@ module private Union =
             [| inputJObject.ToObject(singleCaseArg.PropertyType, serializer) |]
         | multipleFieldsInCustomCaseType ->
             [| for fi in multipleFieldsInCustomCaseType ->
-                match inputJObject.[fi.Name] with
+                match inputJObject[fi.Name] with
                 | null when
                     // Afford converters an opportunity to handle the missing field in the best way I can figure out to signal that
                     // The specific need being covered (see tests) is to ensure that, even with MissingMemberHandling=Ignore,
@@ -79,10 +84,10 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
     override _.CanConvert (t : Type) = Union.isUnion t
 
     override _.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
-        let union = Union.getUnion (value.GetType())
+        let union = Union.getInfo (value.GetType())
         let tag = union.tagReader value
-        let case = union.cases.[tag]
-        let fieldValues = union.fieldReader.[tag] value
+        let case = union.cases[tag]
+        let fieldValues = union.fieldReader[tag] value
         let fieldInfos = case.GetFields()
 
         writer.WriteStartObject()
@@ -92,7 +97,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
 
         match fieldInfos with
         | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
-            match fieldValues.[0] with
+            match fieldValues[0] with
             | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
                 let token = if fv = null then JToken.Parse "null" else JToken.FromObject(fv, serializer)
@@ -117,9 +122,9 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
         if token.Type <> JTokenType.Object then raise (FormatException(sprintf "Expected object token, got %O" token.Type))
         let inputJObject = token :?> JObject
 
-        let union = Union.getUnion t
+        let union = Union.getInfo t
         let targetCaseIndex =
-            let inputCaseNameValue = inputJObject.[discriminator] |> string
+            let inputCaseNameValue = inputJObject[discriminator] |> string
             let findCaseNamed x = union.cases |> Array.tryFindIndex (fun case -> case.Name = x)
             match findCaseNamed inputCaseNameValue, catchAllCase  with
             | None, None ->
@@ -133,5 +138,5 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
                         inputCaseNameValue catchAllCaseName t.FullName |> invalidOp
                 | Some foundIndex -> foundIndex
 
-        let targetCaseFields, targetCaseCtor = union.cases.[targetCaseIndex].GetFields(), union.caseConstructor.[targetCaseIndex]
+        let targetCaseFields, targetCaseCtor = union.cases[targetCaseIndex].GetFields(), union.caseConstructor[targetCaseIndex]
         targetCaseCtor (Union.mapTargetCaseArgs inputJObject serializer targetCaseFields)

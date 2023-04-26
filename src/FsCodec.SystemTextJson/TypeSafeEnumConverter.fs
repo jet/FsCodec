@@ -7,20 +7,19 @@ open System.Text.Json
 /// Utilities for working with DUs where none of the cases have a value
 module TypeSafeEnum =
 
-    let isTypeSafeEnum (typ : Type) =
-        Union.isUnion typ
-        && Union.hasOnlyNullaryCases typ
+    let isTypeSafeEnum (t : Type) =
+        Union.isUnion t
+        && Union.hasOnlyNullaryCases t
 
-    let tryParseT (t : Type) predicate =
+    let tryParseT (t : Type) (str : string) =
         let u = Union.getInfo t
         u.cases
-        |> Array.tryFindIndex (fun c -> predicate c.Name)
-        |> Option.map (fun tag -> u.caseConstructor.[tag] [||])
-        // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
-    let tryParse<'T> (str : string) = tryParseT typeof<'T> ((=) str) |> Option.map (fun e -> e :?> 'T)
+        |> Array.tryFindIndex (fun c -> c.Name = str)
+        |> Option.map (fun tag -> u.caseConstructor[tag] [||])
+    let tryParse<'T> (str : string) = tryParseT typeof<'T> str |> Option.map (fun e -> e :?> 'T)
 
-    let parseT (t : Type) (str : string)  =
-        match tryParseT t ((=) str) with
+    let parseT (t : Type) (str : string) =
+        match tryParseT t str with
         | Some e -> e
         | None   ->
             // Keep exception compat, but augment with a meaningful message.
@@ -29,9 +28,8 @@ module TypeSafeEnum =
 
     let toString<'t> (x : 't) =
         let u = Union.getInfo typeof<'t>
-        let tag = u.tagReader (box x)
-        // TOCONSIDER memoize and/or push into `Union` https://github.com/jet/FsCodec/pull/41#discussion_r394473137
-        u.cases.[tag].Name
+        let tag = u.tagReader x
+        u.cases[tag].Name
 
 /// Maps strings to/from Union cases; refuses to convert for values not in the Union
 type TypeSafeEnumConverter<'T>() =

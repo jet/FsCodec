@@ -17,13 +17,13 @@ type Options private () =
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault
         (   [<Optional; ParamArray>] converters : JsonConverter[],
-            /// Use multi-line, indented formatting when serializing JSON; defaults to false.
+            // Use multi-line, indented formatting when serializing JSON; defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?indent : bool,
-            /// Render idiomatic camelCase for PascalCase items by using `PropertyNamingPolicy = CamelCase`. Defaults to false.
+            // Render idiomatic camelCase for PascalCase items by using `PropertyNamingPolicy = CamelCase`. Defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?camelCase : bool,
-            /// Ignore null values in input data, don't render fields with null values; defaults to `false`.
+            // Ignore null values in input data, don't render fields with null values; defaults to `false`.
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
-            /// Drop escaping of HTML-sensitive characters. defaults to `false`.
+            // Drop escaping of HTML-sensitive characters. defaults to `false`.
             [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool) =
 
         let indent = defaultArg indent false
@@ -43,22 +43,22 @@ type Options private () =
     /// - renders values with `UnsafeRelaxedJsonEscaping` - i.e. minimal escaping as per `NewtonsoftJson`<br/>
     /// Everything else is as per CreateDefault:- i.e. emit nulls instead of omitting fields, no indenting, no camelCase conversion
     static member Create
-        (   /// List of converters to apply. Implicit converters may be prepended and/or be used as a default
+        (   // List of converters to apply. Implicit converters may be prepended and/or be used as a default
             [<Optional; ParamArray>] converters : JsonConverter[],
-            /// Use multi-line, indented formatting when serializing JSON; defaults to false.
+            // Use multi-line, indented formatting when serializing JSON; defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?indent : bool,
-            /// Render idiomatic camelCase for PascalCase items by using `PropertyNamingPolicy = CamelCase`.
-            ///  Defaults to false on basis that you'll use record and tuple field names that are camelCase (but thus not `CLSCompliant`).
+            // Render idiomatic camelCase for PascalCase items by using `PropertyNamingPolicy = CamelCase`.
+            //  Defaults to false on basis that you'll use record and tuple field names that are camelCase (but thus not `CLSCompliant`).
             [<Optional; DefaultParameterValue(null)>] ?camelCase : bool,
-            /// Ignore null values in input data, don't render fields with null values; defaults to `false`.
+            // Ignore null values in input data, don't render fields with null values; defaults to `false`.
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
-            /// Drop escaping of HTML-sensitive characters. defaults to `true`.
+            // Drop escaping of HTML-sensitive characters. defaults to `true`.
             [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool,
-            /// <summary>Apply <c>TypeSafeEnumConverter</c> if possible. Defaults to <c>false</c>.</summary>
+            // <summary>Apply <c>TypeSafeEnumConverter</c> if possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoTypeSafeEnumToJsonString : bool,
-            /// <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
+            // <summary>Apply <c>UnionConverter</c> for all Discriminated Unions, if <c>TypeSafeEnumConverter</c> not possible. Defaults to <c>false</c>.</summary>
             [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool,
-            /// <summary>Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings. Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
+            // <summary>Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings. Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
             [<Optional; DefaultParameterValue(null)>] ?rejectNullStrings: bool) =
 
         let autoTypeSafeEnumToJsonString = defaultArg autoTypeSafeEnumToJsonString false
