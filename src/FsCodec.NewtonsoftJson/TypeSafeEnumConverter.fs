@@ -26,10 +26,12 @@ module TypeSafeEnum =
             raise (KeyNotFoundException(sprintf "Could not find case '%s' for type '%s'" str t.FullName))
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
-    let toString<'t> (x : 't) =
-        let u = Union.getInfo typeof<'t>
+    let toStringT (t : Type) (x : obj) =
+        let u = Union.getInfo t
         let tag = u.tagReader x
         u.cases[tag].Name
+    let toString<'t> (x : 't) =
+        toStringT typeof<'t> x
 
 /// Maps strings to/from Union cases; refuses to convert for values not in the Union
 type TypeSafeEnumConverter() =
@@ -39,7 +41,7 @@ type TypeSafeEnumConverter() =
         TypeSafeEnum.isTypeSafeEnum t
 
     override _.WriteJson(writer : JsonWriter, value : obj, _ : JsonSerializer) =
-        let str = TypeSafeEnum.toString value
+        let str = TypeSafeEnum.toStringT (value.GetType()) value
         writer.WriteValue str
 
     override _.ReadJson(reader : JsonReader, t : Type, _ : obj, _ : JsonSerializer) =
