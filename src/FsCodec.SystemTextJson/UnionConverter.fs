@@ -4,6 +4,7 @@ open FSharp.Reflection
 open System
 open System.Text.Json
 
+[<Interface>]
 type IUnionConverterOptions =
     abstract member Discriminator : string with get
     abstract member CatchAllCase : string option with get

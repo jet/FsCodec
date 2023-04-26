@@ -18,7 +18,7 @@ module StringUtf8 =
     let dec (b : ReadOnlySpan<byte>) : string = System.Text.Encoding.UTF8.GetString b
     let stringUtf8Encoder =
         let encode e = struct (eventType, enc e)
-        let tryDecode struct (s, b : ReadOnlyMemory<byte>) = if s = eventType then ValueSome (dec b.Span) else invalidOp "Invalid eventType value"
+        let tryDecode s (b : ReadOnlyMemory<byte>) = if s = eventType then ValueSome (dec b.Span) else invalidOp "Invalid eventType value"
         FsCodec.Codec.Create(encode, tryDecode)
 
     let sut = stringUtf8Encoder
