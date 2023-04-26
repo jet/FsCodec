@@ -15,7 +15,7 @@ type OptionConverter() =
             if value = null then null
             else
                 let _, fields = FSharpValue.GetUnionFields(value, value.GetType())
-                fields.[0]
+                fields[0]
 
         serializer.Serialize(writer, value)
 
@@ -26,8 +26,8 @@ type OptionConverter() =
             else innerType
 
         let cases = Union.getUnionCases t
-        if reader.TokenType = JsonToken.Null then FSharpValue.MakeUnion(cases.[0], Array.empty)
+        if reader.TokenType = JsonToken.Null then FSharpValue.MakeUnion(cases[0], Array.empty)
         else
             let value = serializer.Deserialize(reader, innerType)
-            if value = null then FSharpValue.MakeUnion(cases.[0], Array.empty)
-            else FSharpValue.MakeUnion(cases.[1], [|value|])
+            if value = null then FSharpValue.MakeUnion(cases[0], Array.empty)
+            else FSharpValue.MakeUnion(cases[1], [|value|])

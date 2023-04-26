@@ -1,21 +1,21 @@
 ﻿namespace FsCodec.NewtonsoftJson
 
 open Newtonsoft.Json
-open System.Collections.Generic
 open System
+open System.Collections.Generic
 
 /// Utilities for working with DUs where none of the cases have a value
 module TypeSafeEnum =
 
     let isTypeSafeEnum (t : Type) =
         Union.isUnion t
-        && (Union.getUnion t).cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
+        && Union.hasOnlyNullaryCases t
 
     let tryParseT (t : Type) (str : string) =
-        let union = Union.getUnion t
-        union.cases
-        |> Array.tryFindIndex (fun case -> case.Name = str)
-        |> Option.map (fun tag -> (union.caseConstructor.[tag] [||]))
+        let u = Union.getInfo t
+        u.cases
+        |> Array.tryFindIndex (fun c -> c.Name = str)
+        |> Option.map (fun tag -> u.caseConstructor[tag] [||])
     let tryParse<'T> (str : string) = tryParseT typeof<'T> str |> Option.map (fun e -> e :?> 'T)
 
     let parseT (t : Type) (str : string) =
@@ -26,16 +26,17 @@ module TypeSafeEnum =
             raise (KeyNotFoundException(sprintf "Could not find case '%s' for type '%s'" str t.FullName))
     let parse<'T> (str : string) = parseT typeof<'T> str :?> 'T
 
-    let toString (x : obj) =
-        let union = Union.getUnion (x.GetType())
-        let tag = union.tagReader x
-        union.cases.[tag].Name
+    let toString<'t> (x : 't) =
+        let u = Union.getInfo typeof<'t>
+        let tag = u.tagReader x
+        u.cases[tag].Name
 
 /// Maps strings to/from Union cases; refuses to convert for values not in the Union
 type TypeSafeEnumConverter() =
     inherit JsonConverter()
 
-    override _.CanConvert (t : Type) = TypeSafeEnum.isTypeSafeEnum t
+    override _.CanConvert(t : Type) =
+        TypeSafeEnum.isTypeSafeEnum t
 
     override _.WriteJson(writer : JsonWriter, value : obj, _ : JsonSerializer) =
         let str = TypeSafeEnum.toString value
