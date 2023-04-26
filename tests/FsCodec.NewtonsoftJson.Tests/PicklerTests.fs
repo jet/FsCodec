@@ -96,12 +96,12 @@ module ``Upconversion example`` =
         type Event =
             | PropertiesUpdated of {| properties: PropertiesV2 |}
 
-        let up : Contract -> Event = function
+        let up: Contract -> Event = function
             | Contract.PropertiesUpdated e -> PropertiesUpdated  {| properties = { a = e.properties.a; b = PropertiesV2.defaultB } |}
             | Contract.PropertiesUpdatedV2 e -> PropertiesUpdated e
-        let down : Event -> Contract = function
+        let down: Event -> Contract = function
             | Event.PropertiesUpdated e -> Contract.PropertiesUpdatedV2 e
-        let codec = Codec.Create<Event, Contract, _>(up = (fun struct (_, c) -> up c),
+        let codec = Codec.Create<Event, Contract, _>(up = (fun _e c -> up c),
                                                      down = fun e -> struct (down e, ValueNone, ValueNone))
 
     module Fold =

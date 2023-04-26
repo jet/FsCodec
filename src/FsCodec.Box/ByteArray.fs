@@ -3,8 +3,8 @@ namespace FsCodec
 open System.Runtime.CompilerServices
 open System
 
-[<Extension>]
-type ByteArray =
+[<Extension; AbstractClass; Sealed>]
+type ByteArray private () =
 
     static member BytesToReadOnlyMemory(x : byte array) : ReadOnlyMemory<byte> =
         if x = null then ReadOnlyMemory.Empty
@@ -19,4 +19,4 @@ type ByteArray =
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, byte array, 'Context> =
-        FsCodec.Core.EventCodec.Map(native, ByteArray.ReadOnlyMemoryToBytes, ByteArray.BytesToReadOnlyMemory)
+        FsCodec.Core.EventCodec.Map(native, Func<_, _> ByteArray.ReadOnlyMemoryToBytes, Func<_, _> ByteArray.BytesToReadOnlyMemory)

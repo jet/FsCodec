@@ -10,8 +10,6 @@ open FSharp.UMX
 type StreamName = string<streamName>
 and [<Measure>] streamName
 
-type CategoryAndStreamId = (struct (string * string))
-
 /// Creates, Parses and Matches Stream Names in one of two forms:
 /// 1. {category}-{streamId}
 /// 2. {category}-{id1}_{id2}_...{idN}

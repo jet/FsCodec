@@ -12,6 +12,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Changed
 
 - `NewtonsoftJson.TypeSafeEnum`: Sync with `SystemTextJson.TypeSafeEnum` [#91](https://github.com/jet/FsCodec/pull/91) 
+-  replace all `FSharpFunc` usage with `Func` [#92](https://github.com/jet/FsCodec/pull/92) 
 
 ### Removed
 ### Fixed

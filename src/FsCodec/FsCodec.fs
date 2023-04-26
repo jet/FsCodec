@@ -33,9 +33,9 @@ type ITimelineEvent<'Format> =
 /// <summary>Defines an Event Contract interpreter that Encodes and/or Decodes payloads representing the known/relevant set of <c>'Event</c>s borne by a stream Category</summary>
 type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
-    abstract Encode : context: 'Context * value : 'Event -> IEventData<'Format>
+    abstract Encode: context: 'Context * value : 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
-    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
+    abstract TryDecode: encoded: ITimelineEvent<'Format> -> 'Event voption
 
 namespace FsCodec.Core
 
@@ -61,12 +61,12 @@ type EventData<'Format>(eventType, data, meta, eventId, correlationId, causation
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f : 'Format -> 'Mapped)
+    static member Map<'Mapped>(f: Func<'Format, 'Mapped>)
         (x : IEventData<'Format>) : IEventData<'Mapped> =
             { new IEventData<'Mapped> with
                 member _.EventType = x.EventType
-                member _.Data = f x.Data
-                member _.Meta = f x.Meta
+                member _.Data = f.Invoke x.Data
+                member _.Meta = f.Invoke x.Meta
                 member _.EventId = x.EventId
                 member _.CorrelationId = x.CorrelationId
                 member _.CausationId = x.CausationId
@@ -102,7 +102,7 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f : 'Format -> 'Mapped)
+    static member Map<'Mapped>(f: Func<'Format, 'Mapped>)
         (x : ITimelineEvent<'Format>) : ITimelineEvent<'Mapped> =
             { new ITimelineEvent<'Mapped> with
                 member _.Index = x.Index
@@ -110,8 +110,8 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
                 member _.Context = x.Context
                 member _.Size = x.Size
                 member _.EventType = x.EventType
-                member _.Data = f x.Data
-                member _.Meta = f x.Meta
+                member _.Data = f.Invoke x.Data
+                member _.Meta = f.Invoke x.Meta
                 member _.EventId = x.EventId
                 member _.CorrelationId = x.CorrelationId
                 member _.CausationId = x.CausationId
@@ -120,7 +120,7 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
 [<NoComparison; NoEquality>]
 type EventCodec<'Event, 'Format, 'Context> private () =
 
-    static member Map<'TargetFormat>(native : IEventCodec<'Event, 'Format, 'Context>, up : 'Format -> 'TargetFormat, down : 'TargetFormat -> 'Format)
+    static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format,'TargetFormat>, down: Func<'TargetFormat, 'Format>)
         : IEventCodec<'Event, 'TargetFormat, 'Context> =
 
         let upConvert = EventData.Map up

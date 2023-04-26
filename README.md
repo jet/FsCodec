@@ -342,9 +342,9 @@ _See [tests/FsCodec.NewtonsoftJson.Tests/Examples.fsx](tests/FsCodec.NewtonsoftJ
 /// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
 type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
-    abstract Encode : context: 'Context * value: 'Event -> IEventData<'Format>
+    abstract Encode: context: 'Context * value: 'Event -> IEventData<'Format>
     /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
-    abstract TryDecode : encoded: ITimelineEvent<'Format> -> 'Event voption
+    abstract TryDecode: encoded: ITimelineEvent<'Format> -> 'Event voption
 ```
 
 `IEventCodec` represents a standard contract for the encoding and decoding of events used in event sourcing and event based notification scenarios:
@@ -665,10 +665,10 @@ module EventsUpDown =
     type Event =
         | PropertiesUpdated of {| properties: PropertiesV2 |}
 
-    let up : Contract -> Event = function
+    let up: Contract -> Event = function
         | Contract.PropertiesUpdated e -> PropertiesUpdated  {| properties = { a = e.properties.a; b = PropertiesV2.defaultB } |}
         | Contract.PropertiesUpdatedV2 e -> PropertiesUpdated e
-    let down : Event -> Contract = function
+    let down: Event -> Contract = function
         | Event.PropertiesUpdated e -> Contract.PropertiesUpdatedV2 e
     let codec = Codec.Create<Event, Contract, _>(up = (fun struct (_, c) -> up c),
                                                  down = fun e -> struct (down e, ValueNone, ValueNone))
