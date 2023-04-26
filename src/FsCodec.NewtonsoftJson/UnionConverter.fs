@@ -30,7 +30,7 @@ module private Union =
         }
     let getInfo = memoize createInfo
 
-    /// Allows us to distinguish between Unions that have bodies and hence should use a UnionConverter
+    /// Allows us to distinguish Unions that do not have bodies and hence should use a TypeSafeEnumConverter
     let hasOnlyNullaryCases (t : Type) =
         let union = getInfo t
         union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
