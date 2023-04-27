@@ -11,10 +11,10 @@ type VerbatimUtf8JsonConverter() =
     static let enc = System.Text.Encoding.UTF8
 
     override _.CanConvert(t : Type) =
-        typeof<byte array>.Equals(t)
+        typeof<byte[]>.Equals(t)
 
     override _.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
-        let array = value :?> byte array
+        let array = value :?> byte[]
         if array = null || array.Length = 0 then serializer.Serialize(writer, null)
         else writer.WriteRawValue(enc.GetString(array))
 

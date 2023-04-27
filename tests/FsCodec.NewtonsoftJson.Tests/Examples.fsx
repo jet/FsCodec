@@ -40,8 +40,6 @@ module Contract2 =
     let deserialize (json : string) : Item = serdes.Deserialize json
 
 let private serdes = Options.Default |> Serdes
-let inline ser x = serdes.Serialize(x)
-let inline des<'t> x = serdes.Deserialize<'t>(x)
 
 (* Global vs local Converters
 
@@ -56,10 +54,10 @@ type GuidConverter() =
 
 type WithEmbeddedGuid = { a: string; [<Newtonsoft.Json.JsonConverter(typeof<GuidConverter>)>] b: Guid }
 
-ser { a = "testing"; b = Guid.Empty }
+serdes.Serialize { a = "testing"; b = Guid.Empty }
 // {"a":"testing","b":"00000000000000000000000000000000"}
 
-ser Guid.Empty
+serdes.Serialize Guid.Empty
 // "00000000-0000-0000-0000-000000000000"
 
 let serdesWithGuidConverter = Options.Create(converters = [| GuidConverter() |]) |> Serdes
@@ -74,15 +72,15 @@ type Outcome = Joy | Pain | Misery
 type Message = { name: string option; outcome: Outcome }
 
 let value = { name = Some null; outcome = Joy}
-ser value
+serdes.Serialize value
 // {"name":null,"outcome":"Joy"}
 
-des<Message> """{"name":null,"outcome":"Joy"}"""
+serdes.Deserialize<Message> """{"name":null,"outcome":"Joy"}"""
 // val it : Message = {name = None; outcome = Joy;}
 
 // By design, we throw when a value is unknown. Often this is the correct design.
 // If, and only if, your software can do something useful with catch-all case, see the technique in `OutcomeWithOther`
-try des<Message> """{"name":null,"outcome":"Discomfort"}""" with e -> printf "%A" e; Unchecked.defaultof<Message>
+try serdes.Deserialize<Message> """{"name":null,"outcome":"Discomfort"}""" with e -> printf "%A" e; Unchecked.defaultof<Message>
 // System.Collections.Generic.KeyNotFoundException: Could not find case 'Discomfort' for type 'FSI_0012+Outcome'
 
 (* TypeSafeEnumConverter fallback
@@ -106,13 +104,13 @@ and OutcomeWithCatchAllConverter() =
 type Message2 = { name: string option; outcome: OutcomeWithOther }
 
 let value2 = { name = Some null; outcome = Joy}
-ser value2
+serdes.Serialize value2
 // {"name":null,"outcome":"Joy"}
 
-des<Message2> """{"name":null,"outcome":"Joy"}"""
+serdes.Deserialize<Message2> """{"name":null,"outcome":"Joy"}"""
 // val it : Message = {name = None; outcome = Joy;}
 
-des<Message2> """{"name":null,"outcome":"Discomfort"}"""
+serdes.Deserialize<Message2> """{"name":null,"outcome":"Discomfort"}"""
 // val it : Message = {name = None; outcome = Other;}
 
 (* Illustrating usage of IEventCodec and its accompanying active patterns *)

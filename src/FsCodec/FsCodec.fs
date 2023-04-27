@@ -117,7 +117,7 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
                 member _.CausationId = x.CausationId
                 member _.Timestamp = x.Timestamp }
 
-[<NoComparison; NoEquality>]
+[<AbstractClass; Sealed>]
 type EventCodec<'Event, 'Format, 'Context> private () =
 
     static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format,'TargetFormat>, down: Func<'TargetFormat, 'Format>)

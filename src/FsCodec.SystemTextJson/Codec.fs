@@ -5,14 +5,15 @@ open System.Text.Json
 
 /// System.Text.Json implementation of TypeShape.UnionContractEncoder's IEncoder that encodes to a ReadOnlyMemory<byte>
 type ReadOnlyMemoryEncoder(options : JsonSerializerOptions) =
+    let serdes = FsCodec.SystemTextJson.Serdes options
     interface TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>> with
         member _.Empty = ReadOnlyMemory.Empty
 
         member _.Encode(value : 'T) =
-            JsonSerializer.SerializeToUtf8Bytes(value, options) |> ReadOnlyMemory
+            serdes.SerializeToUtf8<'t>(value) |> ReadOnlyMemory
 
         member _.Decode<'T>(json : ReadOnlyMemory<byte>) =
-            JsonSerializer.Deserialize<'T>(json.Span, options)
+            serdes.Deserialize<'T>(json.Span)
 
 namespace FsCodec.SystemTextJson
 
@@ -26,6 +27,7 @@ open System.Text.Json
 /// See <a href="https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs"></a> for example usage.</summary>
 type Codec private () =
 
+    // NOTE Options.Default implies unsafeRelaxedJsonEscaping = true
     static let DefaultEncoder : Lazy<TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>>> = lazy (Core.ReadOnlyMemoryEncoder Options.Default :> _)
 
     static let mkEncoder : JsonSerializerOptions option -> TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>> = function

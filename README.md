@@ -30,7 +30,7 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 - [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4) represents a single event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type)
 - [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23) represents a single stored event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type). Inherits `IEventData`, adding `Index` and `IsUnfold` in order to represent the position on the timeline that the event logically occupies.
 - [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode : 'Context option * 'Event -> IEventData` and `TryDecode : ITimelineEvent -> 'Event option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
-- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode : 'Event -> string * byte array` and `tryDecode : string * byte array -> 'Event option` functions (other overloads are available for advanced cases)
+- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode : 'Event -> string * byte[]` and `tryDecode : string * byte[] -> 'Event option` functions (other overloads are available for advanced cases)
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L44) is a low level helper to create an `IEventData` directly for purposes such as tests etc.
 - [`FsCodec.Core.TimelineEvent.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L58) is a low level helper to create an `ITimelineEvent` directly for purposes such as tests etc.
 
@@ -94,7 +94,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
 ### `Newtonsoft.Json`-specific low level converters
 
   - [`OptionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/OptionConverter.fs#L7) represents F#'s `Option<'t>` as a value or `null`; included in the standard `Options.Create` profile.
-  - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte array` without decomposing it into an object model (not typically relevant for application level code, used in `Equinox.Cosmos` versions prior to `3.0`).
+  - [`VerbatimUtf8JsonConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/VerbatimUtf8JsonConverter.fs#L7) captures/renders known valid UTF8 JSON data into a `byte[]` without decomposing it into an object model (not typically relevant for application level code, used in `Equinox.Cosmos` versions prior to `3.0`).
 
 ### `System.Text.Json`-specific low level converters
 
@@ -278,17 +278,17 @@ type Outcome = Joy | Pain | Misery
 type Message = { name: string option; outcome: Outcome }
 
 let value = { name = Some null; outcome = Joy}
-ser value
+serdes.Serialize value
 // {"name":null,"outcome":"Joy"}
 
-des<Message> """{"name":null,"outcome":"Joy"}"""
+serdes.Deserialize<Message> """{"name":null,"outcome":"Joy"}"""
 // val it : Message = {name = None; outcome = Joy;}
 ```
 
 By design, we throw when a value is unknown. Often this is the correct design. If, and only if, your software can do something useful with catch-all case, see the technique in `OutcomeWithOther` (below)
 
 ```fsharp
-des<Message> """{"name":null,"outcome":"Discomfort"}"""
+serdes.Deserialize<Message> """{"name":null,"outcome":"Discomfort"}"""
 // throws System.Collections.Generic.KeyNotFoundException: Could not find case 'Discomfort' for type 'FSI_0012+Outcome'
 ```
 
@@ -316,17 +316,17 @@ Because the `type` is tagged with a Converter attribute, valid values continue t
 
 ```fsharp
 let value2 = { name = Some null; outcome = Joy}
-ser value2
+serdes.Serialize value2
 // {"name":null,"outcome":"Joy"}
 
-des<Message2> """{"name":null,"outcome":"Joy"}"""
+serdes.Deserialize<Message2> """{"name":null,"outcome":"Joy"}"""
 // val it : Message = {name = None; outcome = Joy;}
 ```
 
 More importantly, the formerly invalid value now gets mapped to our fallback value (`Other`) as intended.
 
 ```fsharp
-des<Message2> """{"name":null,"outcome":"Discomfort"}"""
+serdes.Deserialize<Message2> """{"name":null,"outcome":"Discomfort"}"""
 // val it : Message = {name = None; outcome = Other;}
 ```
 

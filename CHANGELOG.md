@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `Serdes`: `SerializeToUtf8`, associated `Deserialize` overloads [#93](https://github.com/jet/FsCodec/pull/93)
+
 ### Changed
 
 - `NewtonsoftJson.TypeSafeEnum`: Sync with `SystemTextJson.TypeSafeEnum` [#91](https://github.com/jet/FsCodec/pull/91) 
@@ -78,7 +81,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 <a name="3.0.0-rc.4"></a>
 ## [3.0.0-rc.4] - 2022-07-05
 
-- `TryDeflate`:`ToByteArrayCodec`/`ToUtf8ArrayCodec`: Maps `int * ReadOnlyMemory<byte>` encodings to (uncompressed) `byte array`/`ReadOnlyMemory<byte>`  [#81](https://github.com/jet/FsCodec/pull/81)
+- `TryDeflate`:`ToByteArrayCodec`/`ToUtf8ArrayCodec`: Maps `int * ReadOnlyMemory<byte>` encodings to (uncompressed) `byte[]`/`ReadOnlyMemory<byte>`  [#81](https://github.com/jet/FsCodec/pull/81)
 
 ### Added
 
@@ -114,8 +117,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - Updated build and tests to use `net6.0`, all test package dependencies
 - Updated `TypeShape` reference to v `10`, triggering min `FSharp.Core` target moving to `4.5.4`
 - `SystemTextJson.Codec`: Switched Event body type from `JsonElement` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
-- `NewtonsoftJson.Codec`: Switched Event body type from `byte array` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
-- `ToByteArrayCodec`: now adapts a `ReadOnlyMemory<byte>` encoder (was from `JsonElement`) (to `byte array` bodies); Moved from `FsCodec.SystemTextJson` to `FsCodec.Box` [#75](https://github.com/jet/FsCodec/pull/75)
+- `NewtonsoftJson.Codec`: Switched Event body type from `byte[]` to `ReadOnlyMemory<byte>` [#75](https://github.com/jet/FsCodec/pull/75)
+- `ToByteArrayCodec`: now adapts a `ReadOnlyMemory<byte>` encoder (was from `JsonElement`) (to `byte[]` bodies); Moved from `FsCodec.SystemTextJson` to `FsCodec.Box` [#75](https://github.com/jet/FsCodec/pull/75)
 
 ### Removed
 
@@ -286,7 +289,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Changed
 
-- Generalized `Codec.Create` to no longer presume `Data` and `Metadata` should always be `byte array` [#24](https://github.com/jet/FsCodec/pull/24)
+- Generalized `Codec.Create` to no longer presume `Data` and `Metadata` should always be `byte[]` [#24](https://github.com/jet/FsCodec/pull/24)
 
 ### Removed
 

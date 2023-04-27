@@ -14,7 +14,7 @@ module private EncodedMaybeDeflated =
 
     (* EncodedBody can potentially hold compressed content, that we'll inflate on demand *)
 
-    let private inflate (data : ReadOnlyMemory<byte>) : byte array =
+    let private inflate (data : ReadOnlyMemory<byte>) : byte[] =
         let s = new System.IO.MemoryStream(data.ToArray(), writable = false)
         let decompressor = new System.IO.Compression.DeflateStream(s, System.IO.Compression.CompressionMode.Decompress, leaveOpen = true)
         let output = new System.IO.MemoryStream()
@@ -58,7 +58,7 @@ type Deflate =
         EncodedMaybeDeflated.encode options.minSize options.minGain x
     static member EncodedToUtf8(x) : ReadOnlyMemory<byte> =
         EncodedMaybeDeflated.decode x
-    static member EncodedToByteArray(x) : byte array =
+    static member EncodedToByteArray(x) : byte[] =
         let u8 = EncodedMaybeDeflated.decode x in u8.ToArray()
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to attempt to compress the UTF-8 data.<br/>
@@ -82,7 +82,7 @@ type Deflate =
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
         FsCodec.Core.EventCodec.Map(native, Func<_, _> Deflate.EncodedToUtf8, Func<_, _> Deflate.Utf8ToEncodedDirect)
 
-    /// Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory<byte></c> Event Bodies to render and/or consume from Uncompressed <c>byte array</c>.
+    /// Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory<byte></c> Event Bodies to render and/or consume from Uncompressed <c>byte[]</c>.
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
