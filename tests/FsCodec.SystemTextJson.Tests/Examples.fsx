@@ -5,7 +5,7 @@
 (* Rider's FSI is not happy without the explicit references :shrug: *)
 #I "bin/Debug/net6.0"
 #r "FsCodec.dll"
-//#r "System.Text.Json.dll" // Does not work atm :(
+#r "System.Text.Json.dll"
 #r "FsCodec.SystemTextJson.dll"
 #r "TypeShape.dll"
 #r "FSharp.UMX.dll"
@@ -125,12 +125,12 @@ module Store =
     
     // Opt in to:
     // - mapping Type Safe Enums (F# Unions where the cases have no bodies) to/from Strings
-    // - mapping other F# Unions using the UnionConverter with default settoings
+    // - mapping other F# Unions using the UnionConverter with default settings
     // TOCONSIDER avoid using this automatic behavior, and instead let the exception that System.Text.Json
     //            produces trigger adding a JsonConverterAttribute for each type as Documentation 
     let options = Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true)
     
-    // TOCONSIDER Can swap CodecJsonElment for Codec to encode as ReadOnlyMemory<byte> where appropriate
+    // TOCONSIDER Can swap CodecJsonElement for Codec to encode as ReadOnlyMemory<byte> where appropriate
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         CodecJsonElement.Create(options)
 
@@ -180,13 +180,17 @@ let events = [
 ]
 
 // Switch on debug logging to get detailed information about events that don't match (which has no significant perf cost when not switched on)
-open Serilog
-let outputTemplate = "{Message} {Properties}{NewLine}"
-Log.Logger <-
-    LoggerConfiguration()
-        .MinimumLevel.Debug()
-        .WriteTo.Console(Serilog.Events.LogEventLevel.Debug, outputTemplate=outputTemplate)
-        .CreateLogger()
+module Log =
+    open Serilog
+    let outputTemplate = "{Message} {Properties}{NewLine}"
+    let initWithDebugLevel () =
+        Log.Logger <-
+            LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console(Serilog.Events.LogEventLevel.Debug, outputTemplate=outputTemplate)
+                .CreateLogger()
+
+Log.initWithDebugLevel ()    
 
 (* Explicit matching, showing how some ugly things get into the code if you do the streamName matching and event parsing separately *)
 
@@ -328,21 +332,11 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 
 *)
 
-(* Roundtripping contextual information to the application using an upconverter and a downconverter
+(* Round-tripping contextual information to the application using an upconverter and a downconverter
 
-   Events being roundtripped from a store (e.g. Equinox etc), typically bear most relevant information in the EventBody 
+   Events being round-tripped from a store (e.g. Equinox etc), typically bear most relevant information in the EventBody 
    Where relevant, a decoding process may want to extract some contextual information based on the event envelope as the body is decoded 
 *)
-
-// TODO remove shims
-type Serdes with
-    
-    /// Deserializes value of given type from a JsonElement.
-    member x.Deserialize<'T>(e : System.Text.Json.JsonElement) : 'T =
-        System.Text.Json.JsonSerializer.Deserialize<'T>(e, x.Options)
-    /// Deserializes value of given type from a UTF8 JSON Span.
-    member x.Deserialize<'T>(span : System.ReadOnlySpan<byte>) : 'T =
-        System.Text.Json.JsonSerializer.Deserialize<'T>(span, x.Options)
 
 module StoreWithMeta =
 
@@ -356,7 +350,7 @@ module StoreWithMeta =
     let private serdes = Serdes Options.Default
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface the metadata from the raw event as part of the application level event based on the stored form
-        let up struct (raw : Store.Event, contract : 'E) : Event<'E> =
+        let up (raw : Store.Event) (contract : 'E) : Event<'E> =
             raw.Index, serdes.Deserialize<Metadata> raw.Meta, contract
         // _index: up and down are expected to encode/decode symmetrically - when encoding, the app supplies a dummy, and the store assigns it on appending
         // the metadata is encoded as the normal bodies are
@@ -366,7 +360,7 @@ module StoreWithMeta =
 
 (*  Adding contextual information to the event metadata as it's encoded via an out of band context
 
-    As illustrated in StoreWthMeta, in some cases the Metadata can be composed (and then roundtripped back) to the application
+    As illustrated in StoreWthMeta, in some cases the Metadata can be composed (and then round-tripped back) to the application
     logic as a natural part of the system's processing.
     
     Frequently, however, the contextual information is not actually relevant to the application logic.
@@ -386,7 +380,7 @@ module StoreWithContext =
     // NO special options (see `module Store` for a more extensive example)
     let private options = Options.Default
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        let up struct (_eventEnvelope, typed: 'E) = typed
+        let up _rawEvent (typed: 'E) = typed
 
         let down (event: 'E) =
             // Not producing any Metadata based on the application-level event in this instance
@@ -394,7 +388,7 @@ module StoreWithContext =
             let ts = ValueNone
             struct (event, meta, ts)
 
-        let mapCausation struct (context : Context voption, _downConvertedMeta : Metadata voption) =
+        let mapCausation (context : Context voption) (_downConvertedMeta : Metadata voption) =
             let eventId = Guid.NewGuid()
             let metadata, corrId, causeId =
                 match context with
@@ -431,7 +425,7 @@ module StreamsWithMeta =
         
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface some metadata from the raw event as part of the application level type  
-        let up struct (raw : Streams.Event, contract : 'E) : Event<'E> =
+        let up (raw : Streams.Event) (contract : 'E) : Event<'E> =
             struct (raw.Index, serdes.Deserialize<Metadata>(let meta = raw.Meta in meta.Span), contract)
         // We are not using this codec to encode events, so we let the encoding side fail very fast
         let down _ = failwith "N/A"

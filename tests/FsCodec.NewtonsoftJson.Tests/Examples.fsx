@@ -15,8 +15,7 @@
 #endif
 
 open FsCodec.NewtonsoftJson
-open Microsoft.FSharp.Core
-open Newtonsoft.Json
+type JsonConverterAttribute = Newtonsoft.Json.JsonConverterAttribute
 open System
 
 module Contract =

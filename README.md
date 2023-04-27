@@ -955,7 +955,7 @@ module StoreWithContext =
     // NO special options (see `module Store` for a more extensive example)
     let private options = Options.Default
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        let up struct (_eventEnvelope, typed: 'E) = typed
+        let up _eventEnvelope (typed: 'E) = typed
 
         let down (event: 'E) =
             // Not producing any Metadata based on the application-level event in this instance
@@ -963,7 +963,7 @@ module StoreWithContext =
             let ts = ValueNone
             struct (event, meta, ts)
 
-        let mapCausation struct (context : Context voption, _downConvertedMeta : Metadata voption) =
+        let mapCausation (context : Context voption) (_downConvertedMeta : Metadata voption) =
             let eventId = Guid.NewGuid()
             let metadata, corrId, causeId =
                 match context with
