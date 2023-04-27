@@ -112,13 +112,13 @@ module StreamName =
 
     /// <summary>Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.</summary>
     /// <remarks>Inverse of what <code>compose</code> does to the subElements</remarks>
-    let (|IdElements|) (streamId : string) : string array =
+    let (|IdElements|) (streamId : string) : string[] =
         streamId.Split underscore
 
     /// <summary>Splits a well-formed Stream Name of the form {category}-{id1}_{id2}_{idN} into a pair of category and ids.<br/>
     /// Throws <c>InvalidArgumentException</c> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).</summary>
     /// <remarks>Inverse of <c>create</c></remarks>
-    let splitCategoryAndIds (streamName : StreamName) : struct (string * string array) =
+    let splitCategoryAndIds (streamName : StreamName) : struct (string * string[]) =
         let rawName = toString streamName
         match trySplitCategoryAndStreamId rawName with
         | ValueSome (cat, IdElements ids) -> (cat, ids)
@@ -127,4 +127,4 @@ module StreamName =
     /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into the two elements.<br/>
     /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed</summary>
     /// <remarks>Inverse of <c>create</c></remarks>
-    let (|CategoryAndIds|) : StreamName -> struct (string * string array) = splitCategoryAndIds
+    let (|CategoryAndIds|) : StreamName -> struct (string * string[]) = splitCategoryAndIds

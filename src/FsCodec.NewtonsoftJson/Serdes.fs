@@ -2,15 +2,12 @@ namespace FsCodec.NewtonsoftJson
 
 open Newtonsoft.Json
 open System.IO
-open System.Text
 
 /// Serializes to/from strings using the supplied JsonSerializerSettings
 type Serdes(options : JsonSerializerSettings) =
-    // Why are we creating a serializer here instead of using JsonConvert.Serialize?
-    // Because, under the hood, JsonConvert creates a serializer instance for *each* call
-    // Source:
+
+    // Cache serializer instance to avoid JsonConvert helpers creating one per call; see
     // https://github.com/JamesNK/Newtonsoft.Json/blob/4dc9af66e07dea321ad101bfb379326127251a80/Src/Newtonsoft.Json/JsonConvert.cs#L817
-    // It's consistent with the stream implementation
     let serializer = JsonSerializer.Create(options)
 
     /// <summary>The <c>JsonSerializerSettings</c> used by this instance.</summary>
@@ -28,14 +25,20 @@ type Serdes(options : JsonSerializerSettings) =
         use reader = new JsonTextReader(new StringReader(json))
         serializer.Deserialize<'T>(reader)
 
+    /// Deserializes value of given type from a UTF8 JSON Span.
+    member _.Deserialize<'T>(utf8json : System.ReadOnlyMemory<byte>) : 'T =
+        use stream = new MemoryStream(utf8json.ToArray(), writable = false) // see Utf8BytesEncoder.wrapAsStream
+        use reader = new JsonTextReader(new StreamReader(stream, System.Text.Encoding.UTF8))
+        serializer.Deserialize<'T>(reader)
+
     /// Serializes and writes given value to a stream.
     member _.SerializeToStream<'T>(value : 'T, utf8Stream : Stream) =
         // We're setting CloseOutput = false, because that's the default behavior in STJ
         // but also mostly because it's rude to close without asking
-        use writer = new JsonTextWriter(new StreamWriter(utf8Stream, Encoding.UTF8), CloseOutput = false)
+        use writer = new JsonTextWriter(new StreamWriter(utf8Stream, System.Text.Encoding.UTF8), CloseOutput = false)
         serializer.Serialize(writer, value)
 
     /// Deserializes by reading from a stream.
     member _.DeserializeFromStream<'T>(utf8Stream : Stream) =
-        use reader = new JsonTextReader(new StreamReader(utf8Stream, Encoding.UTF8))
+        use reader = new JsonTextReader(new StreamReader(utf8Stream, System.Text.Encoding.UTF8))
         serializer.Deserialize<'T>(reader)

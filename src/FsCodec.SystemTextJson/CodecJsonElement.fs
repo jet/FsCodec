@@ -4,14 +4,15 @@ open System.Text.Json
 
 /// System.Text.Json implementation of TypeShape.UnionContractEncoder's IEncoder that encodes to a JsonElement
 type JsonElementEncoder(options : JsonSerializerOptions) =
+    let serdes = FsCodec.SystemTextJson.Serdes options
     interface TypeShape.UnionContract.IEncoder<JsonElement> with
         member _.Empty = Unchecked.defaultof<JsonElement>
 
         member _.Encode(value : 'T) =
-            JsonSerializer.SerializeToElement(value, options)
+            serdes.SerializeToElement(value)
 
         member _.Decode<'T>(json : JsonElement) =
-            JsonSerializer.Deserialize<'T>(json, options)
+            serdes.Deserialize<'T>(json)
 
 namespace FsCodec.SystemTextJson
 
