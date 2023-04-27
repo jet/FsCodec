@@ -17,16 +17,14 @@
 #endif
 
 open FsCodec.SystemTextJson
-open System.Text.Json
-open System.Text.Json.Serialization // JsonConverter is in that namespace
+type JsonConverterAttribute = System.Text.Json.Serialization.JsonConverterAttribute
 open System
 
 module Contract =
 
     type Item = { value : string option }
-    // while no converter actually gets applied, as STJ v6 handles Options out of the box, this makes it explicit that we have a policy
+    // No special policies required as we are using standard types
     let private serdes = Serdes.Default
-    // applies default settings from Options.Create(), i.e., includes UnsafeRelaxedJsonEscaping
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
@@ -37,7 +35,8 @@ module Contract2 =
     // NOTE: Pascal-cased field that needs to be converted to camelCase, see `camelCase = true`
     type Item = { Value : string option; other : TypeThatRequiresMyCustomConverter }
     // Note we add a custom converter here
-    let private serdes = Options.Create(converters = [| MyCustomConverter() |], camelCase = true) |> Serdes
+    let private options = Options.Create(converters = [| MyCustomConverter() |], camelCase = true)
+    let private serdes = Serdes options
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
@@ -121,12 +120,22 @@ module Store =
     
     // We are encoding to JsonElement bodies for minimal allocation overhead
     type Event = FsCodec.ITimelineEvent<EventBody>
-    and EventBody = JsonElement
+    and EventBody = System.Text.Json.JsonElement
     and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<'E, EventBody, unit>
     
+    // Opt in to:
+    // - mapping Type Safe Enums (F# Unions where the cases have no bodies) to/from Strings
+    // - mapping other F# Unions using the UnionConverter with default settoings
+    // TOCONSIDER avoid using this automatic behavior, and instead let the exception that System.Text.Json
+    //            produces trigger adding a JsonConverterAttribute for each type as Documentation 
     let options = Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true)
     
-    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> = CodecJsonElement.Create(options)
+    // TOCONSIDER Can swap CodecJsonElment for Codec to encode as ReadOnlyMemory<byte> where appropriate
+    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
+        CodecJsonElement.Create(options)
+
+(* For these tests, we want to use a strongly typed ClientId
+   There are other tests that show other ways to manage this, but FSharp.UMX is clean and safe default *)
 
 open FSharp.UMX
 type ClientId = string<clientId>
@@ -219,10 +228,10 @@ module ReactionsBasic =
    
     let dec = streamCodec<Events.Event>
     
-    let (|MatchSingle|_|) = function
+    let (|MatchSingle|_|) : FsCodec.StreamName * Event -> (ClientId * Events.Event) option = function
         | StreamName clientId, TryDecodeEvent dec event -> Some (clientId, event)
         | _ -> None
-        
+
 let reactSingle (clientId : ClientId) (event : Events.Event) =
     printfn "Client %s, event %A" (ClientId.toString clientId) event
     
@@ -236,32 +245,52 @@ let runCodecMatch () =
 
 runCodecMatch ()
 
-(* Using Propulsion, events may arrive as contiguous arrays of events *)
+(* Standard helper module used for parsing Events delivered via Streams, e.g. from Propulsion *)
 
 module Streams =
 
-    // When we obtain events from an event store via streaming notifications, we typically receive them as ReadOnlyMemory<byte> bodies
+    (* TODO if using Propulsion, you can `open Propulsion.Sinks` here
+       NOTE it can still be useful to have type aliases so app wiring can refer to a terse `Streams.Event` etc *)
+    
+    // Events coming from streams are carried as a TimelineEvent; the body type is configurable
     type Event = FsCodec.ITimelineEvent<EventBody>
+    // Propulsion's Sinks by default use ReadOnlyMemory<byte> as the storage format
     and EventBody = ReadOnlyMemory<byte>
+    // the above Events can be decoded by a Codec implementing this interface
     and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
 
+    // Borrowing the Store options; frequently the events you parse can use less complex ones...
+    let private options = Store.options
+    /// Generates a Codec for the specified Event Union type, using the standard settings
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        Codec.Create<'E>(Store.options)
+        Codec.Create<'E>(options)
 
-    /// Uses the supplied codec to decode the supplied event record `x` (iff at LogEventLevel.Debug, detail fails to `log` citing the `stream` and content)
-    let tryDecode<'E> (codec : Codec<'E>) (log : Serilog.ILogger) (streamName : FsCodec.StreamName) (x : Event) =
+    // as we know our event bodies are all UTF8 encoded JSON, we can render the string as a log event property
+    // alternately, you can render the EventBody directly and ensure you have appropriate type destructuring configured
+    let private render (x : EventBody) : string =
+        System.Text.Encoding.UTF8.GetString(x.Span)
+    /// Uses the supplied codec to decode the supplied event record `x`
+    /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
+    let tryDecode<'E> (log : Serilog.ILogger) (codec : Codec<'E>) (streamName : FsCodec.StreamName) (x : Event) =
         match codec.TryDecode x with
         | ValueNone ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
-                log.ForContext("event", string x.Data, true)
+                log.ForContext("event", render x.Data, true)
                     .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, streamName)
-            None
-        | ValueSome x -> Some x
-    let (|TryDecode|_|) (codec : Codec<'E>) struct (streamName, event) = tryDecode codec Serilog.Log.Logger streamName event
-    let decode<'E> (codec : Codec<'E>) struct (streamName, events : Event[]) : 'E[] = events |> Array.choose (tryDecode<'E> codec Serilog.Log.Logger streamName)
+            ValueNone
+        | ValueSome x -> ValueSome x
+    
+    /// Attempts to decode the supplied Event using the supplied Codec
+    let [<return: Struct>] (|TryDecode|_|) (codec : Codec<'E>) struct (streamName, event) =
+        tryDecode Serilog.Log.Logger codec streamName event
+    module Array = let inline chooseV f xs = [| for item in xs do match f item with ValueSome v -> yield v | ValueNone -> () |]
+    /// Yields the subset of events that successfully decoded (could be Array.empty)
+    let decode<'E> (codec : Codec<'E>) struct (streamName, events : Event[]) : 'E[] =
+        events |> Array.chooseV (tryDecode<'E> Serilog.Log.Logger codec streamName)
     let (|Decode|) = decode
 
-(* When using Propulsion, Events are typically delivered as an array of contiguous events *)
+(* When using Propulsion, Events are typically delivered as an array of contiguous events together with a StreamName
+   The Match Active Pattern decodes such a batch *)
 
 module Reactions =    
    
@@ -271,10 +300,10 @@ module Reactions =
     let [<return: Struct>] (|Match|_|) = function
         | struct (StreamName clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
         | _ -> ValueNone
-    
+
 let reactStream (clientId : ClientId) (event : Events.Event[]) =
     printfn "Client %s, events %A" (ClientId.toString clientId) event
-   
+
 let handleStream streamName events =
     match struct (streamName, events) with
     | Reactions.Match (clientId, events) ->
@@ -282,12 +311,12 @@ let handleStream streamName events =
     | FsCodec.StreamName.CategoryAndId (cat, id), _ ->
         for e in events do
         printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-        
+
 let runStreams () =
     for streamName, xs in events |> Seq.groupBy fst do
         let events = xs |> Seq.map snd |> Array.ofSeq
         handleStream streamName events
-    
+
 runStreams ()
 
 (*
@@ -305,23 +334,86 @@ Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
    Where relevant, a decoding process may want to extract some contextual information based on the event envelope as the body is decoded 
 *)
 
+// TODO remove shims
+type Serdes with
+    
+    /// Deserializes value of given type from a JsonElement.
+    member x.Deserialize<'T>(e : System.Text.Json.JsonElement) : 'T =
+        System.Text.Json.JsonSerializer.Deserialize<'T>(e, x.Options)
+    /// Deserializes value of given type from a UTF8 JSON Span.
+    member x.Deserialize<'T>(span : System.ReadOnlySpan<byte>) : 'T =
+        System.Text.Json.JsonSerializer.Deserialize<'T>(span, x.Options)
+
 module StoreWithMeta =
 
     type Event<'E> = int64 * Metadata * 'E
     and Metadata = { principal: string }
     and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<Event<'E>, Store.EventBody, unit>
 
-    let private deserialize<'t> (x : JsonElement) =
-        JsonSerializer.Deserialize<'t>(x)
+    // NO special options (see `module Store` for a more extensive example)
+    let private options = Options.Default
+    // we assume no special requirements for complex data types when deserializing the metadata, so use Default Options
+    let private serdes = Serdes Options.Default
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface the metadata from the raw event as part of the application level event based on the stored form
         let up struct (raw : Store.Event, contract : 'E) : Event<'E> =
-            raw.Index, deserialize<Metadata> raw.Meta, contract
+            raw.Index, serdes.Deserialize<Metadata> raw.Meta, contract
         // _index: up and down are expected to encode/decode symmetrically - when encoding, the app supplies a dummy, and the store assigns it on appending
         // the metadata is encoded as the normal bodies are
-        let down ((_index, meta : Metadata, event : 'E) : Event<'E>) = struct (event, ValueSome meta, ValueNone)
-        CodecJsonElement.Create<Event<'E>, 'E, Metadata>(up, down, options = Store.options) 
+        let down ((_index, meta : Metadata, event : 'E) : Event<'E>) =
+            struct (event, ValueSome meta, ValueNone)
+        CodecJsonElement.Create<Event<'E>, 'E, Metadata>(up, down, options = options) 
+
+(*  Adding contextual information to the event metadata as it's encoded via an out of band context
+
+    As illustrated in StoreWthMeta, in some cases the Metadata can be composed (and then roundtripped back) to the application
+    logic as a natural part of the system's processing.
     
+    Frequently, however, the contextual information is not actually relevant to the application logic.
+    
+    In such a case, we can pass a _Context_ to the Codec when encoding is taking place.
+    
+    An example of such a facility is Equinox's `context` argument for `Decider.createWithContext`; whenever an event is
+    being encoded to go into the store, the relevant `'Context` is supplied to the Codec, where it is then supplied to a
+    `mapCausation` function 
+*)
+
+module StoreWithContext =
+
+    type Context = { correlationId: string; causationId: string; principal: string }
+    and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<'E, Store.EventBody, Context voption>
+    and Metadata = { principal: string }
+    // NO special options (see `module Store` for a more extensive example)
+    let private options = Options.Default
+    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
+        let up struct (_eventEnvelope, typed: 'E) = typed
+
+        let down (event: 'E) =
+            // Not producing any Metadata based on the application-level event in this instance
+            let meta = ValueNone : Metadata voption
+            let ts = ValueNone
+            struct (event, meta, ts)
+
+        let mapCausation struct (context : Context voption, _downConvertedMeta : Metadata voption) =
+            let eventId = Guid.NewGuid()
+            let metadata, corrId, causeId =
+                match context with
+                | ValueNone ->
+                    // In some parts of this system, we don't have a Context to pass - hence we use `Context voption`
+                    // as the context type in this instance. Generally, it's recommended for this mapping function
+                    // to throw in order to have each path in the system that wishes to generate events be required
+                    // to supply the relevant attribution information. But, here we illustrate how to do it loosey goosey! 
+                    ValueNone, null, null
+                | ValueSome v ->
+                    // We map the correlation/causation identifiers into the designated fields
+                    // the remaining information, we save into the Event's Meta field
+                    // In this instance, we don't have any metadata arising from the application level events,
+                    //   but, if we did, we could merge it into the final rendered `ValueSome` we are passing down
+                    let finalMeta = { principal = v.principal }
+                    ValueSome finalMeta, v.correlationId, v.causationId
+            struct (metadata, eventId, corrId, causeId)
+        CodecJsonElement.Create<'E, 'E, Metadata, Context voption>(up, down, mapCausation, options = options)
+        
 (* Decoding contextual information from Streams Metadata
 
    Events arriving from a source (e.g. Propulsion) can bear contextual information
@@ -334,15 +426,13 @@ module StreamsWithMeta =
     and Metadata = { principal: string }
     and Codec<'E> = FsCodec.IEventCodec<Event<'E>, Streams.EventBody, unit>
 
-    // we assume no special requirements for complex data types when deserializing the metadata
-    let serdes = Serdes Options.Default
-    let private deserializeUtf8<'t> (x : ReadOnlyMemory<byte>) =
-        let stream = new System.IO.MemoryStream(x.ToArray())
-        serdes.DeserializeFromStream stream
-    let dec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
+    // we assume no special requirements for complex data types when deserializing the metadata, so use Default Options
+    let private serdes = Serdes Options.Default
+        
+    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface some metadata from the raw event as part of the application level type  
         let up struct (raw : Streams.Event, contract : 'E) : Event<'E> =
-            struct (raw.Index, deserializeUtf8<Metadata> raw.Meta, contract)
+            struct (raw.Index, serdes.Deserialize<Metadata>(let meta = raw.Meta in meta.Span), contract)
         // We are not using this codec to encode events, so we let the encoding side fail very fast
         let down _ = failwith "N/A"
         Codec.Create<Event<'E>, 'E, Metadata>(up, down, options = Store.options) 
@@ -354,7 +444,7 @@ let eventsWithMeta = seq {
 
 module ReactionsWithMeta =     
     
-    let dec = StreamsWithMeta.dec<Events.Event>
+    let dec = StreamsWithMeta.codec<Events.Event>
 
     let [<return: Struct>] (|Match|_|) = function
         | struct (StreamName clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
