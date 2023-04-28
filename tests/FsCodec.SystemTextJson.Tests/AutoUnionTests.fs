@@ -23,7 +23,7 @@ let [<Xunit.Fact>] ``Basic characteristics`` () =
     test <@ Not { body = "A"; opt = None; list = ["A"] } = serdes.Deserialize "{\"case\":\"Not\",\"body\":\"A\",\"list\":[\"A\"]}" @>
 
 let [<Xunit.Fact>] ``Opting out`` () =
-    let serdesDef = Serdes Options.Default
+    let serdesDef = Serdes.Default
     let serdesT = Options.Create(autoTypeSafeEnumToJsonString = true) |> Serdes
     let serdesU = Options.Create(autoUnionToJsonObject = true) |> Serdes
 

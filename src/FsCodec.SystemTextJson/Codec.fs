@@ -1,19 +1,11 @@
 namespace FsCodec.SystemTextJson.Core
 
-open System
-open System.Text.Json
-
 /// System.Text.Json implementation of TypeShape.UnionContractEncoder's IEncoder that encodes to a ReadOnlyMemory<byte>
-type ReadOnlyMemoryEncoder(options : JsonSerializerOptions) =
-    let serdes = FsCodec.SystemTextJson.Serdes options
-    interface TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>> with
-        member _.Empty = ReadOnlyMemory.Empty
-
-        member _.Encode(value : 'T) =
-            serdes.SerializeToUtf8<'t>(value) |> ReadOnlyMemory
-
-        member _.Decode<'T>(json : ReadOnlyMemory<byte>) =
-            serdes.Deserialize<'T>(json.Span)
+type ReadOnlyMemoryEncoder(serdes: FsCodec.SystemTextJson.Serdes) =
+    interface TypeShape.UnionContract.IEncoder<System.ReadOnlyMemory<byte>> with
+        member _.Empty = System.ReadOnlyMemory.Empty
+        member _.Encode(value: 'T) = serdes.SerializeToUtf8<'t>(value) |> System.ReadOnlyMemory
+        member _.Decode<'T>(utf8json: System.ReadOnlyMemory<byte>) = serdes.Deserialize<'T>(utf8json.Span)
 
 namespace FsCodec.SystemTextJson
 
@@ -25,14 +17,15 @@ open System.Text.Json
 /// Requires that Contract types adhere to the conventions implied by using <c>TypeShape.UnionContract.UnionContractEncoder</c><br/>
 /// If you need full control and/or have have your own codecs, see <c>FsCodec.Codec.Create</c> instead.<br/>
 /// See <a href="https://github.com/eiriktsarpalis/TypeShape/blob/master/tests/TypeShape.Tests/UnionContractTests.fs"></a> for example usage.</summary>
+[<AbstractClass; Sealed>]
 type Codec private () =
 
     // NOTE Options.Default implies unsafeRelaxedJsonEscaping = true
-    static let DefaultEncoder : Lazy<TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>>> = lazy (Core.ReadOnlyMemoryEncoder Options.Default :> _)
-
-    static let mkEncoder : JsonSerializerOptions option -> TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>> = function
-        | None -> DefaultEncoder.Value
-        | Some opts -> Core.ReadOnlyMemoryEncoder opts :> _
+    static let defEncoder: Lazy<TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>>> = lazy (Core.ReadOnlyMemoryEncoder Serdes.Default :> _)
+    static let mkEncoder: Serdes option * JsonSerializerOptions option -> TypeShape.UnionContract.IEncoder<ReadOnlyMemory<byte>> = function
+        | None, None -> defEncoder.Value
+        | Some serdes, None -> Core.ReadOnlyMemoryEncoder(serdes)
+        | _, Some opts -> Core.ReadOnlyMemoryEncoder(Serdes opts)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// Uses <c>up</c>, <c>down</c> functions to handle upconversion/downconversion and eventId/correlationId/causationId mapping
@@ -48,11 +41,11 @@ type Codec private () =
             // and <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and an Event Creation<c>timestamp</c></summary>.
             down: Func<'Context, 'Event, struct ('Contract * 'Meta voption * Guid * string * string * DateTimeOffset)>,
             // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c></summary>
-            [<Optional; DefaultParameterValue(null)>] ?options,
+            [<Optional; DefaultParameterValue(null)>] ?options, [<Optional; DefaultParameterValue(null)>] ?serdes,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        FsCodec.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Core.Codec.Create(mkEncoder (serdes, options), up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// Uses <c>up</c>, <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and eventId/correlationId/causationId/timestamp mapping
@@ -71,11 +64,11 @@ type Codec private () =
             // <summary>Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>eventId</c> c) the <c>correlationId</c> and d) the <c>causationId</c></summary>
             mapCausation: Func<'Context, 'Meta voption, struct ('Meta voption * Guid * string * string)>,
             // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c>.</summary>
-            [<Optional; DefaultParameterValue(null)>] ?options,
+            [<Optional; DefaultParameterValue(null)>] ?options, [<Optional; DefaultParameterValue(null)>] ?serdes,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        FsCodec.Core.Codec.Create(mkEncoder options, up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Core.Codec.Create(mkEncoder (serdes, options), up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion/timestamping without eventId/correlation/causationId mapping
@@ -92,19 +85,19 @@ type Codec private () =
             //   and an Event Creation <c>timestamp</c>.</summary>
             down: Func<'Event, struct ('Contract * 'Meta voption * DateTimeOffset voption)>,
             // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c>.</summary>
-            [<Optional; DefaultParameterValue(null)>] ?options,
+            [<Optional; DefaultParameterValue(null)>] ?options, [<Optional; DefaultParameterValue(null)>] ?serdes,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, unit> =
-        FsCodec.Core.Codec.Create(mkEncoder options, up, down, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Core.Codec.Create(mkEncoder (serdes, options), up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
         (   // <summary>Configuration to be used by the underlying <c>System.Text.Json</c> Serializer when encoding/decoding. Defaults to same as <c>Options.Default</c>.</summary>
-            [<Optional; DefaultParameterValue(null)>] ?options,
+            [<Optional; DefaultParameterValue(null)>] ?options, [<Optional; DefaultParameterValue(null)>] ?serdes,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, ReadOnlyMemory<byte>, unit> =
-        FsCodec.Core.Codec.Create(mkEncoder options, ?rejectNullaryCases = rejectNullaryCases)
+        FsCodec.Core.Codec.Create(mkEncoder (serdes, options), ?rejectNullaryCases = rejectNullaryCases)

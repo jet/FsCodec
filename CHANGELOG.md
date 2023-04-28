@@ -10,7 +10,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-- `Serdes`: `SerializeToUtf8`, associated `Deserialize` overloads [#93](https://github.com/jet/FsCodec/pull/93)
+- `Serdes`: `SerializeToUtf8`, associated `Deserialize` overloads [#94](https://github.com/jet/FsCodec/pull/94)
+- `Serdes`: `Default` [#95](https://github.com/jet/FsCodec/pull/95)
 
 ### Changed
 

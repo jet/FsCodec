@@ -21,7 +21,7 @@ let [<Fact>] happy () =
     test <@ Some Joy = serdesWithOutcomeConverter.Deserialize "\"Joy\"" @>
     raises<KeyNotFoundException> <@ serdesWithOutcomeConverter.Deserialize<Outcome> "\"Confusion\"" @>
     // Was a JsonException prior to V6
-    let serdes = Serdes Options.Default
+    let serdes = Serdes.Default
     raises<NotSupportedException> <@ serdes.Deserialize<Outcome> "1" @>
 
 let [<Fact>] sad () =
@@ -41,7 +41,7 @@ and OutcomeWithCatchAllConverter() =
         |> Option.defaultValue Other
 
 let [<Fact>] fallBackExample () =
-    let serdes = Serdes Options.Default
+    let serdes = Serdes.Default
     test <@ Joy = serdes.Deserialize<OutcomeWithOther> "\"Joy\"" @>
     test <@ Some Other = serdes.Deserialize<OutcomeWithOther option> "\"Wat\"" @>
     test <@ Other = serdes.Deserialize<OutcomeWithOther> "\"Wat\"" @>

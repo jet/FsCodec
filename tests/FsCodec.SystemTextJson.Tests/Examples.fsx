@@ -1,7 +1,7 @@
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.SystemTextJson.Tests before attempting to send this to FSI with Alt-Enter
 
-#if USE_LOCAL_BUILD
+#if !USE_LOCAL_BUILD
 (* Rider's FSI is not happy without the explicit references :shrug: *)
 #I "bin/Debug/net6.0"
 #r "FsCodec.dll"
@@ -24,7 +24,7 @@ module Contract =
 
     type Item = { value : string option }
     // while no converter actually gets applied, as STJ v6 handles Options out of the box, this makes it explicit that we have a policy
-    let private serdes = Serdes Options.Default
+    let private serdes = Serdes.Default
     // applies default settings from Options.Create(), i.e., includes UnsafeRelaxedJsonEscaping
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
@@ -40,7 +40,7 @@ module Contract2 =
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
-let private serdes = Serdes Options.Default
+let private serdes = Serdes.Default
 
 (* Global vs local Converters
 

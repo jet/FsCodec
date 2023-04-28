@@ -6,18 +6,16 @@ module FsCodec.NewtonsoftJson.Tests.StreamTests
 open FsCodec.NewtonsoftJson
 #endif
 
-open Xunit
-open System.IO
 open Swensen.Unquote
-
-let serdes = Serdes Options.Default
+open System.IO
+open Xunit
 
 type Rec = { a : int; b : string; c : string }
 
 let [<Fact>] ``Can serialize/deserialize to stream`` () =
     let value = { a = 10; b = "10"; c = "" }
     use stream = new MemoryStream()
-    serdes.SerializeToStream(value, stream)
+    Serdes.Default.SerializeToStream(value, stream)
     stream.Seek(0L, SeekOrigin.Begin) |> ignore
-    let value' = serdes.DeserializeFromStream(stream)
-    <@ value = value' @>
+    let value' = Serdes.Default.DeserializeFromStream(stream)
+    test <@ value = value' @>

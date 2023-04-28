@@ -10,8 +10,8 @@
     <Compile Include="TypeSafeEnumConverter.fs" />
     <Compile Include="OptionConverter.fs" />
     <Compile Include="Options.fs" />
-    <Compile Include="Codec.fs" />
     <Compile Include="Serdes.fs" />
+    <Compile Include="Codec.fs" />
     <Compile Include="VerbatimUtf8Converter.fs" />
   </ItemGroup>
 

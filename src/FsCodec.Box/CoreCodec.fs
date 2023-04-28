@@ -7,6 +7,7 @@ open System.Runtime.InteropServices
 /// Requires that Contract types adhere to the conventions implied by using <c>TypeShape.UnionContract.UnionContractEncoder</c><br/>
 /// If you need full control and/or have have your own codecs, see <c>FsCodec.Codec.Create</c> instead.<br/>
 /// See non-<c>Core</c> namespace for application level encoders.</summary>
+[<AbstractClass; Sealed>]
 type Codec private () =
 
     /// <summary>Generate an <c>IEventCodec</c> using the supplied <c>encoder</c>.<br/>

@@ -17,7 +17,7 @@ type Union =
 
 let ignoreNullOptions = Options.Create(ignoreNulls = true)
 let elementEncoder : TypeShape.UnionContract.IEncoder<JsonElement> =
-    FsCodec.SystemTextJson.Core.JsonElementEncoder(ignoreNullOptions) :> _
+    FsCodec.SystemTextJson.Core.JsonElementEncoder(Serdes ignoreNullOptions) :> _
 
 let eventCodec = CodecJsonElement.Create<Union>(ignoreNullOptions)
 let multiHopCodec = eventCodec.ToUtf8Codec().ToJsonElementCodec()
@@ -39,7 +39,7 @@ let [<Property>] roundtrips value =
     let enveloped = { d = encoded }
 
     // the options should be irrelevant, but use the defaults (which would add nulls in that we don't want if it was leaking)
-    let serdes = Serdes Options.Default
+    let serdes = Serdes.Default
     let ser = serdes.Serialize enveloped
 
     match embedded with
