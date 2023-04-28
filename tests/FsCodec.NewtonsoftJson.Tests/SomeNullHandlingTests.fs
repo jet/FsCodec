@@ -1,5 +1,5 @@
 #if SYSTEM_TEXT_JSON
-module FsCodec.SytemTextJson.Tests.SomeNullHandlingTests
+module FsCodec.SystemTextJson.Tests.SomeNullHandlingTests
 
 open FsCodec.SystemTextJson
 open Swensen.Unquote

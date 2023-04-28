@@ -63,7 +63,7 @@ type Serdes(options : JsonSerializerSettings) =
         use reader = new JsonTextReader(new StringReader(json))
         serializer.Deserialize<'T>(reader)
 
-    /// Deserializes value of given type from a UTF8 JSON Span.
+    /// Deserializes value of given type from a UTF8 JSON Buffer.
     member _.Deserialize<'T>(utf8json : ReadOnlyMemory<byte>) : 'T =
         use ms = Utf8BytesEncoder.wrapAsStream utf8json
         use jsonReader = Utf8BytesEncoder.makeJsonReader ms
