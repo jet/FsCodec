@@ -17,5 +17,5 @@ let [<Fact>] ``Can serialize/deserialize to stream`` () =
     use stream = new MemoryStream()
     serdes.SerializeToStream(value, stream)
     stream.Seek(0L, SeekOrigin.Begin) |> ignore
-    let deserialized = serdes.DeserializeFromStream(stream)
-    <@ value = deserialized @>
+    let value' = serdes.DeserializeFromStream(stream)
+    test <@ value = value' @>
