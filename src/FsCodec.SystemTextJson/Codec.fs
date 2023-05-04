@@ -5,7 +5,7 @@ type ReadOnlyMemoryEncoder(serdes: FsCodec.SystemTextJson.Serdes) =
     interface TypeShape.UnionContract.IEncoder<System.ReadOnlyMemory<byte>> with
         member _.Empty = System.ReadOnlyMemory.Empty
         member _.Encode(value: 'T) = serdes.SerializeToUtf8<'t>(value) |> System.ReadOnlyMemory
-        member _.Decode<'T>(utf8json: System.ReadOnlyMemory<byte>) = serdes.Deserialize<'T>(utf8json.Span)
+        member _.Decode<'T>(utf8json: System.ReadOnlyMemory<byte>) = serdes.Deserialize<'T>(utf8json)
 
 namespace FsCodec.SystemTextJson
 

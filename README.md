@@ -814,11 +814,10 @@ module Streams =
     // the above Events can be decoded by a Codec implementing this interface
     and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
 
-    // Borrowing the Store options; frequently the events you parse can use less complex ones...
-    let private options = Store.options
-    /// Generates a Codec for the specified Event Union type, using the standard settings
+    /// Generates a Codec for the specified Event Union type
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        Codec.Create<'E>(options)
+        // Borrowing the Store serdes; frequently the events you parse can use less complex options...
+        Codec.Create<'E>(serdes = Store.serdes)
 
     // as we know our event bodies are all UTF8 encoded JSON, we can render the string as a log event property
     // alternately, you can render the EventBody directly and ensure you have appropriate type destructuring configured
