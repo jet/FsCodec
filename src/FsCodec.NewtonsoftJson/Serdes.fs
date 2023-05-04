@@ -73,8 +73,10 @@ type Serdes(options : JsonSerializerSettings) =
     member _.SerializeToStream<'T>(value : 'T, utf8Stream : Stream) =
         // We're setting CloseOutput = false, because that's the default behavior in STJ
         // but also mostly because it's rude to close without asking
-        use writer = new JsonTextWriter(new StreamWriter(utf8Stream, System.Text.Encoding.UTF8), CloseOutput = false)
+        use streamWriter = new StreamWriter(utf8Stream, System.Text.Encoding.UTF8, 128, leaveOpen = true)
+        use writer = new JsonTextWriter(streamWriter, CloseOutput = false)
         serializer.Serialize(writer, value)
+        streamWriter.Flush()
 
     /// Deserializes by reading from a stream.
     member _.DeserializeFromStream<'T>(utf8Stream : Stream) =
