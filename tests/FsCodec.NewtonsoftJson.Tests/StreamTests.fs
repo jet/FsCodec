@@ -9,7 +9,8 @@ open FsCodec.NewtonsoftJson
 open Swensen.Unquote
 open System.IO
 open Xunit
-let serdes = Serdes Options.Default
+
+let serdes = Serdes.Default
 
 type Rec = { a : int; b : string; c : string }
 let [<Fact>] ``Can serialize/deserialize to stream`` () =
