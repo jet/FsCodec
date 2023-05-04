@@ -427,13 +427,14 @@ where `Store` refers to a set of infrastructure helpers:
 ```fsharp
 namespace global
 
-open  FsCodec.SystemTextJson
+open FsCodec.SystemTextJson
 
 module Store =
     
-    // We are encoding to JsonElement bodies for minimal allocation overhead
     type Event = FsCodec.ITimelineEvent<EventBody>
-    and EventBody = System.Text.Json.JsonElement
+    // Many stores use a ReadOnlyMemory<byte> to represent a UTF-8 encoded JSON event body
+    // System.Text.Json.JsonElement can be a useful alternative where the store is JSON based
+    and EventBody = ReadOnlyMemory<byte>
     and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<'E, EventBody, unit>
     
     // Opt in to:
@@ -441,11 +442,13 @@ module Store =
     // - mapping other F# Unions using the UnionConverter with default settoings
     // TOCONSIDER avoid using this automatic behavior, and instead let the exception that System.Text.Json
     //            produces trigger adding a JsonConverterAttribute for each type as Documentation 
-    let options = Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true)
+    let private options = Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true)
+    let serdes = Serdes options
     
-    // TOCONSIDER Can swap CodecJsonElment for Codec to encode as ReadOnlyMemory<byte> where appropriate
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        CodecJsonElement.Create(options)
+        Codec.Create(serdes = serdes)
+        // OR, if your Store uses JsonElement bodies
+        // CodecJsonElement.Create(serdes = serdes)
 ```
 
 Having a common set of helpers allows one to analyse the encoding policies employed per aggregate as they inevitably evolve over time.
@@ -902,19 +905,17 @@ module StoreWithMeta =
     and Metadata = { principal: string }
     and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<Event<'E>, Store.EventBody, unit>
 
-    // we assume no special requirements for complex data types when deserializing the metadata, so use Default Options
-    let private options = Options.Default
-    // no special requirements for deserializing metadata
-    let private serdes = Serdes Options.Default
+    // no special requirements for deserializing Metadata, so use Default Serdes
+    let private serdes = Serdes.Default
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface the metadata from the raw event as part of the application level event based on the stored form
-        let up struct (raw : Store.Event, contract : 'E) : Event<'E> =
+        let up (raw : Store.Event) (contract : 'E) : Event<'E> =
             raw.Index, serdes.Deserialize<Metadata> raw.Meta, contract
         // _index: up and down are expected to encode/decode symmetrically - when encoding, the app supplies a dummy, and the store assigns it on appending
         // the metadata is encoded as the normal bodies are
         let down ((_index, meta : Metadata, event : 'E) : Event<'E>) =
             struct (event, ValueSome meta, ValueNone)
-        CodecJsonElement.Create<Event<'E>, 'E, Metadata>(up, down, options = options) 
+        Codec.Create<Event<'E>, 'E, Metadata>(up, down, serdes = Store.serdes) 
 ```
 
 The above embeds and/or extracts contextual information from the Event's `Meta` field.
@@ -952,10 +953,9 @@ module StoreWithContext =
     type Context = { correlationId: string; causationId: string; principal: string }
     and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<'E, Store.EventBody, Context voption>
     and Metadata = { principal: string }
-    // NO special options (see `module Store` for a more extensive example)
-    let private options = Options.Default
+    
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        let up _eventEnvelope (typed: 'E) = typed
+        let up (_raw : Store.Event) (contract: 'E) = contract
 
         let down (event: 'E) =
             // Not producing any Metadata based on the application-level event in this instance
@@ -981,7 +981,7 @@ module StoreWithContext =
                     let finalMeta = { principal = v.principal }
                     ValueSome finalMeta, v.correlationId, v.causationId
             struct (metadata, eventId, corrId, causeId)
-        CodecJsonElement.Create<'E, 'E, Metadata, Context voption>(up, down, mapCausation, options = options)
+        Codec.Create<'E, 'E, Metadata, Context voption>(up, down, mapCausation, serdes = Store.serdes)
 ```
 
 An example of how that facility is used in practice is via [Equinox's](https://github.com/jet/equinox) `context`
@@ -1074,13 +1074,12 @@ module StreamsWithMeta =
     and Metadata = { principal: string }
     and Codec<'E> = FsCodec.IEventCodec<Event<'E>, Streams.EventBody, unit>
 
-    // we assume no special requirements for complex data types when deserializing the metadata, so use Default Options
-    let private serdes = Serdes Options.Default
-        
+    // no special requirements for deserializing metadata, so use Default Serdes
+    let private serdes = Serdes.Default
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface some metadata from the raw event as part of the application level type  
-        let up struct (raw : Streams.Event, contract : 'E) : Event<'E> =
-            struct (raw.Index, serdes.Deserialize<Metadata>(let meta = raw.Meta in meta.Span), contract)
+        let up (raw : Streams.Event) (contract : 'E) : Event<'E> =
+            struct (raw.Index, serdes.Deserialize<Metadata> raw.Meta, contract)
         // We are not using this codec to encode events, so we let the encoding side fail very fast
         let down _ = failwith "N/A"
         Codec.Create<Event<'E>, 'E, Metadata>(up, down, options = Store.options) 

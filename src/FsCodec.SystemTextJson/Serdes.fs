@@ -38,6 +38,10 @@ type Serdes(options : JsonSerializerOptions) =
     member _.Deserialize<'T>(span : System.ReadOnlySpan<byte>) : 'T =
         JsonSerializer.Deserialize<'T>(span, options)
 
+    /// Deserializes value of given type from a UTF8 JSON Buffer.
+    member x.Deserialize<'T>(utf8json : System.ReadOnlyMemory<byte>) : 'T =
+        x.Deserialize<'T>(utf8json.Span)
+
     /// Serializes and writes given value to a stream.
     /// NOTE: <c>FsCodec.SystemTextJson.Options.Default</c> defaults to <c>unsafeRelaxedJsonEscaping = false</c>
     member _.SerializeToStream<'T>(value : 'T, utf8Stream : Stream) : unit =
