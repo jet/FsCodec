@@ -6,6 +6,10 @@ open System.Text.Json
 /// Serializes to/from strings using the supplied Options
 type Serdes(options : JsonSerializerOptions) =
 
+    static let def = lazy Serdes Options.Default
+    /// Cached shortcut for Serdes Options.Default
+    static member Default : Serdes = def.Value
+
     /// <summary>The <c>JsonSerializerOptions</c> used by this instance.</summary>
     member _.Options : JsonSerializerOptions = options
 

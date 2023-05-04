@@ -149,7 +149,7 @@ If you follow the policies covered in the rest of the documentation here, your D
 Hence the following represents the recommended default policy:-
 
     /// Define a Serdes instance with a given policy somewhere (globally if you need to do explicit JSON generation) 
-    let serdes = Serdes Options.Default
+    let serdes = FsCodec.NewtonsoftJson.Serdes.Default
 
     services.AddMvc(fun options -> ...
     ).AddNewtonsoftJson(fun options ->
@@ -168,12 +168,11 @@ The equivalent for the native `System.Text.Json`, as of  v6, thanks [to the grea
 The following illustrates how to opt into [`autoTypeSafeEnumToJsonString` and/or `autoUnionToJsonObject` modes](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs), and `rejectNullStrings` for the rendering of View Models by ASP.NET:
 
     // Default behavior throws an exception if you attempt to serialize a DU or TypeSafeEnum without an explicit JsonConverterAttribute
-    // let serdes = FsCodec.SystemTextJson.Options.Default |> FsCodec.SystemTextJson.Serdes
+    // let serdes = FsCodec.SystemTextJson.Serdes.Default
 
     // If you use autoTypeSafeEnumToJsonString = true or autoUnionToJsonObject = true, serdes.Serialize / Deserialize applies the relevant converters
-    let serdes =
-        FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true, rejectNullString = true)
-        |> FsCodec.SystemTextJson.Serdes
+    let options = FsCodec.SystemTextJson.Options.Create(autoTypeSafeEnumToJsonString = true, autoUnionToJsonObject = true, rejectNullString = true)
+    let serdes = FsCodec.SystemTextJson.Serdes options
 
     services.AddMvc(fun options -> ...
     ).AddJsonOptions(fun options ->

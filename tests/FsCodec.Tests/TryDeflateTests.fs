@@ -1,4 +1,4 @@
-module FsCodec.Core.Tests.DeflateTests
+module FsCodec.Tests.DeflateTests
 
 open System
 open Swensen.Unquote

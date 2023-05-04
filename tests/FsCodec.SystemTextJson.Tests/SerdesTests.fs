@@ -99,7 +99,7 @@ let ``string options are supported regardless of "rejectNullStrings" value`` rej
 
 (* Serdes + default Options behavior, i.e. the stuff we do *)
 
-let serdes = Serdes Options.Default
+let serdes = Serdes.Default
 
 let [<Fact>] records () =
     let value = { a = 1 }

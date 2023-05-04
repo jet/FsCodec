@@ -1,7 +1,7 @@
 // Compile the fsproj by either a) right-clicking or b) typing
 // dotnet build tests/FsCodec.NewtonsoftJson.Tests before attempting to send this to FSI with Alt-Enter
 
-#if USE_LOCAL_BUILD
+#if !USE_LOCAL_BUILD
 #I "bin/Debug/net6.0"
 #r "FsCodec.dll"
 #r "Newtonsoft.Json.dll"
@@ -24,7 +24,7 @@ module Contract =
 
     type Item = { value : string option }
     // implies an OptionConverter will be applied
-    let private serdes = Serdes Options.Default
+    let private serdes = Serdes.Default
     let serialize (x : Item) : string = serdes.Serialize x
     let deserialize (json : string) = serdes.Deserialize json
 
@@ -35,7 +35,8 @@ module Contract2 =
     type Item = { Value : string option; other : TypeThatRequiresMyCustomConverter }
     /// Options to be used within this contract
     // note OptionConverter is also included by default; Value field will write as `"value"`
-    let private serdes = Options.Create(MyCustomConverter(), camelCase = true) |> FsCodec.NewtonsoftJson.Serdes
+    let private options = Options.Create(MyCustomConverter(), camelCase = true)
+    let private serdes = Serdes options
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) : Item = serdes.Deserialize json
 

@@ -1,4 +1,4 @@
-﻿module FsCodec.NewtonsoftJson.PicklerTests
+﻿module FsCodec.NewtonsoftJson.Tests.PicklerTests
 
 open FsCodec.NewtonsoftJson
 open Newtonsoft.Json

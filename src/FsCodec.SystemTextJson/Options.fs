@@ -7,12 +7,11 @@ open System.Text.Json.Serialization
 
 #nowarn "44" // see IgnoreNullValues below
 
+[<AbstractClass; Sealed>]
 type Options private () =
 
-    static let def = lazy Options.Create()
-
     /// <summary>Analogous to <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
-    static member Default : JsonSerializerOptions = def.Value
+    static member val Default : JsonSerializerOptions = Options.Create()
 
     /// Creates a default set of serializer options used by Json serialization. When used with no args, same as `JsonSerializerOptions()`
     static member CreateDefault

@@ -538,11 +538,7 @@ module ``Struct discriminated unions`` =
         test <@ """{"case":"CaseIV","iv":{"test":"hi"},"ibv":"bye"}""" = serialize i @>
 #endif
 
-#if SYSTEM_TEXT_JSON
-let serdes = Serdes Options.Default
-#else
-let serdes = Serdes Options.Default
-#endif
+let serdes = Serdes.Default
 
 module Nested =
 
