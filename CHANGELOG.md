@@ -9,17 +9,22 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.10"></a>
+## [3.0.0-rc.10] - 2023-6-05
+
+### Added
 
 - `Serdes`: `SerializeToUtf8`, associated `Deserialize` overloads [#94](https://github.com/jet/FsCodec/pull/94)
 - `Serdes`: `Default` [#95](https://github.com/jet/FsCodec/pull/95)
 
 ### Changed
 
-- `NewtonsoftJson.TypeSafeEnum`: Sync with `SystemTextJson.TypeSafeEnum` [#91](https://github.com/jet/FsCodec/pull/91) 
--  replace all `FSharpFunc` usage with `Func` [#92](https://github.com/jet/FsCodec/pull/92) 
-
-### Removed
-### Fixed
+- `NewtonsoftJson.TypeSafeEnum`: Sync with `SystemTextJson.TypeSafeEnum` [#91](https://github.com/jet/FsCodec/pull/91)
+-  replace all `FSharpFunc` usage with `Func` [#92](https://github.com/jet/FsCodec/pull/92)
 
 <a name="3.0.0-rc.9"></a>
 ## [3.0.0-rc.9] - 2022-11-30
@@ -353,7 +358,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.10...HEAD
+[3.0.0-rc.9]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...3.0.0-rc.10
 [3.0.0-rc.9]: https://github.com/jet/FsCodec/compare/3.0.0-rc.8...3.0.0-rc.9
 [3.0.0-rc.8]: https://github.com/jet/FsCodec/compare/3.0.0-rc.7...3.0.0-rc.8
 [3.0.0-rc.7]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...3.0.0-rc.7
