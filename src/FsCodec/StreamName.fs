@@ -128,3 +128,20 @@ module StreamName =
     /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed</summary>
     /// <remarks>Inverse of <c>create</c></remarks>
     let (|CategoryAndIds|) : StreamName -> struct (string * string[]) = splitCategoryAndIds
+
+    module Parse =
+        let parse category f (name: StreamName) =
+            let struct (streamCategory, id) = splitCategoryAndStreamId name
+            if streamCategory = category
+            then ValueSome(f id)
+            else ValueNone
+        let parse2 category f g (name: StreamName) =
+            let struct(streamCategory, ids) = splitCategoryAndIds name
+            if streamCategory = category && ids.Length = 2
+            then ValueSome struct(f ids[0], g ids[1])
+            else ValueNone
+        let parse3 category f g h (name: StreamName) =
+            let struct(streamCategory, ids) = splitCategoryAndIds name
+            if streamCategory = category && ids.Length = 3
+            then ValueSome struct(f ids[0], g ids[1], h ids[2])
+            else ValueNone
