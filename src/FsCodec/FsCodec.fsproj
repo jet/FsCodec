@@ -8,6 +8,7 @@
     <Compile Include="FsCodec.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="StreamName.fs" />
+    <Compile Include="StreamId.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -129,19 +129,28 @@ module StreamName =
     /// <remarks>Inverse of <c>create</c></remarks>
     let (|CategoryAndIds|) : StreamName -> struct (string * string[]) = splitCategoryAndIds
 
-    module Parse =
-        let parse category f (name: StreamName) =
-            let struct (streamCategory, id) = splitCategoryAndStreamId name
-            if streamCategory = category
-            then ValueSome(f id)
-            else ValueNone
-        let parse2 category f g (name: StreamName) =
-            let struct(streamCategory, ids) = splitCategoryAndIds name
-            if streamCategory = category && ids.Length = 2
-            then ValueSome struct(f ids[0], g ids[1])
-            else ValueNone
-        let parse3 category f g h (name: StreamName) =
-            let struct(streamCategory, ids) = splitCategoryAndIds name
-            if streamCategory = category && ids.Length = 3
-            then ValueSome struct(f ids[0], g ids[1], h ids[2])
-            else ValueNone
+    /// Extracts the application-level id of a StreamName
+    let dec category f (name: StreamName) = function
+        | CategoryAndId(cat, id) when cat = category -> f id
+        | _ -> ValueNone
+    /// Extracts a tuple of application-level ids from a StreamName
+    let dec2 category f g (name: StreamName) = function
+        | CategoryAndIds(cat, ids) when cat = category -> 
+            if ids.Length <> 2
+            then invalidArg "name" "Unexpected id count"
+            else ValueSome struct(f ids[0], g ids[1])
+        | _ -> ValueNone
+    /// Extracts a tuple of application-level ids from a StreamName
+    let dec3 category f g h (name: StreamName) = function
+        | CategoryAndIds(cat, ids) when cat = category -> 
+            if ids.Length <> 3
+            then invalidArg "name" "Unexpected id count"
+            else ValueSome struct(f ids[0], g ids[1], h ids[2])
+        | _ -> ValueNone
+    /// Extracts a tuple of application-level ids from a StreamName
+    let dec4 category f g h i (name: StreamName) = function 
+        | CategoryAndIds(cat, ids) when cat = category -> 
+            if ids.Length <> 4
+            then invalidArg "name" "Unexpected id count"
+            else ValueSome struct(f ids[0], g ids[1], h ids[2], i ids[3])
+        | _ -> ValueNone
