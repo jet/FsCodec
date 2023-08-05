@@ -22,8 +22,8 @@ module StreamName =
     // Validation helpers, etc.
     module Category =
 
-        let [<Literal>] Separator = '_' // separates {category}-{streamId}
-        let [<Literal>] SeparatorStr = "_"
+        let [<Literal>] Separator = '-' // separates {category}-{streamId}
+        let [<Literal>] SeparatorStr = "-"
         let internal separator = [| Separator |]
 
         /// Throws if a candidate category includes a '-', is null, or is empty
