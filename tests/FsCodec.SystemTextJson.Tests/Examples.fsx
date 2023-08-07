@@ -235,18 +235,17 @@ Unhandled Event: Category Favorites, Id ClientB, Index 3, Event: "Exported"
 Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 *)
 
-(* Simplified by having a MatchSingle ActivePattern that decodes if it matches *)
+(* Simplified by having a DecodeSingle ActivePattern that decodes if it matches *)
 
 module ReactionsBasic =    
    
     let dec = streamCodec<Events.Event>
-    
     let (|DecodeSingle|_|): FsCodec.StreamName * Event -> (ClientId * Events.Event) option = function
         | Reaction.For clientId, TryDecodeEvent dec event -> Some (clientId, event)
         | _ -> None
 
 let reactSingle (clientId: ClientId) (event: Events.Event) =
-    printfn "Client %s, event %A" (ClientId.toString clientId) event
+    printfn $"Client %s{ClientId.toString clientId}, event %A{event}"
     
 let runCodecMatch () =
     for streamName, event in events do
@@ -304,14 +303,13 @@ module Streams =
 (* When using Propulsion, Events are typically delivered as an array of contiguous events together with a StreamName
    The Decode Active Pattern decodes such a batch *)
 
-module Reactions =    
+module Reactions =
    
     /// Active Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the streamId if the Category matches
     let [<return: Struct>] (|For|_|) = Stream.tryDecode
 
-    let dec = Streams.codec<Events.Event>
-    
+    let private dec = Streams.codec<Events.Event>
     /// Yields decoded events and relevant strongly typed ids if the Category of the Stream Name matches
     let [<return: Struct>] (|Decode|_|) = function
         | struct (For clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
@@ -480,4 +478,4 @@ Client ClientB, event 1 meta { principal = "me" } event Added { item = "a" }
 Client ClientB, event 2 meta { principal = "me" } event Removed { name = null }
 Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 
- *)
+*)
