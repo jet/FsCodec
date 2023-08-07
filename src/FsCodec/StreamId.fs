@@ -50,24 +50,6 @@ module StreamId =
         /// Splits a streamId into its constituent fragments
         let (|Split|): StreamId -> string[] = split
 
-    /// Validates and extracts the StreamId into a single fragment value
-    /// Throws if the item embeds a `_`, is `null`, or is empty
-    let parseExactlyOne (x: StreamId): string = toString x |> Elements.parseExactlyOne |> toString
-    /// Validates and extracts the StreamId into a single fragment value
-    /// Throws if the item embeds a `_`, is `null`, or is empty
-    let (|Parse1|) (x: StreamId): string = parseExactlyOne x
-
-    /// Splits a StreamId into the specified number of fragments.
-    /// Throws if the value does not adhere to the expected fragment count.
-    let parse count (x: StreamId): string[] =
-        let xs = Elements.split x
-        if xs.Length <> count then
-            invalidArg "x" (sprintf "StreamId '{%s}' must have {%d} elements, but had {%d}." (toString x) count xs.Length)
-        xs
-    /// Splits a StreamId into an expected number of fragments.
-    /// Throws if the value does not adhere to the expected fragment count.
-    let (|Parse|) count: StreamId -> string[] = parse count
-
     /// Helpers to generate StreamIds given a number of individual id to string mapper functions
     [<AbstractClass; Sealed>]
     type Gen private () =
@@ -90,8 +72,26 @@ module StreamId =
     /// Generate a StreamId from a 4-tuple of application-level ids, given four rendering functions that map to a non empty fragment without embedded `_` chars
     let gen4 f1 f2 f3 f4: 'a * 'b * 'c * 'd -> StreamId = Gen.Map(f1, f2, f3, f4).Invoke
 
+    /// Validates and extracts the StreamId into a single fragment value
+    /// Throws if the item embeds a `_`, is `null`, or is empty
+    let parseExactlyOne (x: StreamId): string = toString x |> Elements.parseExactlyOne |> toString
+    /// Validates and extracts the StreamId into a single fragment value
+    /// Throws if the item embeds a `_`, is `null`, or is empty
+    let (|Parse1|) (x: StreamId): string = parseExactlyOne x
+
+    /// Splits a StreamId into the specified number of fragments.
+    /// Throws if the value does not adhere to the expected fragment count.
+    let parse count (x: StreamId): string[] =
+        let xs = Elements.split x
+        if xs.Length <> count then
+            invalidArg "x" (sprintf "StreamId '{%s}' must have {%d} elements, but had {%d}." (toString x) count xs.Length)
+        xs
+    /// Splits a StreamId into an expected number of fragments.
+    /// Throws if the value does not adhere to the expected fragment count.
+    let (|Parse|) count: StreamId -> string[] = parse count
+
     /// Extracts a single fragment from the StreamId. Throws if the value is composed of more than one item.
-    let dec f (x: StreamId) =                   parse 1 x |> Array.exactlyOne |> f
+    let dec f (x: StreamId) =                   parseExactlyOne x |> f
     /// Extracts 2 fragments from the StreamId. Throws if the value does not adhere to that expected form.
     let dec2 f1 f2 (x: StreamId) =              let xs = parse 2 x in struct (f1 xs[0], f2 xs[1])
     /// Extracts 3 fragments from the StreamId. Throws if the value does not adhere to that expected form.
