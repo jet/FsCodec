@@ -15,9 +15,9 @@ and [<Measure>] streamName
 /// 2. {category}-{id1}_{id2}_...{idN}
 module StreamName =
 
-    /// Strip off the strong typing (It's recommended to pattern match as below in the general case)
-    let inline toString (x: StreamName) : string =
-        UMX.untag x
+    /// Strip off the strong typing (In general, it's recommended to pattern match instead)
+    /// NOTE As a UMX type, Object.ToString will render equivalent to this
+    let inline toString (x: StreamName) : string = UMX.untag x
 
     // Validation helpers, etc.
     module Category =
@@ -36,10 +36,10 @@ module StreamName =
             let raw = toString x
             raw.Substring(0, raw.IndexOf Separator)
 
-    module Internal =
+    /// Extracts the category portion of a StreamName
+    let (|Category|): StreamName -> string = Category.ofStreamName
 
-        /// Create a StreamName, trusting the input to be well-formed
-        let trust (raw: string): StreamName = UMX.tag raw
+    module Internal =
 
         /// <summary>Attempts to split a Stream Name in the form <c>{category}-{streamId}</c> into its two elements.
         /// The <c>{streamId}</c> segment is permitted to include embedded '-' (dash) characters
@@ -57,12 +57,15 @@ module StreamName =
             | ValueSome catAndId -> Categorized catAndId
             | ValueNone -> NotCategorized
 
-    let private throwInvalid raw = invalidArg "raw" (sprintf "Stream Name '%s' must contain a '-' separator" raw)
+        let throwInvalid raw = invalidArg "raw" (sprintf "Stream Name '%s' must contain a '-' separator" raw)
+
+        /// Create a StreamName, trusting the input to be well-formed
+        let trust (raw: string): StreamName = UMX.tag raw
 
     /// <summary>Validates and maps a Stream Name consisting of a Category and an StreamId separated by a '-' (dash).<br/>
     /// Throws <c>InvalidArgumentException</c> if it does not adhere to that form.</summary>
     let parse (raw: string): StreamName =
-        if raw.IndexOf Category.Separator = -1 then throwInvalid raw
+        if raw.IndexOf Category.Separator = -1 then Internal.throwInvalid raw
         raw |> Internal.trust
 
     /// Creates a StreamName in the canonical form; a category identifier and an streamId representing the aggregate's identity
@@ -77,11 +80,6 @@ module StreamName =
     let compose (categoryName: string) (streamIdElements: string[]): StreamName =
         create categoryName (StreamId.Elements.compose streamIdElements)
 
-    /// Extracts the category portion of the StreamName
-    let category (x: StreamName) = Category.ofStreamName x
-    /// Extracts the category portion of a StreamName
-    let (|Category|) = category
-
     /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.<br/>
     /// Throws <c>InvalidArgumentException</c> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).</summary>
     /// <remarks>Inverse of <c>create</c></remarks>
@@ -89,7 +87,7 @@ module StreamName =
         let rawName = toString streamName
         match Internal.tryParse rawName with
         | ValueSome catAndId -> catAndId
-        | ValueNone -> throwInvalid rawName // Yes, it _should_ never happen
+        | ValueNone -> Internal.throwInvalid rawName // Yes, it _should_ never happen
     /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.<br/>
     /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed.</summary>
     /// <remarks>Inverse of <c>create</c></remarks>

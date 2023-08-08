@@ -14,6 +14,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19): defines a base interface for serializers.
   - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in a serializer and/or Union Encoder of your choice (typically this is used to supply a pair `encode` and `tryDecode` functions)
   - [`FsCodec.StreamName`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs): strongly-typed wrapper for a Stream Name, together with factory functions and active patterns for parsing same
+  - [`FsCodec.StreamId`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamId.fs): strongly-typed wrapper for a Stream Id, together with factory functions and active patterns for parsing same
 - [![Box Codec NuGet](https://img.shields.io/nuget/v/FsCodec.Box.svg)](https://www.nuget.org/packages/FsCodec.Box/) `FsCodec.Box`: See [`FsCodec.Box.Codec`](#boxcodec); `IEventCodec<obj>` implementation that provides a null encode/decode step in order to enable decoupling of serialization/deserialization concerns from the encoding aspect, typically used together with  [`Equinox.MemoryStore`](https://www.fuget.org/packages/Equinox.MemoryStore)
   - [depends](https://www.fuget.org/packages/FsCodec.Box) on `FsCodec`, `TypeShape >= 10`
 - [![Newtonsoft.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.NewtonsoftJson.svg)](https://www.nuget.org/packages/FsCodec.NewtonsoftJson/) `FsCodec.NewtonsoftJson`: As described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/), enabled tagging of F# Discriminated Union cases in a versionable manner with low-dependencies using [TypeShape](https://github.com/eiriktsarpalis/TypeShape)'s [`UnionContractEncoder`](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores)
@@ -520,10 +521,65 @@ module StreamName =
     let tryFind categoryName (x: StreamName): StreamId voption = ...
 ```
 
+The `StreamId` part's key helpers are as follows:
+
+```fsharp
+/// Represents the second half of a canonical StreamName, i.e., the streamId in "{categoryName}-{streamId}"
+type StreamId = string<streamId>
+and [<Measure>] streamId
+
+/// Helpers for composing and rendering StreamId values
+module StreamId =
+
+    /// Any string can be a StreamId; parse/dec/Elements.split will judge whether it adheres to a valid form
+    let create: string -> StreamId = UMX.tag
+
+    /// Render as a string for external use
+    let toString: StreamId -> string = UMX.untag
+
+    /// Generate a StreamId from a single application-level id, given a rendering function that maps to a non empty fragment without embedded `_` chars
+    let gen (f: 'a -> string): 'a -> StreamId = ...
+    /// Generate a StreamId from a tuple of application-level ids, given two rendering functions that map to a non empty fragment without embedded `_` chars
+    let gen2 f1 f2: 'a * 'b -> StreamId = ...
+    /// Generate a StreamId from a triple of application-level ids, given three rendering functions that map to a non empty fragment without embedded `_` chars
+    let gen3 f1 f2 f3: 'a * 'b * 'c -> StreamId = ...
+    /// Generate a StreamId from a 4-tuple of application-level ids, given four rendering functions that map to a non empty fragment without embedded `_` chars
+    let gen4 f1 f2 f3 f4: 'a * 'b * 'c * 'd -> StreamId = ...
+
+    /// Validates and extracts the StreamId into a single fragment value
+    /// Throws if the item embeds a `_`, is `null`, or is empty
+    let parseExactlyOne (x: StreamId): string = ...
+    /// Validates and extracts the StreamId into a single fragment value
+    /// Throws if the item embeds a `_`, is `null`, or is empty
+    let (|Parse1|) (x: StreamId): string = ...
+
+    /// Splits a StreamId into the specified number of fragments.
+    /// Throws if the value does not adhere to the expected fragment count.
+    let parse count (x: StreamId): string[] =
+        let xs = Elements.split x
+        if xs.Length <> count then
+            invalidArg "x" (sprintf "StreamId '{%s}' must have {%d} elements, but had {%d}." (toString x) count xs.Length)
+        xs
+    /// Splits a StreamId into an expected number of fragments.
+    /// Throws if the value does not adhere to the expected fragment count.
+    let (|Parse|) count: StreamId -> string[] = parse count
+
+    /// Extracts a single fragment from the StreamId. Throws if the value is composed of more than one item.
+    let dec f (x: StreamId) =                   parseExactlyOne x |> f
+    /// Extracts 2 fragments from the StreamId. Throws if the value does not adhere to that expected form.
+    let dec2 f1 f2 (x: StreamId) =              let xs = parse 2 x in struct (f1 xs[0], f2 xs[1])
+    /// Extracts 3 fragments from the StreamId. Throws if the value does not adhere to that expected form.
+    let dec3 f1 f2 f3 (x: StreamId) =           let xs = parse 3 x in struct (f1 xs[0], f2 xs[1], f3 xs[2])
+    /// Extracts 4 fragments from the StreamId. Throws if the value does not adhere to that expected form.
+    let dec4 f1 f2 f3 f4 (x: StreamId) =        let xs = parse 4 x in struct (f1 xs[0], f2 xs[1], f3 xs[2], f4 xs[3])
+```
+
 <a name="module-stream"></a>
 ## `module Stream / module Reactions`: Contracts for parsing / routing event records
 
 The following is a set of individually small helpers that work together to allow one to succinctly extract relevant events from batches being handled in reactions.
+
+See the [`StreamName`/`StreamId` section above](#streamname) for the underlying interfaces.
 
 ```fsharp
 (* Stream id generation/parsing logic. Normally kept private; Reactions module exposes relevant parsers to the wider application *)
