@@ -15,8 +15,8 @@ open System.Runtime.Serialization
 
 /// Endows any type that inherits this class with standard .NET comparison semantics using a supplied token identifier
 [<AbstractClass>]
-type Comparable<'TComp, 'Token when 'TComp :> Comparable<'TComp, 'Token> and 'Token : comparison>(token : 'Token) =
-    member private _.Token = token // I can haz protected?
+type Comparable<'TComp, 'Token when 'TComp :> Comparable<'TComp, 'Token> and 'Token : comparison>(token: 'Token) =
+    member val private Token = token // I can haz protected?
     override x.Equals y = match y with :? Comparable<'TComp, 'Token> as y -> x.Token = y.Token | _ -> false
     override _.GetHashCode() = hash token
     interface IComparable with
@@ -31,8 +31,8 @@ type Comparable<'TComp, 'Token when 'TComp :> Comparable<'TComp, 'Token> and 'To
 type SkuId private (id : string) =
     inherit Comparable<SkuId, string>(id)
     [<IgnoreDataMember>] // Prevent swashbuckle inferring there's a "value" field
-    member _.Value = id
-    override _.ToString () = id
+    member val Value = id
+    override _.ToString() = id
     new (guid: Guid) = SkuId (guid.ToString("N"))
     // NB tests (specifically, empty) lean on having a ctor of this shape
     new() = SkuId(Guid.NewGuid())
@@ -52,8 +52,8 @@ and private SkuIdJsonConverter() =
 type CartId private (id : string) =
     inherit Comparable<CartId, string>(id)
     [<IgnoreDataMember>] // Prevent swashbuckle inferring there's a "value" field
-    member _.Value = id
-    override _.ToString () = id
+    member val Value = id
+    override _.ToString() = id
     // NB tests lean on having a ctor of this shape
     new (guid: Guid) = CartId (guid.ToString("N"))
     // NB for validation [and XSS] purposes we must prove it translatable to a Guid
