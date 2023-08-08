@@ -1,4 +1,4 @@
-# FsCodec [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/fscodec.svg?logo=nuget)](https://www.nuget.org/packages/fscodec/) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE)
+ [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/fscodec.svg?logo=nuget)](https://www.nuget.org/packages/fscodec/) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE)
 
 Defines a minimal interface for serialization and deserialization of events for event-sourcing systems on .NET.
 Provides implementation packages for writing simple yet versionable Event Contract definitions in F# using ubiquitous serializers.
@@ -14,6 +14,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
   - [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19): defines a base interface for serializers.
   - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in a serializer and/or Union Encoder of your choice (typically this is used to supply a pair `encode` and `tryDecode` functions)
   - [`FsCodec.StreamName`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs): strongly-typed wrapper for a Stream Name, together with factory functions and active patterns for parsing same
+  - [`FsCodec.StreamId`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamId.fs): strongly-typed wrapper for a Stream Id, together with factory functions and active patterns for parsing same
 - [![Box Codec NuGet](https://img.shields.io/nuget/v/FsCodec.Box.svg)](https://www.nuget.org/packages/FsCodec.Box/) `FsCodec.Box`: See [`FsCodec.Box.Codec`](#boxcodec); `IEventCodec<obj>` implementation that provides a null encode/decode step in order to enable decoupling of serialization/deserialization concerns from the encoding aspect, typically used together with  [`Equinox.MemoryStore`](https://www.fuget.org/packages/Equinox.MemoryStore)
   - [depends](https://www.fuget.org/packages/FsCodec.Box) on `FsCodec`, `TypeShape >= 10`
 - [![Newtonsoft.Json Codec NuGet](https://img.shields.io/nuget/v/FsCodec.NewtonsoftJson.svg)](https://www.nuget.org/packages/FsCodec.NewtonsoftJson/) `FsCodec.NewtonsoftJson`: As described in [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/), enabled tagging of F# Discriminated Union cases in a versionable manner with low-dependencies using [TypeShape](https://github.com/eiriktsarpalis/TypeShape)'s [`UnionContractEncoder`](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores)
@@ -29,8 +30,8 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 
 - [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4) represents a single event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type)
 - [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23) represents a single stored event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type). Inherits `IEventData`, adding `Index` and `IsUnfold` in order to represent the position on the timeline that the event logically occupies.
-- [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode : 'Context option * 'Event -> IEventData` and `TryDecode : ITimelineEvent -> 'Event option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
-- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode : 'Event -> string * byte[]` and `tryDecode : string * byte[] -> 'Event option` functions (other overloads are available for advanced cases)
+- [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode: 'Context option * 'Event -> IEventData` and `TryDecode: ITimelineEvent -> 'Event option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
+- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode: 'Event -> string * byte[]` and `tryDecode: string * byte[] -> 'Event option` functions (other overloads are available for advanced cases)
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L44) is a low level helper to create an `IEventData` directly for purposes such as tests etc.
 - [`FsCodec.Core.TimelineEvent.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L58) is a low level helper to create an `ITimelineEvent` directly for purposes such as tests etc.
 
@@ -198,13 +199,13 @@ The minimal code needed to define helpers to consistently roundtrip where one on
 ```fsharp
 open FsCodec.SystemTextJson // or FsCodec.NewtonsoftJson if you prefer and/or have legacy converters etc
 module Contract =
-    type Item = { value : string option }
+    type Item = { value: string option }
     // No special policies required as we are using standard types
     let private serdes = Serdes Options.Default
     // implies default settings from Options.Create(), i.e., includes UnsafeRelaxedJsonEscaping
-    let serialize (x : Item) : string = serdes.Serialize x
+    let serialize (x: Item): string = serdes.Serialize x
     // implies default settings from Options.Create()
-    let deserialize (json : string) = serdes.Deserialize json
+    let deserialize (json: string) = serdes.Deserialize json
 ```
 
 #### More advanced case necessitating a custom converter
@@ -213,12 +214,12 @@ While it's hard to justify the wrapping in the previous case, this illustrates h
 
 ```fsharp
 module Contract =
-    type Item = { Value : string option; other : TypeThatRequiresMyCustomConverter }
+    type Item = { value: string option; other: TypeThatRequiresMyCustomConverter }
     /// Options to be used within this contract - note the Pascal Cased Value property compared to the previous record definition
     let private options = Options.Create(converters = [| MyCustomConverter() |], camelCase = true)
     let private serdes = Serdes options
-    let serialize (x : Item) = serdes.Serialize x
-    let deserialize (json : string) : Item = serdes.Deserialize json
+    let serialize (x: Item) = serdes.Serialize x
+    let deserialize (json: string): Item = serdes.Deserialize json
 ```
 
 ## Encoding and conversion of F# types
@@ -367,20 +368,20 @@ Pending and timeline Events share the following common contract:
 /// Common form for either a Domain Event or an Unfolded Event, without any context regarding its place in the timeline of events
 type IEventData<'Format> =
     /// The Event Type, used to drive deserialization
-    abstract member EventType : string
+    abstract member EventType: string
     /// Event body, as UTF-8 encoded JSON ready to be injected into the Store
-    abstract member Data : 'Format
+    abstract member Data: 'Format
     /// Optional metadata (null, or same as Data, not written if missing)
-    abstract member Meta : 'Format
+    abstract member Meta: 'Format
     /// Application-generated identifier used to drive idempotent writes based on deterministic Ids and/or Request Id
-    abstract member EventId : System.Guid
+    abstract member EventId: System.Guid
     /// The Correlation Id associated with the flow that generated this event. Can be `null`
-    abstract member CorrelationId : string
+    abstract member CorrelationId: string
     /// The Causation Id associated with the flow that generated this event. Can be `null`
-    abstract member CausationId : string
+    abstract member CausationId: string
     /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
     /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
-    abstract member Timestamp : System.DateTimeOffset
+    abstract member Timestamp: System.DateTimeOffset
 ```
 
 <a name="ITimelineEvent"></a>
@@ -393,11 +394,11 @@ Events from a versioned feed and/or being loaded from an Event Store bring addit
 type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
-    abstract member Index : int64
+    abstract member Index: int64
     /// Application-supplied context related to the origin of this event
-    abstract member Context : obj
+    abstract member Context: obj
     /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
-    abstract member IsUnfold : bool
+    abstract member IsUnfold: bool
 ```
 
 ## Contracts for parsing / routing event records
@@ -405,15 +406,9 @@ type ITimelineEvent<'Format> =
 See [a scheme for the serializing Events modelled as an F# Discriminated Union](https://eiriktsarpalis.wordpress.com/2018/10/30/a-contract-pattern-for-schemaless-datastores/) for details of the representation scheme used for the events when using `FsCodec.NewtonsoftJson.Codec.Create`. We'll use the following example contract for the illustration:
 
 ```fsharp
-// By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
-let [<Literal>] Category = "Favorites"
-
-/// Generates a strongly typed StreamName from the supplied Id (incorporating the Category name)
-let streamName (id : ClientId) = FsCodec.StreamName.create Category (ClientId.toString id)
-
 module Events =
 
-    type Added = { item : string }
+    type Added = { item: string }
     type Removed = { name: string }
     type Event =
         | Added of Added
@@ -464,8 +459,8 @@ open FSharp.UMX
 type [<Measure>] clientId
 type ClientId = string<clientId>
 module ClientId =
-    let parse (str : string) : ClientId = % str
-    let toString (value : ClientId) : string = % value
+    let parse (str: string): ClientId = % str
+    let toString (value: ClientId): string = % value
     let (|Parse|) = ClientId.parse
 ```
 
@@ -495,58 +490,123 @@ type StreamName = string<streamName>
 
 module StreamName =
 
-    (* Creators: Building from constituent parts
-       Guards against malformed category, streamId and/or streamIdElements with exceptions *)
-
-    // Recommended way to specify a stream identifier; a category identifier and a streamId representing the aggregate's identity
-    // category is separated from id by `-`
-    let create (category : string) streamId : StreamName = ...
-
-    // Composes a StreamName from a category and > 1 name elements.
-    // category is separated from the streamId by '-'; elements are separated from each other by '_'
-    let compose (category : string) (streamIdElements : string seq) : StreamName = ...
+    let toString (streamName: StreamName): string = UMX.untag streamName
 
     // Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-` (dash)
     // Throws <code>InvalidArgumentException</code> if it does not adhere to that form
-    let parse (rawStreamName : string) : StreamName = ...
+    let parse (rawStreamName: string): StreamName = ...
 
-    (* Rendering *)
+    // Recommended way to specify a stream identifier; a category identifier and a streamId representing the aggregate's identity
+    // category is separated from id by `-`
+    let create (category: string) streamId: StreamName = ...
 
-    let toString (streamName : StreamName) : string = UMX.untag streamName
-
-    (* Parsing: Raw Stream name Validation functions/pattern that handle malformed cases without throwing *)
-
-    // Attempts to split a Stream Name in the form {category}-{streamId} into its two elements.
-    // The {streamId} segment is permitted to include embedded '-' (dash) characters
-    let trySplitCategoryAndId (rawStreamName : string) : (string * string) voption = ...
-
-    // Attempts to split a Stream Name in the form {category}-{streamId} into its two elements.
-    // The {streamId} segment is permitted to include embedded '-' (dash) characters
-    // Yields <code>NotCategorized</code> if it does not adhere to that form.
-    let (|Categorized|NotCategorized|) (rawStreamName : string) : Choice<struct (string*string), unit> = ...
-
-    (* Splitting: functions/Active patterns for (i.e. generated via `parse`, `create` or `compose`) well-formed Stream Names
-       Will throw if presented with malformed strings [generated via alternate means] *)
+    // Composes a StreamName from a category and > 1 name elements.
+    // category is separated from the streamId by '-'; elements are separated from each other by '_'
+    let compose (category: string) (streamIdElements: string[]): StreamName = ...
 
     /// Extracts the category portion of the StreamName
-    let category (x : StreamName) : string = ...
+    let category (x: StreamName): string = ...
     let (|Category|) = category
     
-    // Splits a well-formed Stream Name of the form {category}-{streamId} into its two elements.
-    // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
-    // <remarks>Inverse of <code>create</code>
-    let splitCategoryAndStreamId (streamName : StreamName) : struct (string * string) = ...
-    let (|CategoryAndId|) : StreamName -> struct (string * string) = splitCategoryAndId
+    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.<br/>
+    /// Throws <c>InvalidArgumentException</c> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).</summary>
+    /// <remarks>Inverse of <c>create</c></remarks>
+    let split (streamName: StreamName): struct (string * StreamId) = ...
+    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.<br/>
+    /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed.</summary>
+    /// <remarks>Inverse of <c>create</c></remarks>
+    let (|Split|): StreamName -> struct (string * StreamId) = split
 
-    // Splits a `_`-separated set of id elements (as formed by `compose`) into its (one or more) constituent elements.
-    // <remarks>Inverse of what <code>compose</code> does to the streamIdElements
-    let (|IdElements|) (streamId : string) : string[] = ...
+    /// Yields the StreamId, if the Category matches the specified one
+    let tryFind categoryName (x: StreamName): StreamId voption = ...
+```
 
-    // Splits a well-formed Stream Name of the form {category}-{id1}_{id2}_{idN} into a pair of category and ids
-    // Throws <code>InvalidArgumentException</code> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
-    // <remarks>Inverse of <code>create</code>
-    let splitCategoryAndIds (streamName : StreamName) : struct (string * string)[] = ...
-    let (|CategoryAndIds|) : StreamName -> struct (string * string[]) = splitCategoryAndIds
+The `StreamId` part's key helpers are as follows:
+
+```fsharp
+/// Represents the second half of a canonical StreamName, i.e., the streamId in "{categoryName}-{streamId}"
+type StreamId = string<streamId>
+and [<Measure>] streamId
+
+/// Helpers for composing and rendering StreamId values
+module StreamId =
+
+    /// Any string can be a StreamId; parse/dec/Elements.split will judge whether it adheres to a valid form
+    let create: string -> StreamId = UMX.tag
+
+    /// Render as a string for external use
+    let toString: StreamId -> string = UMX.untag
+
+    /// Generate a StreamId from a single application-level id, given a rendering function that maps to a non empty fragment without embedded `_` chars
+    let gen (f: 'a -> string): 'a -> StreamId = ...
+    /// Generate a StreamId from a tuple of application-level ids, given two rendering functions that map to a non empty fragment without embedded `_` chars
+    let gen2 f1 f2: 'a * 'b -> StreamId = ...
+    /// Generate a StreamId from a triple of application-level ids, given three rendering functions that map to a non empty fragment without embedded `_` chars
+    let gen3 f1 f2 f3: 'a * 'b * 'c -> StreamId = ...
+    /// Generate a StreamId from a 4-tuple of application-level ids, given four rendering functions that map to a non empty fragment without embedded `_` chars
+    let gen4 f1 f2 f3 f4: 'a * 'b * 'c * 'd -> StreamId = ...
+
+    /// Validates and extracts the StreamId into a single fragment value
+    /// Throws if the item embeds a `_`, is `null`, or is empty
+    let parseExactlyOne (x: StreamId): string = ...
+    /// Validates and extracts the StreamId into a single fragment value
+    /// Throws if the item embeds a `_`, is `null`, or is empty
+    let (|Parse1|) (x: StreamId): string = ...
+
+    /// Splits a StreamId into the specified number of fragments.
+    /// Throws if the value does not adhere to the expected fragment count.
+    let parse count (x: StreamId): string[] =
+        let xs = Elements.split x
+        if xs.Length <> count then
+            invalidArg "x" (sprintf "StreamId '{%s}' must have {%d} elements, but had {%d}." (toString x) count xs.Length)
+        xs
+    /// Splits a StreamId into an expected number of fragments.
+    /// Throws if the value does not adhere to the expected fragment count.
+    let (|Parse|) count: StreamId -> string[] = parse count
+
+    /// Extracts a single fragment from the StreamId. Throws if the value is composed of more than one item.
+    let dec f (x: StreamId) =                   parseExactlyOne x |> f
+    /// Extracts 2 fragments from the StreamId. Throws if the value does not adhere to that expected form.
+    let dec2 f1 f2 (x: StreamId) =              let xs = parse 2 x in struct (f1 xs[0], f2 xs[1])
+    /// Extracts 3 fragments from the StreamId. Throws if the value does not adhere to that expected form.
+    let dec3 f1 f2 f3 (x: StreamId) =           let xs = parse 3 x in struct (f1 xs[0], f2 xs[1], f3 xs[2])
+    /// Extracts 4 fragments from the StreamId. Throws if the value does not adhere to that expected form.
+    let dec4 f1 f2 f3 f4 (x: StreamId) =        let xs = parse 4 x in struct (f1 xs[0], f2 xs[1], f3 xs[2], f4 xs[3])
+```
+
+<a name="module-stream"></a>
+## `module Stream / module Reactions`: Contracts for parsing / routing event records
+
+The following is a set of individually small helpers that work together to allow one to succinctly extract relevant events from batches being handled in reactions.
+
+See the [`StreamName`/`StreamId` section above](#streamname) for the underlying interfaces.
+
+```fsharp
+(* Stream id generation/parsing logic. Normally kept private; Reactions module exposes relevant parsers to the wider application *)
+module private Stream =
+    // By convention, each contract defines a 'category' used as the first part of the stream name (e.g. `"Favorites-ClientA"`)
+    let [<Literal>] Category = "Favorites"
+    /// Generates a strongly typed StreamId from the supplied Id
+    let id: ClientId -> FsCodec.StreamId = FsCodec.StreamId.gen ClientId.toString
+    /// Maps from an app level identifier to a stream name as used when storing events in that stream
+    /// Not normally necessary - typically you generate StreamIds, and you'll load from something that knows the Category
+    let name: ClientId -> FsCodec.StreamName = id >> FsCodec.StreamName.create Category
+    /// Inverse of `id`; decodes a StreamId into its constituent parts; throws if the presented StreamId does not adhere to the expected format
+    let decodeId: FsCodec.StreamId -> ClientId = FsCodec.StreamId.dec ClientId.parse
+    /// Inspects a stream name; if for this Category, decodes the elements into application level ids. Throws if it's malformed.
+    let tryDecode: FsCodec.StreamName -> ClientId voption = FsCodec.StreamName.tryFind Category >> ValueOption.map decodeId
+
+module Reactions =    
+   
+    /// Active Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
+    /// Yields a strongly typed id from the streamId if the Category matches
+    let [<return: Struct>] (|For|_|) = Stream.tryDecode
+
+    let private dec = Streams.codec<Events.Event>
+    /// Yields decoded events and relevant strongly typed ids if the Category of the Stream Name matches
+    let [<return: Struct>] (|Decode|_|) = function
+        | struct (For clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
+        | _ -> ValueNone
 ```
 
 ## Decoding events
@@ -554,17 +614,17 @@ module StreamName =
 Given the following example events from across streams:
 
 ```fsharp
-let utf8 (s : string) = System.Text.Encoding.UTF8.GetBytes(s)
+let utf8 (s: string) = System.Text.Encoding.UTF8.GetBytes(s)
+let streamForClient c = Stream.name (ClientId.parse c)
 let events = [
-    StreamName.create "Favorites" "ClientA", Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "a" }""")
-    StreamName.parse "Favorites-ClientB",    Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "b" }""")
-    streamName (ClientId.parse "ClientA"),   Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "b" }""")
-    StreamName.parse "Favorites-ClientB",    Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "a" }""")
-    StreamName.parse "Favorites-ClientB",    Core.TimelineEvent.Create(2L, "Removed",   utf8 """{ "item": "a" }""")
-    StreamName.create "Favorites" "ClientB", Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")
-    StreamName.parse "Misc-x",               Core.TimelineEvent.Create(0L, "Dummy",     utf8 """{ "item": "z" }""")
+    Stream.name (ClientId.parse "ClientA"),                 FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "a" }""")
+    streamForClient "ClientB",                              FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "b" }""")
+    FsCodec.StreamName.parse "Favorites-ClientA",           FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "b" }""")
+    streamForClient "ClientB",                              FsCodec.Core.TimelineEvent.Create(1L, "Added",     utf8 """{ "item": "a" }""")
+    streamForClient "ClientB",                              FsCodec.Core.TimelineEvent.Create(2L, "Removed",   utf8 """{ "item": "a" }""")
+    FsCodec.StreamName.compose "Favorites" [| "ClientB" |], FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")
+    FsCodec.StreamName.parse "Misc-x",                      FsCodec.Core.TimelineEvent.Create(0L, "Dummy",     utf8 """{ "item": "z" }""")
 ]
-```
 
 and the helpers defined above, we can route and/or filter them as follows:
 
@@ -575,34 +635,25 @@ and EventBody = ReadOnlyMemory<byte>
 and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
 
 let streamCodec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-    Codec.Create<'E>(Store.options)
+    Codec.Create<'E>(serdes = Store.serdes)
 
 let dec = streamCodec<Events.Event>
-
-let [<return:Struct>] (|TryDecodeEvent|_|) (codec : Codec<'E>) event = codec.TryDecode event
+let [<return:Struct>] (|TryDecodeEvent|_|) (codec: Codec<'E>) event = codec.TryDecode event
 
 let runCodecExplicit () =
     for stream, event in events do
         match stream, event with
-        | StreamName clientId, TryDecodeEvent dec e ->
-            printfn "Client %s, event %A" (ClientId.toString clientId) e
-        | FsCodec.StreamName.CategoryAndId struct (cat, id), e ->
-            printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A" cat id e.Index e.EventType
+        | Reactions.For clientId, TryDecodeEvent dec e ->
+            printfn $"Client %s{ClientId.toString clientId}, event %A{e}"
+        | FsCodec.StreamName.Split struct (cat, sid), e ->
+            printfn $"Unhandled Event: Category %s{cat}, Ids %s{FsCodec.StreamId.toString sid}, Index %d{e.Index}, Event: %A{e.EventType}"
 ```
 
-The `StreamName clientId` bit above refers to an inverse of the `streamName` function, which parses a `StreamName`
+The `Reactions.For clientId` bit above is the inverse of the `Stream.name` function. It parses a `StreamName`
 back to the the application-level identifiers ([the `ClientId` type](#umx)), _but only if the `Category`
-part of the name matches (i.e., the [stream name](#streamname) `StartsWith("Favorites=")`). While this may seem
+part of the name matches (i.e., the [stream name](#streamname) `StartsWith("Favorites-")`). While this may seem
 like a lot of busywork, it pays off when you have multiple stream categories, each with different identifiers (or
 cases where you have a complex identifiers, e.g., where you have a Stream Name that's composed of a Tenant Id and a User Id)
-
-```fsharp
-/// Active Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
-/// Yields a strongly typed id from the streamId _if the Category matches_
-let [<return: Struct>] (|StreamName|_|) = function
-| FsCodec.StreamName.CategoryAndId (Category, ClientId.Parse clientId) -> ValueSome clientId
-| _ -> ValueNone
-```
 
 invoking `runCodecExplicit ()` yields:
 
@@ -622,6 +673,126 @@ There are two events that we were not able to decode, for varying reasons:
 2. `"Favorites" "ClientB", FsCodec.Core.TimelineEvent.Create(3L, "Exported",  utf8 """{ "count": 2 }""")` represents an Event that has recently been defined in the source system, but not yet handled by the processor. In the event of such an unclassified event occurring within a stream contract we want to know when we're not handling a given event. That's trapped above and logged as `Unhandled Event: Category Favorites, Id ClientB, Index 3, Event: "Exported"`.
 
 _Note however, that we don't have a clean way to trap the data and log it. See [Logging unmatched events](#logging-unmatched-events) for an example of how one might log such unmatched events_
+
+## Adding Matchers to the Event Contract
+
+We can clarify the consuming code a little by adding further helper Active Patterns alongside the event contract :-
+
+```fsharp
+module ReactionsBasic =    
+   
+    let dec = streamCodec<Events.Event>
+    let (|DecodeSingle|_|): FsCodec.StreamName * Event -> (ClientId * Events.Event) option = function
+        | Reactions.For clientId, TryDecodeEvent dec event -> Some (clientId, event)
+        | _ -> None
+```
+
+That boxes off the complex pattern matching close to the contract itself, and lets us match on the events in a handler as follows:
+
+```fsharp
+let reactSingle (clientId: ClientId) (event: Events.Event) =
+    printfn $"Client %s{ClientId.toString clientId}, event %A{event}"
+    
+let runCodecMatch () =
+    for streamName, event in events do
+        match streamName, event with
+        | ReactionsBasic.DecodeSingle (clientId, event) ->
+            reactSingle clientId event
+        | FsCodec.StreamName.Split (cat, sid), e ->
+            printfn $"Unhandled Event: Category %s{cat}, Ids {FsCodec.StreamId.toString sid}, Index %d{e.Index}, Event: %s{e.EventType} "
+```
+
+<a name="reactions"></a>
+## Processing Reactions, Logging unmatched events
+
+The following standard helpers (which use the [`Serilog`](https://github.com/serilog/serilog) library), can be used to selectively layer on some logging when run with logging upped to `Debug` level:
+
+```fsharp
+module Streams =
+
+    // Events coming from streams are carried as a TimelineEvent; the body type is configurable
+    type Event = FsCodec.ITimelineEvent<EventBody>
+    // Propulsion's Sinks by default use ReadOnlyMemory<byte> as the storage format
+    and EventBody = ReadOnlyMemory<byte>
+    // the above Events can be decoded by a Codec implementing this interface
+    and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
+
+    /// Generates a Codec for the specified Event Union type
+    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
+        // Borrowing the Store serdes; frequently the events you parse can use less complex options...
+        Codec.Create<'E>(serdes = Store.serdes)
+
+    // as we know our event bodies are all UTF8 encoded JSON, we can render the string as a log event property
+    // alternately, you can render the EventBody directly and ensure you have appropriate type destructuring configured
+    let private render (x: EventBody): string =
+        System.Text.Encoding.UTF8.GetString(x.Span)
+    /// Uses the supplied codec to decode the supplied event record `x`
+    /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
+    let tryDecode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
+        match codec.TryDecode x with
+        | ValueNone ->
+            if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
+                log.ForContext("event", render x.Data, true)
+                    .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, streamName)
+            ValueNone
+        | ValueSome x -> ValueSome x
+    
+    /// Attempts to decode the supplied Event using the supplied Codec
+    let [<return: Struct>] (|TryDecode|_|) (codec: Codec<'E>) struct (streamName, event) =
+        tryDecode Serilog.Log.Logger codec streamName event
+    module Array = let inline chooseV f xs = [| for item in xs do match f item with ValueSome v -> yield v | ValueNone -> () |]
+    /// Yields the subset of events that successfully decoded (could be Array.empty)
+    let decode<'E> (codec: Codec<'E>) struct (streamName, events: Event[]): 'E[] =
+        events |> Array.chooseV (tryDecode<'E> Serilog.Log.Logger codec streamName)
+    let (|Decode|) = decode
+```
+
+If we assume we have the standard `module Streams`, `module Events`, and `module Stream` as above, and the following `module Reactions`:
+
+```
+module Reactions =
+   
+    let private dec = Streams.codec<Events.Event>
+    /// Yields decoded events and relevant strongly typed ids if the Category of the Stream Name matches
+    let [<return: Struct>] (|Decode|_|) = function
+        | struct (For clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
+        | _ -> ValueNone
+    
+let react (clientId: ClientId) (event: Events.Event[]) =
+    printfn "Client %s, events %A" (ClientId.toString clientId) event
+    
+let runCodec () =
+    for streamName, xs in events |> Seq.groupBy fst do
+        let events = xs |> Seq.map snd |> Array.ofSeq
+        match struct (streamName, events) with
+        | Reactions.Decode (clientId, events) ->
+            react clientId events
+        | FsCodec.StreamName.Split (cat, sid), events ->
+            for e in events do
+                printfn "Unhandled Event: Category %s, Id %A, Index %d, Event: %A " cat sid e.Index e.EventType
+
+runCodec ()
+```
+
+Normally, the `log.IsEnabled` call instantly rules out any need for logging.
+We can activate this inert logging hook by reconfiguring the logging as follows:
+
+```fsharp
+// Switch on debug logging to get detailed information about events that don't match (which has no singificant perf cost when not switched on)
+open Serilog
+open Serilog.Events
+let outputTemplate = "{Message} {Properties}{NewLine}"
+Serilog.Log.Logger <-
+    LoggerConfiguration()
+        .MinimumLevel.Debug()
+        .WriteTo.Console(LogEventLevel.Debug, outputTemplate=outputTemplate)
+        .CreateLogger()
+runCodec ()
+```
+
+This adds the following additional output when triggering `runCodec ()`:-
+
+    Codec "<Snipped>" Could not decode "Exported" in "Favorites-ClientB" {event="{ \"count\": 2 }"}
 
 <a name="upconversion"></a>
 ### Handling versioning of events in F# with FsCodec
@@ -651,7 +822,7 @@ to a match expression.
      - pull out helper functions for pattern matches and do the upconversion inline in the fold
         ```fsharp
         module Fold =
-            let applyUpdate state (e : PrppertiesV2) = ...
+            let applyUpdate state (e: PrppertiesV2) = ...
             let evolve state = function
             | Events.PropertiesUpdated e -> applyUpdate state e
             | Events.PropertiesUpdatedV2 e -> applyUpdate state { a = e.a; b = PropertiesV2.defaultB }
@@ -758,139 +929,14 @@ module Events =
         | PropertiesUpdated e -> {| properties = { a = e.properties.a; b = PropertiesV2.defaultB } |}
         | PropertiesUpdatedV2 e -> e
 module Fold =
-    type State = { b : int }
-    let evolve state : Events.Event -> State = function
+    type State = { b: int }
+    let evolve state: Events.Event -> State = function
     | Events.Updated e -> { state with b = e.properties.b }
 ```
 
 The main reason this is not a universal solution is that such Active Patterns are currently limited to 7 cases.
 
 See the [`Upconversion active patterns`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.NewtonsoftJson.Tests/PicklerTests.fs#L114).
-
-## Adding Matchers to the Event Contract
-
-We can clarify the consuming code a little by adding further helper Active Patterns alongside the event contract :-
-
-```fsharp
-module ReactionsBasic =    
-   
-    let dec = streamCodec<Events.Event>
-    
-    let (|MatchSingle|_|) : FsCodec.StreamName * Event -> (ClientId * Events.Event) option = function
-        | StreamName clientId, TryDecodeEvent dec event -> Some (clientId, event)
-        | _ -> None
-```
-
-That boxes off the complex pattern matching close to the contract itself, and lets us match on the events in a handler as follows:
-
-```fsharp
-let reactSingle (clientId : ClientId) (event : Events.Event) =
-    printfn "Client %s, event %A" (ClientId.toString clientId) event
-    
-let runCodecMatch () =
-    for streamName, event in events do
-        match streamName, event with
-        | ReactionsBasic.MatchSingle (clientId, event) ->
-            reactSingle clientId event
-        | FsCodec.StreamName.CategoryAndId (cat, id), e ->
-            printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-```
-
-<a name="reactions"></a>
-## Processing Reactions, Logging unmatched events
-
-The following standard helpers (which use the [`Serilog`](https://github.com/serilog/serilog) library), can be used to selectively layer on some logging when run with logging upped to `Debug` level:
-
-```fsharp
-module Streams =
-
-    (* TODO if using Propulsion, you can `open Propulsion.Sinks` here
-       NOTE it can still be useful to have type aliases so app wiring can refer to a terse `Streams.Event` etc *)
-    
-    // Events coming from streams are carried as a TimelineEvent; the body type is configurable
-    type Event = FsCodec.ITimelineEvent<EventBody>
-    // Propulsion's Sinks by default use ReadOnlyMemory<byte> as the storage format
-    and EventBody = ReadOnlyMemory<byte>
-    // the above Events can be decoded by a Codec implementing this interface
-    and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
-
-    /// Generates a Codec for the specified Event Union type
-    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        // Borrowing the Store serdes; frequently the events you parse can use less complex options...
-        Codec.Create<'E>(serdes = Store.serdes)
-
-    // as we know our event bodies are all UTF8 encoded JSON, we can render the string as a log event property
-    // alternately, you can render the EventBody directly and ensure you have appropriate type destructuring configured
-    let private render (x : EventBody) : string =
-        System.Text.Encoding.UTF8.GetString(x.Span)
-    /// Uses the supplied codec to decode the supplied event record `x`
-    /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
-    let tryDecode<'E> (log : Serilog.ILogger) (codec : Codec<'E>) (streamName : FsCodec.StreamName) (x : Event) =
-        match codec.TryDecode x with
-        | ValueNone ->
-            if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
-                log.ForContext("event", render x.Data, true)
-                    .Debug("Codec {type} Could not decode {eventType} in {stream}", codec.GetType().FullName, x.EventType, streamName)
-            ValueNone
-        | ValueSome x -> ValueSome x
-    
-    /// Attempts to decode the supplied Event using the supplied Codec
-    let [<return: Struct>] (|TryDecode|_|) (codec : Codec<'E>) struct (streamName, event) =
-        tryDecode Serilog.Log.Logger codec streamName event
-    module Array = let inline chooseV f xs = [| for item in xs do match f item with ValueSome v -> yield v | ValueNone -> () |]
-    /// Yields the subset of events that successfully decoded (could be Array.empty)
-    let decode<'E> (codec : Codec<'E>) struct (streamName, events : Event[]) : 'E[] =
-        events |> Array.chooseV (tryDecode<'E> Serilog.Log.Logger codec streamName)
-    let (|Decode|) = decode
-```
-
-If we assume we have the standard `module Streams`, `module Events` as above, and the following `module Reactions`: 
-
-```
-module Reactions =    
-   
-    let dec = Streams.codec<Events.Event>
-    
-    /// Yields decoded events and relevant strongly typed ids if the Category of the Stream Name matches
-    let [<return: Struct>] (|Match|_|) = function
-        | struct (StreamName clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
-        | _ -> ValueNone
-    
-let react (clientId : ClientId) (event : Events.Event[]) =
-    printfn "Client %s, events %A" (ClientId.toString clientId) event
-    
-let runCodec () =
-    for streamName, xs in events |> Seq.groupBy fst do
-        let events = xs |> Seq.map snd |> Array.ofSeq
-        match struct (streamName, events) with
-        | Reactions.Match (clientId, events) ->
-            react clientId events
-        | FsCodec.StreamName.CategoryAndId (cat, id), events ->
-            for e in events do
-                printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
-
-runCodec ()
-```
-
-Normally, the `log.IsEnabled` call instantly rules out any need for logging.
-We can activate this inert logging hook by reconfiguring the logging as follows:
-
-```fsharp
-// Switch on debug logging to get detailed information about events that don't match (which has no singificant perf cost when not switched on)
-open Serilog
-open Serilog.Events
-let outputTemplate = "{Message} {Properties}{NewLine}"
-Serilog.Log.Logger <-
-    LoggerConfiguration()
-        .MinimumLevel.Debug()
-        .WriteTo.Console(LogEventLevel.Debug, outputTemplate=outputTemplate)
-        .CreateLogger()
-runCodec ()
-```
-
-This adds the following additional output when triggering `runCodec ()`:-
-
-    Codec "<Snipped>" Could not decode "Exported" in "Favorites-ClientB" {event="{ \"count\": 2 }"}
 
 <a name="metadata"></a>
 ## Adding metadata to events based on Domain-intrinsic information
@@ -952,9 +998,8 @@ module StoreWithContext =
     type Context = { correlationId: string; causationId: string; principal: string }
     and Codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> = FsCodec.IEventCodec<'E, Store.EventBody, Context voption>
     and Metadata = { principal: string }
-    
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-        let up (_raw : Store.Event) (contract: 'E) = contract
+        let up (_raw: Store.Event) (contract: 'E) = contract
 
         let down (event: 'E) =
             // Not producing any Metadata based on the application-level event in this instance
@@ -962,7 +1007,7 @@ module StoreWithContext =
             let ts = ValueNone
             struct (event, meta, ts)
 
-        let mapCausation (context : Context voption) (_downConvertedMeta : Metadata voption) =
+        let mapCausation (context: Context voption) (_downConvertedMeta: Metadata voption) =
             let eventId = Guid.NewGuid()
             let metadata, corrId, causeId =
                 match context with
@@ -1084,32 +1129,31 @@ module StreamsWithMeta =
         Codec.Create<Event<'E>, 'E, Metadata>(up, down, options = Store.options) 
 ```
 
-Then, per the relevant Event contract, we define a Matcher to decode relevant events from the stream:
+Then, per the relevant Event contract, we define a Decode pattern to decode relevant events from the stream, if this event is relevant for us:
 
 ```
 module ReactionsWithMeta =     
-    
-    let dec = StreamsWithMeta.codec<Events.Event>
 
-    let [<return: Struct>] (|Match|_|) = function
-        | struct (StreamName clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
+    let dec = StreamsWithMeta.codec<Events.Event>
+    let [<return: Struct>] (|Decode|_|) = function
+        | struct (Reactions.For clientId, _) & Streams.Decode dec events -> ValueSome struct (clientId, events)
         | _ -> ValueNone
 ```
 
 With the above, we can then handle batches of events for a stream as delivered without any parsing logic mixed in:
 
 ```fsharp
-let reactStreamWithMeta (clientId : ClientId) (events : StreamsWithMeta.Event<Events.Event>[]) =
+let reactStreamWithMeta (clientId: ClientId) (events: StreamsWithMeta.Event<Events.Event>[]) =
     for index, meta, event in events do
-        printfn "Client %s, event %i meta %A event %A" (ClientId.toString clientId) index meta event
+        printfn $"Client %s{ClientId.toString clientId}, event %i{index} meta %A{meta} event %A{event}"
     
 let handleWithMeta streamName events =
     match struct (streamName, events) with
-    | ReactionsWithMeta.Match (clientId, events) ->
+    | ReactionsWithMeta.Decode (clientId, events) ->
         reactStreamWithMeta clientId events
-    | FsCodec.StreamName.CategoryAndId (cat, id), _ ->
+    | FsCodec.StreamName.Split (cat, sid), _ ->
         for e in events do
-        printfn "Unhandled Event: Category %s, Id %s, Index %d, Event: %A " cat id e.Index e.EventType
+        printfn $"Unhandled Event: Category %s{cat}, Id %A{sid}, Index %d{e.Index}, Event: %s{e.EventType} "
 ```
 
 We can now dispatch as follows:

@@ -74,14 +74,14 @@ module private Union =
 
 /// Serializes a discriminated union case with a single field that is a
 /// record by flattening the record fields to the same level as the discriminator
-type UnionConverter private (discriminator : string, ?catchAllCase) =
+type UnionConverter private (discriminator: string, ?catchAllCase) =
     inherit JsonConverter()
 
-    new() = UnionConverter("case", ?catchAllCase=None)
-    new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase=None)
-    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase=match catchAllCase with null -> None | x -> Some x)
+    new() = UnionConverter("case", ?catchAllCase = None)
+    new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase = None)
+    new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
 
-    override _.CanConvert (t : Type) = Union.isUnion t
+    override _.CanConvert(t : Type) = Union.isUnion t
 
     override _.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
         let union = Union.getInfo (value.GetType())
@@ -117,7 +117,7 @@ type UnionConverter private (discriminator : string, ?catchAllCase) =
 
         writer.WriteEndObject()
 
-    override _.ReadJson(reader : JsonReader, t : Type, _ : obj, serializer : JsonSerializer) =
+    override _.ReadJson(reader: JsonReader, t: Type, _: obj, serializer: JsonSerializer) =
         let token = JToken.ReadFrom reader
         if token.Type <> JTokenType.Object then raise (FormatException(sprintf "Expected object token, got %O" token.Type))
         let inputJObject = token :?> JObject

@@ -9,8 +9,21 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `StreamId`: type-tagged wrapper for the streamId portion of a `StreamName` [#100](https://github.com/jet/FsCodec/pull/100)
+- `StreamName.Split`: Splits a StreamName into its `{category}` and `{streamId}` portions, using `StreamId` for the latter. Replaces `CategoryAndId` [#100](https://github.com/jet/FsCodec/pull/100)
+- `StreamName.tryFind`: Helper to implement `Stream.tryDecode` / `Reactions.For` pattern (to implement validation of StreamId format when parsing `StreamName`s). (See README) [#100](https://github.com/jet/FsCodec/pull/100)
+- `StreamName.Category`: covers aspects of `StreamName` pertaining to the `{category}` portion (mainly moved from `StreamName`.* equivalents; see Changed) [#100](https://github.com/jet/FsCodec/pull/100)
+
 ### Changed
+
+- `StreamName`: breaking changes to reflect introduction of strongly typed `StreamId` [#100](https://github.com/jet/FsCodec/pull/100)
+- `StreamName`: renames: `trySplitCategoryAndStreamId` -> `Internal.tryParse`; `splitCategoryAndStreamId` -> `split`; `CategoryAndId` -> `Split`; `Categorized|NotCategorized`-> `Internal`.*; `category`->`Category.ofStreamName`, `IdElements` -> `StreamId.Parse` [#100](https://github.com/jet/FsCodec/pull/100)
+
 ### Removed
+
+- `StreamName`., `CategoryAndIds`: See new `StreamId`, `StreamId.Elements` [#100](https://github.com/jet/FsCodec/pull/100)
+
 ### Fixed
 
 <a name="3.0.0-rc.10"></a>
