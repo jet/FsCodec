@@ -38,6 +38,8 @@ type private Union =
 module private Union =
 
     let isUnion : Type -> bool = memoize (fun t -> FSharpType.IsUnion(t, true))
+    // TOCONSIDER: could memoize this within the Info
+    let unionHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<System.Text.Json.Serialization.JsonConverterAttribute>, true))
 
     let private createInfo t =
         let cases = FSharpType.GetUnionCases(t, true)
@@ -47,7 +49,7 @@ module private Union =
             caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
             options =
                 t.GetCustomAttributes(typeof<JsonUnionConverterOptionsAttribute>, false)
-                |> Array.tryHead // AttributeUsage(AllowMultiple = false)
+                |> Array.tryHead // could be tryExactlyOne as AttributeUsage(AllowMultiple = false)
                 |> Option.map (fun a -> a :?> IUnionConverterOptions) }
     let getInfo : Type -> Union = memoize createInfo
 

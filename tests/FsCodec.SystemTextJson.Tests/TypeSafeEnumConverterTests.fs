@@ -10,9 +10,9 @@ open Xunit
 type Outcome = Joy | Pain | Misery
 
 let [<Fact>] happy () =
-    test <@ box Joy = TypeSafeEnum.parseT (typeof<Outcome>) "Joy" @>
+    test <@ box Joy = TypeSafeEnum.parseT typeof<Outcome> "Joy" @>
     test <@ Joy = TypeSafeEnum.parse "Joy" @>
-    test <@ box Joy = TypeSafeEnum.parseT (typeof<Outcome>) "Joy"  @>
+    test <@ box Joy = TypeSafeEnum.parseT typeof<Outcome> "Joy"  @>
     test <@ None = TypeSafeEnum.tryParse<Outcome> "Wat" @>
     raises<KeyNotFoundException> <@ TypeSafeEnum.parse<Outcome> "Wat" @>
 
