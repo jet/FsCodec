@@ -35,11 +35,38 @@ let [<Xunit.Fact>] ``Opting out`` () =
     raises<System.NotSupportedException> <@ serdesT.Serialize(Union F) @>
     test <@ Union F = Union F |> serdesT.Serialize |> serdesT.Deserialize @>
 
+module TypeSafeEnumConversion =
+
+    type SimpleTruth = True | False
+
+    let [<Xunit.Fact>] ``is case sensitive`` () =
+        let serdesT = Options.Create(autoTypeSafeEnumToJsonString = true) |> Serdes
+        True =! serdesT.Deserialize<SimpleTruth> "\"True\""
+        raises<System.Collections.Generic.KeyNotFoundException> <@ serdesT.Deserialize<SimpleTruth> "\"true\"" @>
+
+    module ``Overriding With Case Insensitive`` =
+
+        [<System.Text.Json.Serialization.JsonConverter(typeof<LogicalConverter>)>]
+        type Truth =
+            | True | False | FileNotFound
+            static member Parse: string -> Truth = TypeSafeEnum.parseF<Truth>(fun s inp -> s.Equals(inp, System.StringComparison.OrdinalIgnoreCase))
+        and LogicalConverter() =
+            inherit JsonIsomorphism<Truth, string>()
+            override _.Pickle x = match x with FileNotFound -> "lost" | x -> TypeSafeEnum.toString x
+            override _.UnPickle input = Truth.Parse input
+
+        let [<Xunit.Fact>] ``specific converter wins`` () =
+            let serdesT = Options.Create(autoTypeSafeEnumToJsonString = true) |> Serdes
+            let serdesDef = Serdes.Default
+            for serdes in [| serdesT; serdesDef |] do
+                test <@ FileNotFound = serdes.Deserialize "\"fileNotFound\"" @>
+                test <@ "\"lost\"" = serdes.Serialize FileNotFound @>
+
 let [<FsCheck.Xunit.Property>] ``auto-encodes Unions and non-unions`` (x : Any) =
     let encoded = serdes.Serialize x
     let decoded : Any = serdes.Deserialize encoded
 
-    // Special cases for (non-roundtrippable) Some null => None conversion that STJ (and NSJ OptionConverter) do
+    // Special cases for (non roundtrip capable) Some null => None conversion that STJ (and NSJ OptionConverter) do
     // See next test for a debatable trick
     match decoded, x with
     | Union (G None), Union (G (Some null)) -> ()
