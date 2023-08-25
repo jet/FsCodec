@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.11"></a>
+## [3.0.0-rc.11] - 2023-8-25
+
+### Added
 
 - `StreamId`: type-tagged wrapper for the streamId portion of a `StreamName` [#100](https://github.com/jet/FsCodec/pull/100)
 - `StreamName.Split`: Splits a StreamName into its `{category}` and `{streamId}` portions, using `StreamId` for the latter. Replaces `CategoryAndId` [#100](https://github.com/jet/FsCodec/pull/100)
@@ -24,7 +32,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Removed
 
-- `StreamName`., `CategoryAndIds`: See new `StreamId`, `StreamId.Elements` [#100](https://github.com/jet/FsCodec/pull/100)
+- `StreamName.CategoryAndIds`: See new `StreamId`, `StreamId.Elements` [#100](https://github.com/jet/FsCodec/pull/100)
 
 ### Fixed
 
@@ -373,8 +381,9 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.10...HEAD
-[3.0.0-rc.9]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...3.0.0-rc.10
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.11...HEAD
+[3.0.0-rc.11]: https://github.com/jet/FsCodec/compare/3.0.0-rc.10...3.0.0-rc.11
+[3.0.0-rc.10]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...3.0.0-rc.10
 [3.0.0-rc.9]: https://github.com/jet/FsCodec/compare/3.0.0-rc.8...3.0.0-rc.9
 [3.0.0-rc.8]: https://github.com/jet/FsCodec/compare/3.0.0-rc.7...3.0.0-rc.8
 [3.0.0-rc.7]: https://github.com/jet/FsCodec/compare/3.0.0-rc.6...3.0.0-rc.7
