@@ -1,5 +1,6 @@
 module FsCodec.SystemTextJson.Tests.TypeSafeEnumConverterTests
 
+open FsCodec
 open FsCodec.SystemTextJson
 open System
 open System.Collections.Generic

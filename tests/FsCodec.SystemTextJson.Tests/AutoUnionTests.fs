@@ -1,5 +1,6 @@
 module FsCodec.SystemTextJson.Tests.AutoUnionTests
 
+open FsCodec
 open FsCodec.SystemTextJson
 open Swensen.Unquote
 

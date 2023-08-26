@@ -13,16 +13,16 @@ type UnionOrTypeSafeEnumConverterFactory(typeSafeEnum, union) =
         t.IsGenericType
         && (let gtd = t.GetGenericTypeDefinition() in gtd = typedefof<option<_>> || gtd = typedefof<list<_>>)
 
-    override _.CanConvert(t : Type) =
+    override _.CanConvert(t: Type) =
         not (isIntrinsic t)
-        && Union.isUnion t
-        && not (Union.unionHasJsonConverterAttribute t)
+        && FsCodec.Union.isUnion t
+        && not (UnionInfo.hasConverterAttribute t)
         && ((typeSafeEnum && union)
-            || typeSafeEnum = Union.hasOnlyNullaryCases t)
+            || typeSafeEnum = FsCodec.Union.isNullary t)
 
-    override _.CreateConverter(typ, _options) =
-        let openConverterType = if Union.hasOnlyNullaryCases typ then typedefof<TypeSafeEnumConverter<_>> else typedefof<UnionConverter<_>>
-        let constructor = openConverterType.MakeGenericType(typ).GetConstructors() |> Array.head
+    override _.CreateConverter(t, _options) =
+        let openConverterType = if FsCodec.Union.isNullary t then typedefof<TypeSafeEnumConverter<_>> else typedefof<UnionConverter<_>>
+        let constructor = openConverterType.MakeGenericType(t).GetConstructors() |> Array.head
         let newExpression = Expression.New(constructor)
         let lambda = Expression.Lambda(typeof<ConverterActivator>, newExpression)
 
