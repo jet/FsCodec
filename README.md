@@ -80,8 +80,8 @@ _The single most complete set of `System.Text.Json` Converters is the [`FSharp.S
 ### Core converters
 
 The respective concrete Codec packages include relevant `Converter`/`JsonConverter` in order to facilitate interoperable and versionable renderings:
-  - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/TypeSafeEnumConverter.fs#L33) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
-  - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/UnionConverter.fs#L71) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within :pray: [@amjdd](https://github.com/amjjd); `System.Text.Json` reimplementation :pray: [@NickDarvey](https://github.com/NickDarvey)
+  - [`TypeSafeEnumConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/TypeSafeEnumConverter.fs) represents discriminated union (whose cases are all nullary), as a `string` in a trustworthy manner (`Newtonsoft.Json.Converters.StringEnumConverter` permits values outside the declared values) :pray: [@amjjd](https://github.com/amjjd)
+  - [`UnionConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/UnionConverter.fs#L23) represents F# discriminated unions as a single JSON `object` with both the tag value and the body content as named fields directly within :pray: [@amjdd](https://github.com/amjjd); `System.Text.Json` reimplementation :pray: [@NickDarvey](https://github.com/NickDarvey)
   
     NOTE: The encoding differs from that provided by `Newtonsoft.Json`'s default converter: `Newtonsoft.Json.Converters.DiscriminatedUnionConverter`, which encodes the fields as an array without names, which has some pros, but many obvious cons
     
@@ -305,10 +305,10 @@ type OutcomeWithOther = Joy | Pain | Misery | Other
 and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
     override _.Pickle v =
-        TypeSafeEnum.toString v
+        FsCodec.TypeSafeEnum.toString v
     override _.UnPickle json =
         json
-        |> TypeSafeEnum.tryParse<OutcomeWithOther>
+        |> FsCodec.TypeSafeEnum.tryParse<OutcomeWithOther>
         |> Option.defaultValue Other
 
 type Message2 = { name: string option; outcome: OutcomeWithOther }

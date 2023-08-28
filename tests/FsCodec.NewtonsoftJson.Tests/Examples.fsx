@@ -93,11 +93,11 @@ type OutcomeWithOther = Joy | Pain | Misery | Other
 and OutcomeWithCatchAllConverter() =
     inherit JsonIsomorphism<OutcomeWithOther, string>()
     override _.Pickle v =
-        TypeSafeEnum.toString v
+        FsCodec.TypeSafeEnum.toString v
 
     override _.UnPickle json =
         json
-        |> TypeSafeEnum.tryParse<OutcomeWithOther>
+        |> FsCodec.TypeSafeEnum.tryParse<OutcomeWithOther>
         |> Option.defaultValue Other
 
 type Message2 = { name: string option; outcome: OutcomeWithOther }
