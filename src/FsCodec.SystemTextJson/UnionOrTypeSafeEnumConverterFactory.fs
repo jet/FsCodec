@@ -9,6 +9,7 @@ type internal ConverterActivator = delegate of unit -> JsonConverter
 type UnionOrTypeSafeEnumConverterFactory(typeSafeEnum, union) =
     inherit JsonConverterFactory()
 
+    static let hasConverterAttribute = memoize (fun (t: Type) -> t.IsDefined(typeof<JsonConverterAttribute>, true))
     let isIntrinsic (t: Type) =
         t.IsGenericType
         && (let gtd = t.GetGenericTypeDefinition() in gtd = typedefof<option<_>> || gtd = typedefof<list<_>>)
@@ -16,7 +17,7 @@ type UnionOrTypeSafeEnumConverterFactory(typeSafeEnum, union) =
     override _.CanConvert(t: Type) =
         not (isIntrinsic t)
         && FsCodec.Union.isUnion t
-        && not (UnionInfo.hasConverterAttribute t)
+        && not (hasConverterAttribute t)
         && ((typeSafeEnum && union)
             || typeSafeEnum = FsCodec.Union.isNullary t)
 

@@ -5,11 +5,9 @@ open System.Text.Json
 
 [<AutoOpen>]
 module private Prelude =
-    /// Provides a thread-safe memoization wrapper for supplied function
-    let memoize : ('T -> 'S) -> 'T -> 'S =
-        fun f ->
-            let cache = System.Collections.Concurrent.ConcurrentDictionary<'T, 'S>()
-            fun t -> cache.GetOrAdd(t, f)
+    let memoize (f: 'T -> 'S): 'T -> 'S =
+        let cache = new System.Collections.Concurrent.ConcurrentDictionary<'T, 'S>()
+        fun t -> cache.GetOrAdd(t, f)
 
 [<AbstractClass>]
 type JsonPickler<'T>() =
@@ -56,5 +54,4 @@ type JsonIsomorphism<'T, 'U>(?targetPickler : JsonPickler<'U>) =
             match targetPickler with
             | None -> JsonSerializer.Deserialize<'U>(&reader,options)
             | Some p -> p.Read(&reader, options)
-
         x.UnPickle target

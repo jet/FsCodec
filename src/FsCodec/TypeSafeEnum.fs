@@ -8,31 +8,25 @@ open System.ComponentModel
 let isTypeSafeEnum t = Union.isUnion t && Union.isNullary t
 
 [<EditorBrowsable(EditorBrowsableState.Never)>]
-let tryParseTF (t: Type) =
-    let u = Union.Info.get t
-    fun predicate ->
-        u.cases
-        |> Array.tryFindIndex (fun c -> predicate c.Name)
-        |> Option.map (fun tag -> u.caseConstructor[tag] Array.empty)
+let tryParseTF (t: Type) = Union.Info.tryFindCaseValueWithName t
 [<EditorBrowsable(EditorBrowsableState.Never)>]
-let parseTF (t: Type) predicate =
-    let p = tryParseTF t
-    fun (str: string) ->
-        match p (predicate str) with
+let parseTF (t: Type) =
+    let tryParseF = tryParseTF t
+    let fail value = sprintf "Could not find case '%s' for type '%s'" value t.FullName |> KeyNotFoundException |> raise
+    fun predicate (str: string) ->
+        match predicate str |> tryParseF with
         | Some e -> e
-        | None ->
-            // Keep exception compat, but augment with a meaningful message.
-            raise (KeyNotFoundException(sprintf "Could not find case '%s' for type '%s'" str t.FullName))
+        | None -> fail str
 [<EditorBrowsable(EditorBrowsableState.Never)>]
 let parseT (t: Type) = parseTF t (=)
 
 let tryParseF<'T> =
-    let p = tryParseTF typeof<'T>
-    fun f str -> p (f str) |> Option.map (fun e -> e :?> 'T)
+    let tryParse = tryParseTF typeof<'T>
+    fun predicate str -> predicate str |> tryParse |> Option.map (fun e -> e :?> 'T)
 let tryParse<'T> = tryParseF<'T> (=)
 let parseF<'T> f =
     let p = parseTF typeof<'T> f
     fun (str: string) -> p str :?> 'T
 let parse<'T> = parseF<'T> (=)
 
-let toString<'t> = Union.caseName<'t>
+let toString<'t> : 't -> string = Union.caseName<'t>
