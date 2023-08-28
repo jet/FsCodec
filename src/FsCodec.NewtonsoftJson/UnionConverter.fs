@@ -1,42 +1,15 @@
 ﻿namespace FsCodec.NewtonsoftJson
 
-open FSharp.Reflection
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open System
 open System.Reflection
 
 [<NoComparison; NoEquality>]
-type private Union =
-    {
-        cases: UnionCaseInfo[]
-        tagReader: obj -> int
-        fieldReader: (obj -> obj[])[]
-        caseConstructor: (obj[] -> obj)[]
-    }
-
-module private Union =
-
-    let isUnion = memoize (fun t -> FSharpType.IsUnion(t, true))
-    let getUnionCases = memoize (fun t -> FSharpType.GetUnionCases(t, true))
-
-    let private createInfo t =
-        let cases = getUnionCases t
-        {
-            cases = cases
-            tagReader = FSharpValue.PreComputeUnionTagReader(t, true)
-            fieldReader = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionReader(c, true))
-            caseConstructor = cases |> Array.map (fun c -> FSharpValue.PreComputeUnionConstructor(c, true))
-        }
-    let getInfo = memoize createInfo
-
-    /// Allows us to distinguish Unions that do not have bodies and hence should use a TypeSafeEnumConverter
-    let hasOnlyNullaryCases (t : Type) =
-        let union = getInfo t
-        union.cases |> Seq.forall (fun case -> case.GetFields().Length = 0)
+module private UnionInfo =
 
     /// Parallels F# behavior wrt how it generates a DU's underlying .NET Type
-    let inline isInlinedIntoUnionItem (t : Type) =
+    let inline isInlinedIntoUnionItem (t: Type) =
         t = typeof<string>
         || t.IsValueType
         || t.IsArray
@@ -44,12 +17,12 @@ module private Union =
            && (typedefof<Option<_>> = t.GetGenericTypeDefinition()
                 || t.GetGenericTypeDefinition().IsValueType)) // Nullable<T>
 
-    let typeHasJsonConverterAttribute = memoize (fun (t : Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
-    let typeIsUnionWithConverterAttribute = memoize (fun (t : Type) -> isUnion t && typeHasJsonConverterAttribute t)
+    let typeHasConverterAttribute = memoize (fun (t: Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
+    let typeIsUnionWithConverterAttribute = memoize (fun (t: Type) -> FsCodec.Union.isUnion t && typeHasConverterAttribute t)
 
-    let propTypeRequiresConstruction (propertyType : Type) =
+    let propTypeRequiresConstruction (propertyType: Type) =
         not (isInlinedIntoUnionItem propertyType)
-        && not (typeHasJsonConverterAttribute propertyType)
+        && not (typeHasConverterAttribute propertyType)
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to let json.net step in to convert argument types
@@ -64,7 +37,7 @@ module private Union =
                     // The specific need being covered (see tests) is to ensure that, even with MissingMemberHandling=Ignore,
                     // the TypeSafeEnumConverter should reject missing values
                     // not having this case would go direct to `null` without passing go
-                    typeHasJsonConverterAttribute fi.PropertyType
+                    typeHasConverterAttribute fi.PropertyType
                     || serializer.MissingMemberHandling = MissingMemberHandling.Error ->
                         // NB caller can opt out of erroring by setting NullValueHandling = NullValueHandling.Ignore)
                         // which renders the following equivalent to the next case
@@ -81,22 +54,18 @@ type UnionConverter private (discriminator: string, ?catchAllCase) =
     new(discriminator: string) = UnionConverter(discriminator, ?catchAllCase = None)
     new(discriminator: string, catchAllCase: string) = UnionConverter(discriminator, ?catchAllCase = match catchAllCase with null -> None | x -> Some x)
 
-    override _.CanConvert(t : Type) = Union.isUnion t
+    override _.CanConvert(t: Type) = FsCodec.Union.isUnion t
 
-    override _.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
-        let union = Union.getInfo (value.GetType())
-        let tag = union.tagReader value
-        let case = union.cases[tag]
-        let fieldValues = union.fieldReader[tag] value
-        let fieldInfos = case.GetFields()
-
+    override _.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
         writer.WriteStartObject()
 
         writer.WritePropertyName(discriminator)
-        writer.WriteValue(case.Name)
+        let case = (FsCodec.Union.Info.get (value.GetType())).getCase value
+        writer.WriteValue(case.name)
 
-        match fieldInfos with
-        | [| fi |] when not (Union.typeIsUnionWithConverterAttribute fi.PropertyType) ->
+        let fieldValues = case.deconstruct value
+        match case.fields with
+        | [| fi |] when not (UnionInfo.typeIsUnionWithConverterAttribute fi.PropertyType) ->
             match fieldValues[0] with
             | null when serializer.NullValueHandling = NullValueHandling.Ignore -> ()
             | fv ->
@@ -110,7 +79,7 @@ type UnionConverter private (discriminator: string, ?catchAllCase) =
                     writer.WritePropertyName(fi.Name)
                     token.WriteTo writer
         | _ ->
-            for fieldInfo, fieldValue in Seq.zip fieldInfos fieldValues do
+            for fieldInfo, fieldValue in Seq.zip case.fields fieldValues do
                 if fieldValue <> null || serializer.NullValueHandling = NullValueHandling.Include then
                     writer.WritePropertyName(fieldInfo.Name)
                     serializer.Serialize(writer, fieldValue)
@@ -122,21 +91,18 @@ type UnionConverter private (discriminator: string, ?catchAllCase) =
         if token.Type <> JTokenType.Object then raise (FormatException(sprintf "Expected object token, got %O" token.Type))
         let inputJObject = token :?> JObject
 
-        let union = Union.getInfo t
-        let targetCaseIndex =
+        let targetCase =
+            let findCaseNamed x = FsCodec.Union.Info.tryFindCaseWithName (FsCodec.Union.Info.get t) ((=) x)
             let inputCaseNameValue = inputJObject[discriminator] |> string
-            let findCaseNamed x = union.cases |> Array.tryFindIndex (fun case -> case.Name = x)
-            match findCaseNamed inputCaseNameValue, catchAllCase  with
+            match findCaseNamed inputCaseNameValue, catchAllCase with
             | None, None ->
                 sprintf "No case defined for '%s', and no catchAllCase nominated for '%s' on type '%s'"
                     inputCaseNameValue typeof<UnionConverter>.Name t.FullName |> invalidOp
-            | Some foundIndex, _ -> foundIndex
+            | Some c, _ -> c
             | None, Some catchAllCaseName ->
                 match findCaseNamed catchAllCaseName with
                 | None ->
                     sprintf "No case defined for '%s', nominated catchAllCase: '%s' not found in type '%s'"
                         inputCaseNameValue catchAllCaseName t.FullName |> invalidOp
-                | Some foundIndex -> foundIndex
-
-        let targetCaseFields, targetCaseCtor = union.cases[targetCaseIndex].GetFields(), union.caseConstructor[targetCaseIndex]
-        targetCaseCtor (Union.mapTargetCaseArgs inputJObject serializer targetCaseFields)
+                | Some c -> c
+        targetCase.construct(UnionInfo.mapTargetCaseArgs inputJObject serializer targetCase.fields)

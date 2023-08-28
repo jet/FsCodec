@@ -9,8 +9,17 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `Union`: Exposed internal type, featuring `isUnion`, `isNullary`, and `caseName` (that's not tied to `TypeSafeEnum`), [#102](https://github.com/jet/FsCodec/pull/102)
+
 ### Changed
+
+- `TypeSafeEnum`: Merged two impls from `SystemTextJson` and `NewtonsoftJson` [#102](https://github.com/jet/FsCodec/pull/102)
+
 ### Removed
+
+- `(NewtonsoftJson|SystemTextJson).TypeSafeEnum`: Merged/moved to `FsCodec.TypeSafeEnum` [#102](https://github.com/jet/FsCodec/pull/102)
+
 ### Fixed
 
 <a name="3.0.0-rc.11"></a>
