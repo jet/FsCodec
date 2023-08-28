@@ -11,11 +11,15 @@ open Xunit
 type Outcome = Joy | Pain | Misery
 
 let [<Fact>] happy () =
+    let oic (x: string) y = x.Equals(y, StringComparison.OrdinalIgnoreCase)
     test <@ box Joy = TypeSafeEnum.parseT typeof<Outcome> "Joy" @>
     test <@ Joy = TypeSafeEnum.parse "Joy" @>
+    test <@ Joy = TypeSafeEnum.parseF oic "JOY" @>
     test <@ box Joy = TypeSafeEnum.parseT typeof<Outcome> "Joy"  @>
+    test <@ box Joy = TypeSafeEnum.parseTF typeof<Outcome> oic "Joy"  @>
     test <@ None = TypeSafeEnum.tryParse<Outcome> "Wat" @>
     raises<KeyNotFoundException> <@ TypeSafeEnum.parse<Outcome> "Wat" @>
+    raises<KeyNotFoundException> <@ TypeSafeEnum.parseF<Outcome> oic "Wat" @>
 
     let serdesWithOutcomeConverter = Options.Create(TypeSafeEnumConverter<Outcome>()) |> Serdes
     test <@ Joy = serdesWithOutcomeConverter.Deserialize "\"Joy\"" @>
