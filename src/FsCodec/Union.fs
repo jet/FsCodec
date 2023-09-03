@@ -23,11 +23,11 @@ module Info =
                 construct = FSharpValue.PreComputeUnionConstructor(i, true)
                 deconstruct = FSharpValue.PreComputeUnionReader(i, true) })
         let getTag = FSharpValue.PreComputeUnionTagReader(t, true)
-        let getCase value = Array.item (getTag value) cases
+        let getCase value = cases[getTag value]
         { cases = cases; getCase = getCase })
-    let tryFindCaseWithName u predicate = u.cases |> Array.tryFind (fun c -> predicate c.name)
+    let tryFindCaseWithName u (predicate: string -> bool): CaseInfo option = u.cases |> Array.tryFind (fun c -> predicate c.name)
     let private caseValues: Type -> obj[] = memoize (fun t -> (get t).cases |> Array.map (fun c -> c.construct Array.empty))
-    let tryFindCaseValueWithName t =
+    let tryFindCaseValueWithName (t: Type): (string -> bool) -> obj option =
         let u = get t
         let caseValue = let values = caseValues t in fun i -> values[i]
         fun predicate -> u.cases |> Array.tryFindIndex (fun c -> predicate c.name) |> Option.map caseValue
