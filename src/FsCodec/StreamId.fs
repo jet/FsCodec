@@ -66,11 +66,11 @@ module StreamId =
     /// Generate a StreamId from a single application-level id, given a rendering function that maps to a non empty fragment without embedded `_` chars
     let gen (f: 'a -> string): 'a -> StreamId = Gen.Map(f).Invoke
     /// Generate a StreamId from a tuple of application-level ids, given two rendering functions that map to a non empty fragment without embedded `_` chars
-    let gen2 f1 f2: 'a * 'b -> StreamId = Gen.Map(f1, f2).Invoke
+    let gen2 f1 f2 struct (a: 'a, b: 'b): StreamId = Gen.Map(f1, f2).Invoke(a, b)
     /// Generate a StreamId from a triple of application-level ids, given three rendering functions that map to a non empty fragment without embedded `_` chars
-    let gen3 f1 f2 f3: 'a * 'b * 'c -> StreamId = Gen.Map(f1, f2, f3).Invoke
+    let gen3 f1 f2 f3 struct (a: 'a, b: 'b, c: 'c): StreamId = Gen.Map(f1, f2, f3).Invoke(a, b, c)
     /// Generate a StreamId from a 4-tuple of application-level ids, given four rendering functions that map to a non empty fragment without embedded `_` chars
-    let gen4 f1 f2 f3 f4: 'a * 'b * 'c * 'd -> StreamId = Gen.Map(f1, f2, f3, f4).Invoke
+    let gen4 f1 f2 f3 f4 struct (a: 'a, b: 'b, c: 'c, d: 'd): StreamId = Gen.Map(f1, f2, f3, f4).Invoke(a, b, c, d)
 
     /// Validates and extracts the StreamId into a single fragment value
     /// Throws if the item embeds a `_`, is `null`, or is empty

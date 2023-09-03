@@ -15,6 +15,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Changed
 
 - `TypeSafeEnum`: Merged two impls from `SystemTextJson` and `NewtonsoftJson` [#102](https://github.com/jet/FsCodec/pull/102)
+- `StreamId.dec*`: Changed to take `struct` tuples [#103](https://github.com/jet/FsCodec/pull/103)
 
 ### Removed
 
