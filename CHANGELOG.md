@@ -22,6 +22,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Fixed
 
+- `Core.Codec`: Changed default timestamp to `DateTime.UtcNow` as per docs (was: `DateTime.Now`) [#104](https://github.com/jet/FsCodec/pull/104)
+
 <a name="3.0.0-rc.11"></a>
 ## [3.0.0-rc.11] - 2023-8-25
 
