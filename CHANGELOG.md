@@ -9,6 +9,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
+
+<a name="3.0.0-rc.12"></a>
+## [3.0.0-rc.12] - 2023-9-4
+
+### Added
 
 - `Union`: Exposed internal type, featuring `isUnion`, `isNullary`, and `caseName` (that's not tied to `TypeSafeEnum`), [#102](https://github.com/jet/FsCodec/pull/102)
 
@@ -393,7 +401,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.11...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.12...HEAD
+[3.0.0-rc.12]: https://github.com/jet/FsCodec/compare/3.0.0-rc.11...3.0.0-rc.12
 [3.0.0-rc.11]: https://github.com/jet/FsCodec/compare/3.0.0-rc.10...3.0.0-rc.11
 [3.0.0-rc.10]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...3.0.0-rc.10
 [3.0.0-rc.9]: https://github.com/jet/FsCodec/compare/3.0.0-rc.8...3.0.0-rc.9
