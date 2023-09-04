@@ -73,7 +73,7 @@ type Codec private () =
         let down context union =
             let struct (c, m, t) = down.Invoke union
             let struct (m', eventId, correlationId, causationId) = mapCausation.Invoke(context, m)
-            struct (c, m', eventId, correlationId, causationId, match t with ValueSome t -> t | ValueNone -> DateTimeOffset.Now)
+            struct (c, m', eventId, correlationId, causationId, match t with ValueSome t -> t | ValueNone -> DateTimeOffset.UtcNow)
         Codec.Create(encoder, up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>encoder</c>.<br/>
