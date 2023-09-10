@@ -6,10 +6,10 @@ open System.Runtime.InteropServices
 
 module private EncodedMaybeDeflated =
 
-    type Encoding =
-        | Direct = 0
-        | Deflate = 1
-        | Brotli = 2
+    module Encoding =
+        let [<Literal>] Direct = 0
+        let [<Literal>] Deflate = 1
+        let [<Literal>] Brotli = 2
     type Encoded = (struct (int * ReadOnlyMemory<byte>))
     let empty : Encoded = int Encoding.Direct, ReadOnlyMemory.Empty
 
@@ -71,7 +71,7 @@ type Deflate =
 
     static member Utf8ToEncodedDirect (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
         EncodedMaybeDeflated.encodeUncompressed x
-    static member Utf8ToEncodedTryDeflate options (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
+    static member Utf8ToEncodedTryCompress options (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
         EncodedMaybeDeflated.encode options.minSize options.minGain x
     static member EncodedToUtf8(x) : ReadOnlyMemory<byte> =
         EncodedMaybeDeflated.decode x
@@ -82,12 +82,12 @@ type Deflate =
     /// If sufficient compression, as defined by <c>options</c> is not achieved, the body is saved as-is.<br/>
     /// The <c>int</c> conveys a flag indicating whether compression was applied.</summary>
     [<Extension>]
-    static member EncodeTryDeflate<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
+    static member EncodeTryCompress<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
         let opts = defaultArg options CompressionOptions.Default
-        FsCodec.Core.EventCodec.Map(native, Deflate.Utf8ToEncodedTryDeflate opts, Func<_, _> Deflate.EncodedToUtf8)
+        FsCodec.Core.EventCodec.Map(native, Deflate.Utf8ToEncodedTryCompress opts, Func<_, _> Deflate.EncodedToUtf8)
 
-    /// Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to encode as per <c>EncodeTryDeflate</c>, but without attempting compression.<br/>
+    /// Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.<br/>
     [<Extension>]
     static member EncodeUncompressed<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =

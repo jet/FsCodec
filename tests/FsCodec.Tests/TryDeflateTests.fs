@@ -30,7 +30,7 @@ module StringUtf8 =
 
 module TryDeflate =
 
-    let sut = FsCodec.Deflate.EncodeTryDeflate(StringUtf8.sut)
+    let sut = FsCodec.Deflate.EncodeTryCompress(StringUtf8.sut)
 
     let compressibleValue = String('x', 5000)
 
