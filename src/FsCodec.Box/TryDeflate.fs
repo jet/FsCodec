@@ -14,7 +14,7 @@ module private EncodedMaybeDeflated =
     let empty : Encoded = int Encoding.Direct, ReadOnlyMemory.Empty
 
     let private brotliDecompress (data: ReadOnlyMemory<byte>): byte[] =
-        use s = new System.IO.MemoryStream(data.ToArray())
+        let s = new System.IO.MemoryStream(data.ToArray(), writable = false)
         use decompressor = new System.IO.Compression.BrotliStream(s, System.IO.Compression.CompressionMode.Decompress)
         use output = new System.IO.MemoryStream()
         decompressor.CopyTo(output)
@@ -29,9 +29,10 @@ module private EncodedMaybeDeflated =
         decompressor.CopyTo(output)
         output.ToArray()
     let decode struct (encoding, data) : ReadOnlyMemory<byte> =
-        if encoding = int Encoding.Deflate then inflate data |> ReadOnlyMemory
-        elif encoding = int Encoding.Brotli then brotliDecompress data |> ReadOnlyMemory
-        else data
+        match encoding with
+        | Encoding.Deflate -> inflate data |> ReadOnlyMemory
+        | Encoding.Brotli -> brotliDecompress data |> ReadOnlyMemory
+        | Encoding.Direct | _ -> data
 
     (* Compression is conditional on the input meeting a minimum size, and the result meeting a required gain *)
 
