@@ -30,7 +30,7 @@ module private EncodedMaybeDeflated =
         output.ToArray()
     let decode struct (encoding, data) : ReadOnlyMemory<byte> =
         if encoding = int Encoding.Deflate then inflate data |> ReadOnlyMemory
-        else if encoding = int Encoding.Brotli then brotliDecompress data |> ReadOnlyMemory
+        elif encoding = int Encoding.Brotli then brotliDecompress data |> ReadOnlyMemory
         else data
 
     (* Compression is conditional on the input meeting a minimum size, and the result meeting a required gain *)
