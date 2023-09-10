@@ -9,8 +9,16 @@ module private EncodedMaybeDeflated =
     type Encoding =
         | Direct = 0
         | Deflate = 1
+        | Brotli = 2
     type Encoded = (struct (int * ReadOnlyMemory<byte>))
     let empty : Encoded = int Encoding.Direct, ReadOnlyMemory.Empty
+
+    let private brotliDecompress (data: ReadOnlyMemory<byte>): byte[] =
+        use s = new System.IO.MemoryStream(data.ToArray())
+        use decompressor = new System.IO.Compression.BrotliStream(s, System.IO.Compression.CompressionMode.Decompress)
+        use output = new System.IO.MemoryStream()
+        decompressor.CopyTo(output)
+        output.ToArray()
 
     (* EncodedBody can potentially hold compressed content, that we'll inflate on demand *)
 
@@ -22,9 +30,17 @@ module private EncodedMaybeDeflated =
         output.ToArray()
     let decode struct (encoding, data) : ReadOnlyMemory<byte> =
         if encoding = int Encoding.Deflate then inflate data |> ReadOnlyMemory
+        else if encoding = int Encoding.Brotli then brotliDecompress data |> ReadOnlyMemory
         else data
 
     (* Compression is conditional on the input meeting a minimum size, and the result meeting a required gain *)
+
+    let private brotliCompress (eventBody: ReadOnlyMemory<byte>): System.IO.MemoryStream =
+        let output = new System.IO.MemoryStream()
+        use compressor = new System.IO.Compression.BrotliStream(output, System.IO.Compression.CompressionLevel.Optimal, leaveOpen = true)
+        compressor.Write(eventBody.Span)
+        compressor.Close()
+        output
 
     let private deflate (eventBody : ReadOnlyMemory<byte>) : System.IO.MemoryStream =
         let output = new System.IO.MemoryStream()
@@ -35,8 +51,8 @@ module private EncodedMaybeDeflated =
     let encodeUncompressed (raw : ReadOnlyMemory<byte>) : Encoded = 0, raw
     let encode minSize minGain (raw : ReadOnlyMemory<byte>) : Encoded =
         if raw.Length < minSize then encodeUncompressed raw
-        else match deflate raw with
-             | tmp when raw.Length > int tmp.Length + minGain -> int Encoding.Deflate, tmp.ToArray() |> ReadOnlyMemory
+        else match brotliCompress raw with
+             | tmp when raw.Length > int tmp.Length + minGain -> int Encoding.Brotli, tmp.ToArray() |> ReadOnlyMemory
              | _ -> encodeUncompressed raw
 
 type [<Struct>] CompressionOptions = { minSize : int; minGain : int } with
