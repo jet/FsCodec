@@ -9,7 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+- Brotli Compression as default
 ### Changed
+- `TryDeflate` -> `TryCompress`
 ### Removed
 ### Fixed
 

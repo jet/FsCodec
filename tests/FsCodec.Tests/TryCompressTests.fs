@@ -1,4 +1,4 @@
-module FsCodec.Tests.DeflateTests
+module FsCodec.Tests.CompressTests
 
 open System
 open Swensen.Unquote
@@ -28,9 +28,9 @@ module StringUtf8 =
         let res' = roundtrip sut value
         res' =! ValueSome value
 
-module TryDeflate =
+module TryCompress =
 
-    let sut = FsCodec.Deflate.EncodeTryCompress(StringUtf8.sut)
+    let sut = FsCodec.Compress.EncodeTryCompress(StringUtf8.sut)
 
     let compressibleValue = String('x', 5000)
 
@@ -52,10 +52,10 @@ module TryDeflate =
 
 module Uncompressed =
 
-    let sut = FsCodec.Deflate.EncodeUncompressed(StringUtf8.sut)
+    let sut = FsCodec.Compress.EncodeUncompressed(StringUtf8.sut)
 
     // Borrow a demonstrably compressible value
-    let value = TryDeflate.compressibleValue
+    let value = TryCompress.compressibleValue
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut value

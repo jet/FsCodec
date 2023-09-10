@@ -67,7 +67,7 @@ type [<Struct>] CompressionOptions = { minSize : int; minGain : int } with
     static member Uncompressed = { minSize = Int32.MaxValue; minGain = 0 }
 
 [<Extension; AbstractClass; Sealed>]
-type Deflate =
+type Compress =
 
     static member Utf8ToEncodedDirect (x : ReadOnlyMemory<byte>) : struct (int * ReadOnlyMemory<byte>) =
         EncodedMaybeDeflated.encodeUncompressed x
@@ -85,22 +85,22 @@ type Deflate =
     static member EncodeTryCompress<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
         let opts = defaultArg options CompressionOptions.Default
-        FsCodec.Core.EventCodec.Map(native, Deflate.Utf8ToEncodedTryCompress opts, Func<_, _> Deflate.EncodedToUtf8)
+        FsCodec.Core.EventCodec.Map(native, Compress.Utf8ToEncodedTryCompress opts, Func<_, _> Compress.EncodedToUtf8)
 
     /// Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory<byte></c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.<br/>
     [<Extension>]
     static member EncodeUncompressed<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> Deflate.Utf8ToEncodedDirect, Func<_, _> Deflate.EncodedToUtf8)
+        FsCodec.Core.EventCodec.Map(native, Func<_, _> Compress.Utf8ToEncodedDirect, Func<_, _> Compress.EncodedToUtf8)
 
     /// Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory<byte></c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory<byte></c>.
     [<Extension>]
     static member ToUtf8Codec<'Event, 'Context>(native : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> Deflate.EncodedToUtf8, Func<_, _> Deflate.Utf8ToEncodedDirect)
+        FsCodec.Core.EventCodec.Map(native, Func<_, _> Compress.EncodedToUtf8, Func<_, _> Compress.Utf8ToEncodedDirect)
 
     /// Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory<byte></c> Event Bodies to render and/or consume from Uncompressed <c>byte[]</c>.
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native : IEventCodec<'Event, struct (int * ReadOnlyMemory<byte>), 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> Deflate.EncodedToByteArray, Func<_, _> Deflate.Utf8ToEncodedDirect)
+        FsCodec.Core.EventCodec.Map(native, Func<_, _> Compress.EncodedToByteArray, Func<_, _> Compress.Utf8ToEncodedDirect)

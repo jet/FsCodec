@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <Compile Include="StreamNameTests.fs" />
-    <Compile Include="TryDeflateTests.fs" />
+    <Compile Include="TryCompressTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
