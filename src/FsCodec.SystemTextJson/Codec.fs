@@ -28,7 +28,7 @@ type Codec private () =
         | _, Some opts -> Core.ReadOnlyMemoryEncoder(Serdes opts)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
-    /// Uses <c>up</c>, <c>down</c> functions to handle upconversion/downconversion and eventId/correlationId/causationId mapping
+    /// Uses <c>up</c>, <c>down</c> functions to handle up/down conversion and eventId/correlationId/causationId mapping
     ///   and/or surfacing metadata to the programming model by including it in the emitted <c>'Event</c><br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name;
     /// <c>Contract</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
@@ -48,7 +48,7 @@ type Codec private () =
         FsCodec.Core.Codec.Create(mkEncoder (serdes, options), up, down, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.<br/>
-    /// Uses <c>up</c>, <c>down</c> and <c>mapCausation</c> functions to facilitate upconversion/downconversion and eventId/correlationId/causationId/timestamp mapping
+    /// Uses <c>up</c>, <c>down</c> and <c>mapCausation</c> functions to facilitate up/down conversion and eventId/correlationId/causationId/timestamp mapping
     ///   and/or surfacing metadata to the programming model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name;
     /// <c>Contract</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>

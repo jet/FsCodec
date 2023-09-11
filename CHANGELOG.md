@@ -9,11 +9,17 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-- Brotli Compression as default
 ### Changed
-- `TryDeflate` -> `TryCompress`
 ### Removed
 ### Fixed
+
+<a name="3.0.0-rc.13"></a>
+## [3.0.0-rc.13] - 2023-9-11
+
+### Changed
+
+- Rename `Deflate.EncodeTryDeflate` -> `Compression.EncodeTryCompress` [#105](https://github.com/jet/FsCodec/pull/105) :pray: [@nordfjord](https://github.com/nordfjord)
+- `Compression`: Switched encoding to use Brotli Compression (Deflate compressed content can still be inflated, but will no longer be generated) [#105](https://github.com/jet/FsCodec/pull/105)
 
 <a name="3.0.0-rc.12"></a>
 ## [3.0.0-rc.12] - 2023-9-4
@@ -69,7 +75,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Changed
 
 - `NewtonsoftJson.TypeSafeEnum`: Sync with `SystemTextJson.TypeSafeEnum` [#91](https://github.com/jet/FsCodec/pull/91)
--  replace all `FSharpFunc` usage with `Func` [#92](https://github.com/jet/FsCodec/pull/92)
+-  replace all `FSharpFunc` usage with `Func` [#92](https://github.com/jet/FsCodec/pull/92) [#105](https://github.com/jet/FsCodec/pull/105)
 
 <a name="3.0.0-rc.9"></a>
 ## [3.0.0-rc.9] - 2022-11-30
@@ -403,7 +409,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.12...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.13...HEAD
+[3.0.0-rc.13]: https://github.com/jet/FsCodec/compare/3.0.0-rc.12...3.0.0-rc.13
 [3.0.0-rc.12]: https://github.com/jet/FsCodec/compare/3.0.0-rc.11...3.0.0-rc.12
 [3.0.0-rc.11]: https://github.com/jet/FsCodec/compare/3.0.0-rc.10...3.0.0-rc.11
 [3.0.0-rc.10]: https://github.com/jet/FsCodec/compare/3.0.0-rc.9...3.0.0-rc.10

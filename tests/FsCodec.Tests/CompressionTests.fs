@@ -40,7 +40,7 @@ module TryCompress =
 
     let [<Fact>] ``compresses when possible`` () =
         let encoded = sut.Encode((), value = compressibleValue)
-        let struct (encoding, encodedValue) = encoded.Data
+        let struct (_encoding, encodedValue) = encoded.Data
         encodedValue.Length <! compressibleValue.Length
 
     let [<Fact>] ``uses raw value where compression not possible`` () =

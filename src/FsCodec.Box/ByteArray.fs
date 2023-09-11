@@ -14,8 +14,8 @@ type ByteArray private () =
         if x.IsEmpty then null
         else x.ToArray()
 
-    /// Adapt an IEventCodec that handles ReadOnlyMemory<byte> Event Bodies to instead use byte[]
-    /// Ideally not used as it makes pooling problematic; only provided for interop/porting scaffolding wrt Equinox V3 and EventStore.Client etc
+    /// <summary>Adapt an IEventCodec that handles ReadOnlyMemory&lt;byte&gt; Event Bodies to instead use <c>byte[]</c>
+    /// Ideally not used as it makes pooling problematic; only provided for interop/porting scaffolding wrt Equinox V3 and EventStore.Client etc</summary>
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
