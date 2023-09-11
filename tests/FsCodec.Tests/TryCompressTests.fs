@@ -1,4 +1,4 @@
-module FsCodec.Tests.DeflateTests
+module FsCodec.Tests.CompressionTests
 
 open System
 open Swensen.Unquote
@@ -28,9 +28,9 @@ module StringUtf8 =
         let res' = roundtrip sut value
         res' =! ValueSome value
 
-module TryDeflate =
+module TryCompress =
 
-    let sut = FsCodec.Deflate.EncodeTryDeflate(StringUtf8.sut)
+    let sut = FsCodec.Compression.EncodeTryCompress(StringUtf8.sut)
 
     let compressibleValue = String('x', 5000)
 
@@ -52,10 +52,10 @@ module TryDeflate =
 
 module Uncompressed =
 
-    let sut = FsCodec.Deflate.EncodeUncompressed(StringUtf8.sut)
+    let sut = FsCodec.Compression.EncodeUncompressed(StringUtf8.sut)
 
     // Borrow a demonstrably compressible value
-    let value = TryDeflate.compressibleValue
+    let value = TryCompress.compressibleValue
 
     let [<Fact>] roundtrips () =
         let res' = roundtrip sut value
@@ -66,3 +66,21 @@ module Uncompressed =
         let encoded = sut.Encode((), value)
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)
+
+
+module Decoding =
+    let raw = struct(0, Text.Encoding.UTF8.GetBytes("Hello World") |> ReadOnlyMemory)
+    let deflated = struct(1, Convert.FromBase64String("8kjNyclXCM8vykkBAAAA//8=") |> ReadOnlyMemory)
+    let brotli = struct(2, Convert.FromBase64String("CwWASGVsbG8gV29ybGQ=") |> ReadOnlyMemory)
+
+    let [<Fact>] ``Can decode all known bodies`` () =
+        let decode = FsCodec.Compression.EncodedToByteArray >> Text.Encoding.UTF8.GetString
+        test <@ decode raw = "Hello World"  @>
+        test <@ decode deflated = "Hello World"  @>
+        test <@ decode brotli = "Hello World"  @>
+
+    let [<Fact>] ``Defaults to leaving the memory alone if unknown`` () =
+        let struct(_, mem) = raw
+        let body = struct(99, mem)
+        let decoded = body |> FsCodec.Compression.EncodedToByteArray |> Text.Encoding.UTF8.GetString
+        test <@ decoded = "Hello World" @>
