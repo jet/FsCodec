@@ -3,6 +3,7 @@
 namespace FsCodec
 
 open FSharp.UMX
+open System
 
 /// Represents the second half of a canonical StreamName, i.e., the streamId in "{categoryName}-{streamId}"
 type StreamId = string<streamId>
@@ -23,7 +24,7 @@ module StreamId =
 
         /// Throws if a candidate id element includes a '_', is null, or is empty
         let inline validate (raw: string) =
-            if raw |> System.String.IsNullOrEmpty then invalidArg "raw" "Element must not be null or empty"
+            if raw |> String.IsNullOrEmpty then invalidArg "raw" "Element must not be null or empty"
             if raw.IndexOf Separator <> -1 then invalidArg "raw" "Element may not contain embedded '_' symbols"
 
     module Elements =
@@ -41,7 +42,7 @@ module StreamId =
         /// Combines streamId fragments. Throws if any of the fragments embed a `_`, are `null`, or are empty
         let compose (rawFragments: string[]): StreamId =
             rawFragments |> Array.iter Element.validate
-            System.String.Join(Separator, rawFragments) |> trust
+            String.Join(Separator, rawFragments) |> trust
 
         let private separator = [| Element.Separator |]
         /// Splits a streamId into its constituent fragments
@@ -55,13 +56,13 @@ module StreamId =
     type Gen private () =
 
         /// Generate a StreamId from a single application-level id, given a rendering function that maps to a non empty fragment without embedded `_` chars
-        static member Map(f: 'a -> string) = System.Func<'a, StreamId>(fun id -> f id |> Elements.parseExactlyOne)
+        static member Map(f: 'a -> string) = Func<'a, StreamId>(fun id -> f id |> Elements.parseExactlyOne)
         /// Generate a StreamId from a tuple of application-level ids, given 2 rendering functions that map to a non empty fragment without embedded `_` chars
-        static member Map(f, f2) = System.Func<'a, 'b, StreamId>(fun id1 id2 -> Elements.compose [| f id1; f2 id2 |])
+        static member Map(f, f2) = Func<'a, 'b, StreamId>(fun id1 id2 -> Elements.compose [| f id1; f2 id2 |])
         /// Generate a StreamId from a triple of application-level ids, given 3 rendering functions that map to a non empty fragment without embedded `_` chars
-        static member Map(f1, f2, f3) = System.Func<'a, 'b, 'c, StreamId>(fun id1 id2 id3 -> Elements.compose [| f1 id1; f2 id2; f3 id3 |])
+        static member Map(f1, f2, f3) = Func<'a, 'b, 'c, StreamId>(fun id1 id2 id3 -> Elements.compose [| f1 id1; f2 id2; f3 id3 |])
         /// Generate a StreamId from a 4-tuple of application-level ids, given 4 rendering functions that map to a non empty fragment without embedded `_` chars
-        static member Map(f1, f2, f3, f4) = System.Func<'a, 'b, 'c, 'd, StreamId>(fun id1 id2 id3 id4 -> Elements.compose [| f1 id1; f2 id2; f3 id3; f4 id4 |])
+        static member Map(f1, f2, f3, f4) = Func<'a, 'b, 'c, 'd, StreamId>(fun id1 id2 id3 id4 -> Elements.compose [| f1 id1; f2 id2; f3 id3; f4 id4 |])
 
     /// Generate a StreamId from a single application-level id, given a rendering function that maps to a non empty fragment without embedded `_` chars
     let gen (f: 'a -> string): 'a -> StreamId = Gen.Map(f).Invoke

@@ -260,7 +260,141 @@ The mechanisms in the previous section have proven themselves sufficient for div
 | maps/`Dictionary` etc. | avoid; prefer arrays | | | As per C#; not always the best option for many reasons, both on the producer and consumer side. Json.NET has support for various maps with various idiosyncracies typically best covered by Stack Overflow, but often a list of records is clearer<br/>For `System.Text.Json`, use an `IDictionary<'K, 'V>` or `Dictionary<'K, 'V>` |
 | tuples | __Don't use__; use records | `(1,2)` | `{"Item1":1,"Item2":2}` | While converters are out there, using tuples in contracts of any kind is simply Not A Good Idea |
 
- <a name="JsonIsomorphism"></a>
+## TypeSafeEnumConverter
+
+`TypeSafeEnumConverter` is intended to provide for Nullary Unions (also known as _Type Safe Enums_, especially in Java circles),
+what `Newtonsoft.Json` does for `enum` values with the `StringEnumConverter`. This is motivated by the fact that the out
+of the box behaviors are unsatisfactory for both `Newtonsoft.Json` and for `System.Text.Json` (but, for different, unfortunate reasons...). 
+
+### Out of the box behavior: `Newtonsoft.Json`
+
+By default, a Nullary Union's default rendering via `Newtonsoft.Json`, without any converters in force,
+is a generic rendering that treats the values as DU values with bodies are treated.
+
+```fsharp
+type Status = Initial | Active
+type StatusMessage = { name: string option; status: Status }
+let status = { name = None; status = Initial } 
+// The problems here are:
+// 1. the value has lots of noise, which consumes storage space, and makes parsing harder
+// 2. other languages which would naturally operate on the string value if it was presented as such will have problems parsing
+// 3. it's also simply unnecessarily hard to read as a human
+serdes.Serialize status
+// "{"name":null,"status":{"Case":"Initial"}}"
+
+// If we pretty-print it, things get worse, not better: 
+let serdesFormatted = Serdes(Options.Create(indent = true))
+serdesFormatted.Serialize(status)
+// "{
+//   "name": null,
+//   "status": {
+//     "Case": "Initial"
+//   }
+// }
+```
+
+### Out of the box behavior: `System.Text.Json`
+
+`System.Text.Json` has no intrinsic behavior. Some lament this, but it's also unambiguous:
+
+```fsharp
+// Without any converters in force, Serdes exposes System.Text.Json's internal behavior, which throws:
+type Status = Initial | Active
+type StatusMessage = { name: string option; status: Status }
+let status = { name = None; status = Initial }
+serdes.Serialize status
+// System.NotSupportedException: F# discriminated union serialization is not supported. Consider authoring a custom converter for the type.
+//    at System.Text.Json.Serialization.Converters.FSharpTypeConverterFactory.CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+```
+
+### TypeSafeEnumConverter behavior
+
+The `TypeSafeEnumConverter` alters this incomplete and/or inconsistent behavior to encode values directly as `StringEnumConverter` does for `enum` (`System.Enum`), for both serializers:
+
+#### `FsCodec.NewtonsoftJson.TypeSafeEnumConverter`
+
+For `Newtonsoft.Json`, the recommended approach is to tag each Nullary Union Type with a `JsonConverter` attribute:
+
+```fsharp
+let serdes2 = Serdes.Default
+[<Newtonsoft.Json.JsonConverter(typeof<TypeSafeEnumConverter>)>]
+type Status2 = Initial | Active
+type StatusMessage2 = { name: string option; status: Status2 }
+let status2 = { name = None; status = Initial }
+serdes2.Serialize status2
+// "{"name":null,"status":"Initial"}"
+```
+
+It's possible to automate this across all types by registering a single custom converter:
+
+```fsharp
+// A single registered converter supplied when creating the Serdes can automatically map all Nullary Unions to strings:
+open FsCodec.NewtonsoftJson
+let serdesWithConverter = Serdes(Options.Create(TypeSafeEnumConverter()))
+// NOTE: no JsonConverter attribute
+type Status3 = Initial | Active
+type StatusMessage3 = { name: string option; status: Status3 }
+let status3 = { name = None; status = Initial }
+serdesWithConverter.Serialize status3
+// "{"name":null,"status":"Initial"}"
+```
+
+#### `FsCodec.SystemTextJson.TypeSafeEnumConverter<'T>`
+
+For `System.Text.Json`, the process is a little different, as Converters in `System.Text.Json` are expected to work for a single type only.
+
+Using the same type that was rejected by out-of-the-box `System.Text.Json` earlier:
+
+```fsharp
+type Status = Initial | Active
+type StatusMessage = { name: string option; status: Status }
+let status = { name = None; status = Initial }
+```
+
+We can supply a Converter via the `Options`:
+
+```fsharp
+open FsCodec.SystemTextJson
+let serdesWithConverter = Serdes <| Options.Create(TypeSafeEnumConverter<Status>())
+serdesWithConverter.Serialize status
+// "{"name":null,"status":"Initial"}"
+
+Rather than having to supply lots of such converter isntances, the recommendation is to tag each type:
+
+```fsharp
+let serdes = Fscodec.SystemTextJson.Serdes.Default
+// NOTE in System.Text.Json, the converter is generic, and must reference the actual type (here: Status2)
+[<System.Text.Json.Serialization.JsonConverter(typeof<TypeSafeEnumConverter<Status2>>)>]
+type Status2 = Initial | Active
+type StatusMessage2 = { name: string option; status: Status2 }
+let status2 = { name = None; status = Initial }
+serdes.Serialize status2
+```
+
+Using the `TypeSafeEnumConverter` in `FsCodec.SystemTextJson`, each Nullary Union Type needs it's own converter registered.
+
+```fsharp
+open FsCodec.SystemTextJson
+// NOTE: Every Nullary Union Type needs a specific instantiation of the generic converter registered:
+let serdesWithConverter = Serdes <| Options.Create(TypeSafeEnumConverter<Status>())
+serdesWithConverter.Serialize status
+// "{"name":null,"status":"Initial"}"
+```
+
+The equivalent of registering a single global TypeSafeEnumConverter is the `autoTypeSafeEnumToJsonString` setting on the `Options`:
+
+```fsharp
+open FsCodec.SystemTextJson
+let options = Options.Create(autoTypeSafeEnumToJsonString = true, rejectNullStrings = true)
+let serdes3 = Serdes options
+type Status3 = Initial | Active
+type StatusMessage3 = { name: string option; status: Status3 }
+let status3 = { name = None; status = Initial } 
+serdes3.Serialize status3
+// "{"name":null,"status":"Initial"}"
+```
+
+<a name="JsonIsomorphism"></a>
 ## Custom converters using `JsonIsomorphism`
 [`JsonIsomorphism`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.NewtonsoftJson/Pickler.fs#L49) enables one to express the `Read`ing and `Write`ing of the JSON for a type in terms of another type. As alluded to above, rendering and parsing of `Guid` values can be expressed succinctly in this manner. The following Converter, when applied to a field, will render it without dashes in the rendered form:
 
@@ -271,7 +405,7 @@ type GuidConverter() =
     override _.UnPickle g = Guid.Parse g
 ```
 
-## `TypeSafeEnumConverter` basic usage
+`JsonIsomporphism` can also be used together with `FsCodec.TypeSafeEnum`, to deal with mapping of values from `string` to Nullary Unions that don't fit in the easy cases.
 
 ```fsharp
 [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
@@ -294,7 +428,7 @@ serdes.Deserialize<Message> """{"name":null,"outcome":"Discomfort"}"""
 // throws System.Collections.Generic.KeyNotFoundException: Could not find case 'Discomfort' for type 'FSI_0012+Outcome'
 ```
 
-##  `TypeSafeEnum` fallback converters using `JsonIsomorphism`
+## `TypeSafeEnum` fallback converters using `JsonIsomorphism`
 
 While, in general, one wants to version contracts such that invalid values simply don't arise, in some cases you want to explicitly handle out of range values.
 Here we implement a converter as a JsonIsomorphism to achieve such a mapping
