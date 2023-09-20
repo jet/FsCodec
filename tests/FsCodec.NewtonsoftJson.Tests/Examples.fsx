@@ -38,7 +38,7 @@ module Contract2 =
     let serialize (x : Item) = serdes.Serialize x
     let deserialize (json : string) : Item = serdes.Deserialize json
 
-let private serdes = Options.Default |> Serdes
+let serdes = Serdes.Default
 
 (* Global vs local Converters
 
@@ -64,6 +64,48 @@ serdesWithGuidConverter.Serialize(Guid.Empty)
 // 00000000000000000000000000000000
 
 (* TypeSafeEnumConverter basic usage *)
+
+// The default rendering, without any converters in force, is a generic rendering
+// This treats the values in a manner consistent with how DU values with bodies are treated
+type Status = Initial | Active
+type StatusMessage = { name: string option; status: Status }
+let status = { name = None; status = Initial } 
+// The problems here are:
+// 1. the value has lots of noise, which consumes storage space, and makes parsing harder
+// 2. other languages which would naturally operate on the string value if it was presented as such will have problems parsing
+// 3. it's also simply unnecessarily hard to read as a human
+serdes.Serialize status
+// "{"name":null,"status":{"Case":"Initial"}}"
+let serdesFormatted = Serdes(Options.Create(indent = true))
+
+// If we pretty-print it, things get worse, not better: 
+serdesFormatted.Serialize(status)
+// "{
+//   "name": null,
+//   "status": {
+//     "Case": "Initial"
+//   }
+// }"
+
+// We can override this with the Newtonsoft.Json.JsonConverter Attribute
+
+open FsCodec.NewtonsoftJson
+let serdes2 = Serdes.Default
+[<Newtonsoft.Json.JsonConverter(typeof<TypeSafeEnumConverter>)>]
+type Status2 = Initial | Active
+type StatusMessage2 = { name: string option; status: Status2 }
+let status2 = { name = None; status = Initial }
+serdes2.Serialize status2
+// "{"name":null,"status":"Initial"}"
+
+// A single registered converter supplied when creating the Serdes can automatically map all Nullary Unions to strings:
+let serdesWithConverter = Serdes(Options.Create(TypeSafeEnumConverter()))
+// NOTE: no JsonConverter attribute
+type Status3 = Initial | Active
+type StatusMessage3 = { name: string option; status: Status3 }
+let status3 = { name = None; status = Initial }
+serdesWithConverter.Serialize status3
+// "{"name":null,"status":"Initial"}"
 
 [<JsonConverter(typeof<TypeSafeEnumConverter>)>]
 type Outcome = Joy | Pain | Misery

@@ -40,7 +40,7 @@ module Contract2 =
     let serialize (x: Item) = serdes.Serialize x
     let deserialize (json: string) = serdes.Deserialize json
 
-let private serdes = Serdes.Default
+let serdes = Serdes.Default
 
 (* Global vs local Converters
 
@@ -66,6 +66,38 @@ serdesWithGuidConverter.Serialize Guid.Empty
 // 00000000000000000000000000000000
 
 (* TypeSafeEnumConverter basic usage *)
+
+// Without any converters in force, Serdes exposes System.Text.Json's internal behavior, which throws:
+type Status = Initial | Active
+type StatusMessage = { name: string option; status: Status }
+let status = { name = None; status = Initial } 
+serdes.Serialize status
+// System.NotSupportedException: F# discriminated union serialization is not supported. Consider authoring a custom converter for the type.
+//    at System.Text.Json.Serialization.Converters.FSharpTypeConverterFactory.CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+
+// NOTE: Every Nullary Union Type needs a specific instantiation of the generic converter registered:
+
+let serdesWithConverter = Serdes <| Options.Create(TypeSafeEnumConverter<Status>())
+serdesWithConverter.Serialize status
+// "{"name":null,"status":"Initial"}"
+
+// Recommended approach is to tag each type:
+
+[<System.Text.Json.Serialization.JsonConverter(typeof<TypeSafeEnumConverter<Status2>>)>]
+type Status2 = Initial | Active
+type StatusMessage2 = { name: string option; status: Status2 }
+let status2 = { name = None; status = Initial }
+serdes.Serialize status2
+
+// The equivalent of registering a single global TypeSafeEnumConverter is the `autoTypeSafeEnumToJsonString` option:
+
+let options = Options.Create(autoTypeSafeEnumToJsonString = true, rejectNullStrings = true)
+let serdes3 = Serdes options
+type Status3 = Initial | Active
+type StatusMessage3 = { name: string option; status: Status3 }
+let status3 = { name = None; status = Initial } 
+serdes3.Serialize status3
+// "{"name":null,"status":"Initial"}"
 
 [<JsonConverter(typeof<TypeSafeEnumConverter<Outcome>>)>]
 type Outcome = Joy | Pain | Misery
