@@ -44,7 +44,7 @@ type Codec private () =
                 let meta' = match meta with ValueSome x -> encoder.Encode<'Meta> x | ValueNone -> Unchecked.defaultof<'Body>
                 EventData(enc.CaseName, enc.Payload, meta', eventId, correlationId, causationId, timestamp)
 
-            member _.TryDecode encoded =
+            member _.Decode encoded =
                 match dataCodec.TryDecode { CaseName = encoded.EventType; Payload = encoded.Data } with
                 | None -> ValueNone
                 | Some contract -> up.Invoke(encoded, contract) |> ValueSome }

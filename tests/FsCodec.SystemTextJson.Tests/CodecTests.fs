@@ -60,7 +60,7 @@ let [<Property>] roundtrips value =
     test <@ wrapped.EventId = System.Guid.Empty
             && (let d = System.DateTimeOffset.UtcNow - wrapped.Timestamp
                 abs d.TotalMinutes < 1) @>
-    let decoded = eventCodec.TryDecode wrapped |> ValueOption.get
+    let decoded = eventCodec.Decode wrapped |> ValueOption.get
     let expected =
         match value with
         | AO ({ opt = Some null } as v) -> AO { v with opt = None }
@@ -69,7 +69,7 @@ let [<Property>] roundtrips value =
     test <@ expected = decoded @>
 
     // Also validate the adapters work when put in series (NewtonsoftJson tests are responsible for covering the individual hops)
-    let decodedMultiHop = multiHopCodec.TryDecode wrapped |> ValueOption.get
+    let decodedMultiHop = multiHopCodec.Decode wrapped |> ValueOption.get
     test <@ expected = decodedMultiHop @>
 
 let [<Xunit.Fact>] ``EventData.Create basics`` () =

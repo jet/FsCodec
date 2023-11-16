@@ -35,7 +35,7 @@ type IEventCodec<'Event, 'Format, 'Context> =
     /// <summary>Encodes a <c>'Event</c> instance into a <c>'Format</c> representation</summary>
     abstract Encode: context: 'Context * value : 'Event -> IEventData<'Format>
     /// <summary>Decodes a formatted representation into a <c>'Event</c> instance. Returns <c>None</c> on undefined <c>EventType</c>s</summary>
-    abstract TryDecode: encoded: ITimelineEvent<'Format> -> 'Event voption
+    abstract Decode: encoded: ITimelineEvent<'Format> -> 'Event voption
 
 namespace FsCodec.Core
 
@@ -132,6 +132,6 @@ type EventCodec<'Event, 'Format, 'Context> private () =
                 let encoded = native.Encode(context, event)
                 upConvert encoded
 
-            member _.TryDecode target =
+            member _.Decode target =
                 let encoded = downConvert target
-                native.TryDecode encoded }
+                native.Decode encoded }

@@ -7,7 +7,7 @@ open System
 [<AbstractClass; Sealed>]
 type Codec =
 
-    /// <summary>Generate an <code>IEventCodec</code> suitable using the supplied pair of <c>encode</c> and <c>tryDecode</c> functions.</summary>
+    /// <summary>Generate an <code>IEventCodec</code> suitable using the supplied pair of <c>encode</c> and <c>decode</c> functions.</summary>
     // Leaving this helper private until we have a real use case which will e.g. enable us to decide whether to align the signature with the up/down functions
     //   employed in the convention-based Codec
     // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
@@ -16,7 +16,7 @@ type Codec =
             // <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.</summary>
             encode: Func<'Context, 'Event, struct (string * 'Format * 'Format * Guid * string * string * DateTimeOffset)>,
             // <summary>Attempts to map from an Event's stored data to <c>Some 'Event</c>, or <c>None</c> if not mappable.</summary>
-            tryDecode: Func<ITimelineEvent<'Format>, 'Event voption>)
+            decode: Func<ITimelineEvent<'Format>, 'Event voption>)
         : IEventCodec<'Event, 'Format, 'Context> =
 
         { new IEventCodec<'Event, 'Format, 'Context> with
@@ -24,10 +24,10 @@ type Codec =
                 let struct (eventType, data, metadata, eventId, correlationId, causationId, timestamp) = encode.Invoke(context, event)
                 Core.EventData(eventType, data, metadata, eventId, correlationId, causationId, timestamp)
 
-            member _.TryDecode encoded =
-                tryDecode.Invoke encoded }
+            member _.Decode encoded =
+                decode.Invoke encoded }
 
-    /// <summary>Generate an <c>IEventCodec</c> suitable using the supplied <c>encode</c> and <c>tryDecode</c> functions to map to/from the stored form.
+    /// <summary>Generate an <c>IEventCodec</c> suitable using the supplied <c>encode</c> and <c>decode</c> functions to map to/from the stored form.
     /// <c>mapCausation</c> provides metadata generation and correlation/causationId mapping based on the <c>context</c> passed to the encoder</summary>
     static member Create<'Event, 'Format, 'Context>
         (   // Maps a fresh <c>'Event</c> resulting from the Domain representation type down to the TypeShape <c>UnionConverter</c> <c>'Contract</c>
@@ -37,7 +37,7 @@ type Codec =
             encode: Func<'Event, struct (string * 'Format * DateTimeOffset voption)>,
             // Maps from the TypeShape <c>UnionConverter</c> <c>'Contract</c> case the Event has been mapped to (with the raw event data as context)
             // to the <c>'Event</c> representation (typically a Discriminated Union) that is to be presented to the programming model.
-            tryDecode: Func<ITimelineEvent<'Format>, 'Event voption>,
+            decode: Func<ITimelineEvent<'Format>, 'Event voption>,
             // Uses the 'Context passed to the Encode call and the 'Meta emitted by <c>down</c> to a) the final metadata b) the <c>correlationId</c> and c) the correlationId
             mapCausation: Func<'Context, 'Event, struct ('Format * Guid * string * string)>)
         : IEventCodec<'Event, 'Format, 'Context> =
@@ -47,19 +47,19 @@ type Codec =
             let ts = match t with ValueSome x -> x | ValueNone -> DateTimeOffset.UtcNow
             let struct (m, eventId, correlationId, causationId) = mapCausation.Invoke(context, event)
             struct (et, d, m, eventId, correlationId, causationId, ts)
-        Codec.Create(encode, tryDecode)
+        Codec.Create(encode, decode)
 
-    /// Generate an <code>IEventCodec</code> using the supplied pair of <c>encode</c> and <c>tryDecode</code> functions.
+    /// Generate an <code>IEventCodec</code> using the supplied pair of <c>encode</c> and <c>decode</code> functions.
     static member Create<'Event, 'Format>
         (   // Maps a <c>'Event</c> to an Event Type Name and an encoded body (to be used as the <c>Data</c>).
             encode: Func<'Event, struct (string * 'Format)>,
             // Attempts to map an Event Type Name and an encoded <c>Data</c> to <c>Some 'Event</c> case, or <c>None</c> if not mappable.
-            tryDecode: Func<string, 'Format, 'Event voption>)
+            decode: Func<string, 'Format, 'Event voption>)
         : IEventCodec<'Event, 'Format, unit> =
 
         let encode' _context event =
             let struct (eventType, data : 'Format) = encode.Invoke event
             struct (eventType, data, Unchecked.defaultof<'Format> (* metadata *),
                     Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), DateTimeOffset.UtcNow (* timestamp *))
-        let tryDecode' (encoded : ITimelineEvent<'Format>) = tryDecode.Invoke(encoded.EventType, encoded.Data)
-        Codec.Create(encode', tryDecode')
+        let decode' (encoded : ITimelineEvent<'Format>) = decode.Invoke(encoded.EventType, encoded.Data)
+        Codec.Create(encode', decode')

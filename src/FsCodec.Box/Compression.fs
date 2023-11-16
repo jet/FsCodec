@@ -15,7 +15,7 @@ module private EncodedMaybeCompressed =
         let [<Literal>] Deflate = 1 // Deprecated encoding produced by versions pre 3.0.0-rc.13; no longer produced
         let [<Literal>] Brotli = 2 // Default encoding as of 3.0.0-rc.13
 
-    (* Decompression logic: triggered by extension methods below at the point where the Codec's TryDecode retrieves the Data or Meta properties *)
+    (* Decompression logic: triggered by extension methods below at the point where the Codec's Decode retrieves the Data or Meta properties *)
 
     // In versions pre 3.0.0-rc.13, the compression was implemented as follows; NOTE: use of Flush vs Close saves space but is unconventional
     // let private deflate (eventBody: ReadOnlyMemory<byte>): System.IO.MemoryStream =

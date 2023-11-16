@@ -10,6 +10,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+- Rename `TryDecode` -> `Decode` as the `Try` prefix indicates it cannot throw while it very well can, causing widespread confusion
 ### Removed
 ### Fixed
 
