@@ -12,7 +12,7 @@ The components within this repository are delivered as multi-targeted Nuget pack
 - [![Codec NuGet](https://img.shields.io/nuget/v/FsCodec.svg)](https://www.nuget.org/packages/FsCodec/) `FsCodec` Defines interfaces with trivial implementation helpers.
   - No dependencies.
   - [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L19): defines a base interface for serializers.
-  - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in a serializer and/or Union Encoder of your choice (typically this is used to supply a pair `encode` and `tryDecode` functions)
+  - [`FsCodec.Codec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L5): enables plugging in custom serialization (a trivial implementation of the interface that simply delegates to a pair of `encode` and `decode` functions you supply)
   - [`FsCodec.StreamName`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamName.fs): strongly-typed wrapper for a Stream Name, together with factory functions and active patterns for parsing same
   - [`FsCodec.StreamId`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/StreamId.fs): strongly-typed wrapper for a Stream Id, together with factory functions and active patterns for parsing same
 - [![Box Codec NuGet](https://img.shields.io/nuget/v/FsCodec.Box.svg)](https://www.nuget.org/packages/FsCodec.Box/) `FsCodec.Box`: See [`FsCodec.Box.Codec`](#boxcodec); `IEventCodec<obj>` implementation that provides a null encode/decode step in order to enable decoupling of serialization/deserialization concerns from the encoding aspect, typically used together with  [`Equinox.MemoryStore`](https://www.fuget.org/packages/Equinox.MemoryStore)
@@ -30,8 +30,8 @@ The purpose of the `FsCodec` package is to provide a minimal interface on which 
 
 - [`FsCodec.IEventData`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L4) represents a single event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type)
 - [`FsCodec.ITimelineEvent`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L23) represents a single stored event and/or related metadata in raw form (i.e. still as a UTF8 string etc, not yet bound to a specific Event Type). Inherits `IEventData`, adding `Index` and `IsUnfold` in order to represent the position on the timeline that the event logically occupies.
-- [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode: 'Context option * 'Event -> IEventData` and `TryDecode: ITimelineEvent -> 'Event option` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
-- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode: 'Event -> string * byte[]` and `tryDecode: string * byte[] -> 'Event option` functions (other overloads are available for advanced cases)
+- [`FsCodec.IEventCodec`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L31) presents `Encode: 'Context option * 'Event -> IEventData` and `Decode: ITimelineEvent -> 'Event voption` methods that can be used in low level application code to generate `IEventData`s or decode `ITimelineEvent`s based on a contract defined by `'Union`
+- [`FsCodec.Codec.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/Codec.fs#L27) implements `IEventCodec` in terms of supplied `encode: 'Event -> string * byte[]` and `decode: string * byte[] -> 'Event voption` functions (other overloads are available for advanced cases)
 - [`FsCodec.Core.EventData.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L44) is a low level helper to create an `IEventData` directly for purposes such as tests etc.
 - [`FsCodec.Core.TimelineEvent.Create`](https://github.com/jet/FsCodec/blob/master/src/FsCodec/FsCodec.fs#L58) is a low level helper to create an `ITimelineEvent` directly for purposes such as tests etc.
 
@@ -479,7 +479,7 @@ type IEventCodec<'Event, 'Format, 'Context> =
     /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
     abstract Encode: context: 'Context * value: 'Event -> IEventData<'Format>
     /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
-    abstract TryDecode: encoded: ITimelineEvent<'Format> -> 'Event voption
+    abstract Decode: encoded: ITimelineEvent<'Format> -> 'Event voption
 ```
 
 `IEventCodec` represents a standard contract for the encoding and decoding of events used in event sourcing and event based notification scenarios:
@@ -728,13 +728,13 @@ module private Stream =
     /// Inverse of `id`; decodes a StreamId into its constituent parts; throws if the presented StreamId does not adhere to the expected format
     let decodeId: FsCodec.StreamId -> ClientId = FsCodec.StreamId.dec ClientId.parse
     /// Inspects a stream name; if for this Category, decodes the elements into application level ids. Throws if it's malformed.
-    let tryDecode: FsCodec.StreamName -> ClientId voption = FsCodec.StreamName.tryFind Category >> ValueOption.map decodeId
+    let decode: FsCodec.StreamName -> ClientId voption = FsCodec.StreamName.tryFind Category >> ValueOption.map decodeId
 
 module Reactions =    
    
     /// Active Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the streamId if the Category matches
-    let [<return: Struct>] (|For|_|) = Stream.tryDecode
+    let [<return: Struct>] (|For|_|) = Stream.decode
 
     let private dec = Streams.codec<Events.Event>
     /// Yields decoded events and relevant strongly typed ids if the Category of the Stream Name matches
@@ -772,12 +772,12 @@ let streamCodec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E
     Codec.Create<'E>(serdes = Store.serdes)
 
 let dec = streamCodec<Events.Event>
-let [<return:Struct>] (|TryDecodeEvent|_|) (codec: Codec<'E>) event = codec.TryDecode event
+let [<return:Struct>] (|DecodeEvent|_|) (codec: Codec<'E>) event = codec.Decode event
 
 let runCodecExplicit () =
     for stream, event in events do
         match stream, event with
-        | Reactions.For clientId, TryDecodeEvent dec e ->
+        | Reactions.For clientId, DecodeEvent dec e ->
             printfn $"Client %s{ClientId.toString clientId}, event %A{e}"
         | FsCodec.StreamName.Split struct (cat, sid), e ->
             printfn $"Unhandled Event: Category %s{cat}, Ids %s{FsCodec.StreamId.toString sid}, Index %d{e.Index}, Event: %A{e.EventType}"
@@ -817,7 +817,7 @@ module ReactionsBasic =
    
     let dec = streamCodec<Events.Event>
     let (|DecodeSingle|_|): FsCodec.StreamName * Event -> (ClientId * Events.Event) option = function
-        | Reactions.For clientId, TryDecodeEvent dec event -> Some (clientId, event)
+        | Reactions.For clientId, DecodeEvent dec event -> Some (clientId, event)
         | _ -> None
 ```
 
@@ -862,8 +862,8 @@ module Streams =
         System.Text.Encoding.UTF8.GetString(x.Span)
     /// Uses the supplied codec to decode the supplied event record `x`
     /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
-    let tryDecode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
-        match codec.TryDecode x with
+    let decode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
+        match codec.Decode x with
         | ValueNone ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
                 log.ForContext("event", render x.Data, true)
@@ -872,12 +872,12 @@ module Streams =
         | ValueSome x -> ValueSome x
     
     /// Attempts to decode the supplied Event using the supplied Codec
-    let [<return: Struct>] (|TryDecode|_|) (codec: Codec<'E>) struct (streamName, event) =
-        tryDecode Serilog.Log.Logger codec streamName event
+    let [<return: Struct>] (|Decode|_|) (codec: Codec<'E>) struct (streamName, event) =
+        decode Serilog.Log.Logger codec streamName event
     module Array = let inline chooseV f xs = [| for item in xs do match f item with ValueSome v -> yield v | ValueNone -> () |]
     /// Yields the subset of events that successfully decoded (could be Array.empty)
     let decode<'E> (codec: Codec<'E>) struct (streamName, events: Event[]): 'E[] =
-        events |> Array.chooseV (tryDecode<'E> Serilog.Log.Logger codec streamName)
+        events |> Array.chooseV (decode<'E> Serilog.Log.Logger codec streamName)
     let (|Decode|) = decode
 ```
 

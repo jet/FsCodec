@@ -191,12 +191,12 @@ module private Stream =
     /// Inverse of `id`; decodes a StreamId into its constituent parts; throws if the presented StreamId does not adhere to the expected format
     let decodeId: FsCodec.StreamId -> ClientId = FsCodec.StreamId.dec ClientId.parse
     /// Inspects a stream name; if for this Category, decodes the elements into application level ids. Throws if it's malformed.
-    let tryDecode: FsCodec.StreamName -> ClientId voption = FsCodec.StreamName.tryFind Category >> ValueOption.map decodeId
+    let decode: FsCodec.StreamName -> ClientId voption = FsCodec.StreamName.tryFind Category >> ValueOption.map decodeId
 
 module Reaction =
     /// Active Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the streamId if the Category matches
-    let [<return: Struct>] (|For|_|) = Stream.tryDecode
+    let [<return: Struct>] (|For|_|) = Stream.decode
 
 module Events =
 
@@ -244,12 +244,12 @@ let streamCodec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E
     Codec.Create<'E>(serdes = Store.serdes)
         
 let dec = streamCodec<Events.Event>
-let [<return:Struct>] (|TryDecodeEvent|_|) (codec: Codec<'E>) event = codec.TryDecode event
+let [<return:Struct>] (|DecodeEvent|_|) (codec: Codec<'E>) event = codec.Decode event
 
 let runCodecExplicit () =
     for stream, event in events do
         match stream, event with
-        | Reaction.For clientId, TryDecodeEvent dec e ->
+        | Reaction.For clientId, DecodeEvent dec e ->
             printfn $"Client %s{ClientId.toString clientId}, event %A{e}"
         | FsCodec.StreamName.Split struct (cat, sid), e ->
             printfn $"Unhandled Event: Category %s{cat}, Ids %s{FsCodec.StreamId.toString sid}, Index %d{e.Index}, Event: %A{e.EventType}"
@@ -273,7 +273,7 @@ module ReactionsBasic =
    
     let dec = streamCodec<Events.Event>
     let (|DecodeSingle|_|): FsCodec.StreamName * Event -> (ClientId * Events.Event) option = function
-        | Reaction.For clientId, TryDecodeEvent dec event -> Some (clientId, event)
+        | Reaction.For clientId, DecodeEvent dec event -> Some (clientId, event)
         | _ -> None
 
 let reactSingle (clientId: ClientId) (event: Events.Event) =
@@ -314,8 +314,8 @@ module Streams =
         System.Text.Encoding.UTF8.GetString(x.Span)
     /// Uses the supplied codec to decode the supplied event record `x`
     /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
-    let tryDecode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
-        match codec.TryDecode x with
+    let decode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
+        match codec.Decode x with
         | ValueNone ->
             if log.IsEnabled Serilog.Events.LogEventLevel.Debug then
                 log.ForContext("event", render x.Data, true)
@@ -324,12 +324,12 @@ module Streams =
         | ValueSome x -> ValueSome x
     
     /// Attempts to decode the supplied Event using the supplied Codec
-    let [<return: Struct>] (|TryDecode|_|) (codec: Codec<'E>) struct (streamName, event) =
-        tryDecode Serilog.Log.Logger codec streamName event
+    let [<return: Struct>] (|Decode|_|) (codec: Codec<'E>) struct (streamName, event) =
+        decode Serilog.Log.Logger codec streamName event
     module Array = let inline chooseV f xs = [| for item in xs do match f item with ValueSome v -> yield v | ValueNone -> () |]
     /// Yields the subset of events that successfully decoded (could be Array.empty)
     let decode<'E> (codec: Codec<'E>) struct (streamName, events: Event[]): 'E[] =
-        events |> Array.chooseV (tryDecode<'E> Serilog.Log.Logger codec streamName)
+        events |> Array.chooseV (decode<'E> Serilog.Log.Logger codec streamName)
     let (|Decode|) = decode
 
 (* When using Propulsion, Events are typically delivered as an array of contiguous events together with a StreamName
@@ -339,7 +339,7 @@ module Reactions =
    
     /// Active Pattern to determine whether a given {category}-{streamId} StreamName represents the stream associated with this Aggregate
     /// Yields a strongly typed id from the streamId if the Category matches
-    let [<return: Struct>] (|For|_|) = Stream.tryDecode
+    let [<return: Struct>] (|For|_|) = Stream.decode
 
     let private dec = Streams.codec<Events.Event>
     /// Yields decoded events and relevant strongly typed ids if the Category of the Stream Name matches

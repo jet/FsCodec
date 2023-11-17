@@ -7,7 +7,7 @@ open Xunit
 let inline roundtrip (sut : FsCodec.IEventCodec<_, _, _>) value =
     let encoded = sut.Encode((), value = value)
     let loaded = FsCodec.Core.TimelineEvent.Create(-1L, encoded)
-    sut.TryDecode loaded
+    sut.Decode loaded
 
 (* Base Fixture Round-trips a String encoded as ReadOnlyMemory<byte> UTF-8 blob *)
 
@@ -18,8 +18,8 @@ module StringUtf8 =
     let dec (b : ReadOnlySpan<byte>) : string = System.Text.Encoding.UTF8.GetString b
     let stringUtf8Encoder =
         let encode e = struct (eventType, enc e)
-        let tryDecode s (b : ReadOnlyMemory<byte>) = if s = eventType then ValueSome (dec b.Span) else invalidOp "Invalid eventType value"
-        FsCodec.Codec.Create(encode, tryDecode)
+        let decode s (b : ReadOnlyMemory<byte>) = if s = eventType then ValueSome (dec b.Span) else invalidOp "Invalid eventType value"
+        FsCodec.Codec.Create(encode, decode)
 
     let sut = stringUtf8Encoder
 
