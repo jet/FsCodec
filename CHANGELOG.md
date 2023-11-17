@@ -10,9 +10,15 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
-- `IEventCodec.TryDecode`: Rename to `Decode` (to align with the primary assumption of a `Try` prefix per BCL conventions: It won't throw, no matter what!) [#107](https://github.com/jet/FsCodec/pull/107) :pray: [@nordfjord](https://github.com/nordfjord)
 ### Removed
 ### Fixed
+
+<a name="3.0.0-rc.14"></a>
+## [3.0.0-rc.14] - 2023-11-17
+
+### Changed
+
+- `IEventCodec.TryDecode`: Rename to `Decode` (to align with the primary assumption of a `Try` prefix per BCL conventions: It won't throw, no matter what!) [#107](https://github.com/jet/FsCodec/pull/107) :pray: [@nordfjord](https://github.com/nordfjord)
 
 <a name="3.0.0-rc.13"></a>
 ## [3.0.0-rc.13] - 2023-9-11
@@ -411,6 +417,7 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
 [Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.13...HEAD
+[3.0.0-rc.14]: https://github.com/jet/FsCodec/compare/3.0.0-rc.13...3.0.0-rc.14
 [3.0.0-rc.13]: https://github.com/jet/FsCodec/compare/3.0.0-rc.12...3.0.0-rc.13
 [3.0.0-rc.12]: https://github.com/jet/FsCodec/compare/3.0.0-rc.11...3.0.0-rc.12
 [3.0.0-rc.11]: https://github.com/jet/FsCodec/compare/3.0.0-rc.10...3.0.0-rc.11
