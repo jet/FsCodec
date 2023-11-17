@@ -10,7 +10,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
-- Rename `TryDecode` -> `Decode` as the `Try` prefix indicates it cannot throw while it very well can, causing widespread confusion
+- `IEventCodec.TryDecode`: Rename to `Decode` (to align with the primary assumption of a `Try` prefix per BCL conventions: It won't throw, no matter what!) [#107](https://github.com/jet/FsCodec/pull/107) :pray: [@nordfjord](https://github.com/nordfjord)
 ### Removed
 ### Fixed
 
