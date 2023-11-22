@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `NewtonsoftJson`: Upped minimum `Newtonsoft.Json` version to `13.0.3` per [GitHub advisory database](https://www.nuget.org/packages/newtonsoft.json/11.0.2)
+
 ### Removed
 ### Fixed
 
