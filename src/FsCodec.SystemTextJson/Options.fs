@@ -67,9 +67,9 @@ type Options private () =
         Options.CreateDefault(
             converters = [|
                 if converters <> null then yield! converters
-                if rejectNullStrings then yield RejectNullStringConverter()
+                if rejectNullStrings then RejectNullStringConverter()
                 if autoTypeSafeEnumToJsonString || autoUnionToJsonObject then
-                    yield UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
+                    UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
             |],
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,

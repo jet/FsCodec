@@ -8,8 +8,6 @@ open System.Runtime.InteropServices
 [<AbstractClass; Sealed>]
 type Options private () =
 
-    static let defaultConverters : JsonConverter[] = [| OptionConverter() |]
-
     /// <summary>Analogous to <c>System.Text.Json</c>'s <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
     static member val Default : JsonSerializerSettings = Options.Create()
 
@@ -62,7 +60,8 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
 
         Options.CreateDefault(
-            converters = (match converters with null | [||] -> defaultConverters | xs -> Array.append defaultConverters xs),
+            converters = [| OptionConverter()
+                            match converters with null -> () | xs -> yield! xs |],
             ?ignoreNulls = ignoreNulls,
             ?errorOnMissing = errorOnMissing,
             ?indent = indent,
