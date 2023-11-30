@@ -67,3 +67,11 @@ type Options private () =
             ?errorOnMissing = errorOnMissing,
             ?indent = indent,
             ?camelCase = camelCase)
+
+    /// <summary>Creates a <c>StringEnumConverter</c>.
+    /// <c>camelCase</c> option defaults to <c>false</c>.
+    /// <c>allowIntegerValues</c> defaults to <c>false</c>. NOTE: Newtonsoft.Json default is: <c>true</c>.</summary>
+    static member CreateStringEnumConverter(?camelCase, ?allowIntegerValues) =
+        let allowIntegers = defaultArg allowIntegerValues false
+        if defaultArg camelCase false then Converters.StringEnumConverter(CamelCaseNamingStrategy(), allowIntegerValues = allowIntegers)
+        else Converters.StringEnumConverter(AllowIntegerValues = allowIntegers)

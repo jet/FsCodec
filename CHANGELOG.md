@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+ 
+- `NewtonsoftJson.Options.CreateStringEnumConverter`: Small wrapper to smooth construction syntax [#109](https://github.com/jet/FsCodec/pull/109)
+
 ### Changed
 
 - `NewtonsoftJson`: Upped minimum `Newtonsoft.Json` version to `13.0.3` per [GitHub advisory database](https://www.nuget.org/packages/newtonsoft.json/11.0.2) [#109](https://github.com/jet/FsCodec/pull/109)
