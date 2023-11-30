@@ -10,7 +10,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
  
-- `NewtonsoftJson.Options.CreateStringEnumConverter`: Small wrapper to smooth construction syntax [#111](https://github.com/jet/FsCodec/pull/111)
+- `NewtonsoftJson.StringEnumConverter.Create`: Small wrapper to smooth construction syntax [#111](https://github.com/jet/FsCodec/pull/111)
 - `NewtonsoftJson.Serdes.Deserialize<'T>(Newtonsoft.Json.Linq.JObject)`: One liner [#111](https://github.com/jet/FsCodec/pull/111)
 
 ### Changed

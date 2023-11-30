@@ -28,12 +28,9 @@ type Options private () =
         let camelCase = defaultArg camelCase false
         let ignoreNulls = defaultArg ignoreNulls false
         let errorOnMissing = defaultArg errorOnMissing false
-        let resolver : IContractResolver =
-             if camelCase then CamelCasePropertyNamesContractResolver() :> _
-             else DefaultContractResolver() :> _
 
         JsonSerializerSettings(
-            ContractResolver = resolver,
+            ContractResolver = (if camelCase then CamelCasePropertyNamesContractResolver() : IContractResolver else DefaultContractResolver()),
             Converters = converters,
             DateTimeZoneHandling = DateTimeZoneHandling.Utc, // Override default of RoundtripKind
             DateFormatHandling = DateFormatHandling.IsoDateFormat, // Pin Json.Net claimed default
@@ -67,10 +64,13 @@ type Options private () =
             ?indent = indent,
             ?camelCase = camelCase)
 
+[<AbstractClass; Sealed>]
+type StringEnumConverter private () =
+
     /// <summary>Creates a <c>StringEnumConverter</c>.
     /// <c>camelCase</c> option defaults to <c>false</c>.
     /// <c>allowIntegerValues</c> defaults to <c>false</c>. NOTE: Newtonsoft.Json default is: <c>true</c>.</summary>
-    static member CreateStringEnumConverter(?camelCase, ?allowIntegerValues) =
+    static member Create(?camelCase, ?allowIntegerValues) =
         let allowIntegers = defaultArg allowIntegerValues false
         if defaultArg camelCase false then Converters.StringEnumConverter(CamelCaseNamingStrategy(), allowIntegerValues = allowIntegers)
         else Converters.StringEnumConverter(AllowIntegerValues = allowIntegers)
