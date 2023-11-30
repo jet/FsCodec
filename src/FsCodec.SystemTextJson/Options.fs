@@ -24,11 +24,11 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             // Drop escaping of HTML-sensitive characters. defaults to `false`.
             [<Optional; DefaultParameterValue(null)>] ?unsafeRelaxedJsonEscaping : bool) =
-
         let indent = defaultArg indent false
         let camelCase = defaultArg camelCase false
         let ignoreNulls = defaultArg ignoreNulls false
         let unsafeRelaxedJsonEscaping = defaultArg unsafeRelaxedJsonEscaping false
+
         let options = JsonSerializerOptions()
         if converters <> null then converters |> Array.iter options.Converters.Add
         if indent then options.WriteIndented <- true
@@ -59,17 +59,16 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject : bool,
             // <summary>Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings. Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
             [<Optional; DefaultParameterValue(null)>] ?rejectNullStrings: bool) =
-
         let autoTypeSafeEnumToJsonString = defaultArg autoTypeSafeEnumToJsonString false
         let autoUnionToJsonObject = defaultArg autoUnionToJsonObject false
         let rejectNullStrings = defaultArg rejectNullStrings false
 
         Options.CreateDefault(
             converters = [|
-                if converters <> null then yield! converters
                 if rejectNullStrings then RejectNullStringConverter()
                 if autoTypeSafeEnumToJsonString || autoUnionToJsonObject then
                     UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
+                if converters <> null then yield! converters
             |],
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
