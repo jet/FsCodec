@@ -23,17 +23,14 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             // Error on missing values (as opposed to letting them just be default-initialized); defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
-
         let indent = defaultArg indent false
         let camelCase = defaultArg camelCase false
         let ignoreNulls = defaultArg ignoreNulls false
         let errorOnMissing = defaultArg errorOnMissing false
-
         JsonSerializerSettings(
             ContractResolver = (if camelCase then CamelCasePropertyNamesContractResolver() : IContractResolver else DefaultContractResolver()),
             Converters = converters,
             DateTimeZoneHandling = DateTimeZoneHandling.Utc, // Override default of RoundtripKind
-            DateFormatHandling = DateFormatHandling.IsoDateFormat, // Pin Json.Net claimed default
             DateParseHandling = DateParseHandling.None, // Override hare-brained default of DateTime per https://github.com/JamesNK/Newtonsoft.Json/issues/862
             Formatting = (if indent then Formatting.Indented else Formatting.None),
             MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
@@ -55,7 +52,6 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             // Error on missing values (as opposed to letting them just be default-initialized); defaults to false
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
-
         Options.CreateDefault(
             converters = [| OptionConverter()
                             match converters with null -> () | xs -> yield! xs |],
