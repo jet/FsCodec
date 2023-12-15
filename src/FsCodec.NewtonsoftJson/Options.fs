@@ -14,6 +14,7 @@ type Options private () =
     static member val Default : JsonSerializerSettings = Options.Create()
 
     /// Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
+    /// With one difference - it inhibits the JSON.NET out of the box parsing of strings that look like dates (see https://github.com/JamesNK/Newtonsoft.Json/issues/862)
     static member CreateDefault
         (   [<Optional; ParamArray>] converters : JsonConverter[],
             // Use multi-line, indented formatting when serializing JSON; defaults to false.
@@ -38,6 +39,7 @@ type Options private () =
             Converters = converters,
             DateTimeZoneHandling = DateTimeZoneHandling.Utc, // Override default of RoundtripKind
             DateFormatHandling = DateFormatHandling.IsoDateFormat, // Pin Json.Net claimed default
+            DateParseHandling = DateParseHandling.None, // Override hare-brained default of DateTime per https://github.com/JamesNK/Newtonsoft.Json/issues/862
             Formatting = (if indent then Formatting.Indented else Formatting.None),
             MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
             NullValueHandling = (if ignoreNulls then NullValueHandling.Ignore else NullValueHandling.Include))
