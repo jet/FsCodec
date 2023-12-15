@@ -8,8 +8,6 @@ open System.Runtime.InteropServices
 [<AbstractClass; Sealed>]
 type Options private () =
 
-    static let defaultConverters : JsonConverter[] = [| OptionConverter() |]
-
     /// <summary>Analogous to <c>System.Text.Json</c>'s <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
     static member val Default : JsonSerializerSettings = Options.Create()
 
@@ -25,20 +23,14 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             // Error on missing values (as opposed to letting them just be default-initialized); defaults to false.
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
-
         let indent = defaultArg indent false
         let camelCase = defaultArg camelCase false
         let ignoreNulls = defaultArg ignoreNulls false
         let errorOnMissing = defaultArg errorOnMissing false
-        let resolver : IContractResolver =
-             if camelCase then CamelCasePropertyNamesContractResolver() :> _
-             else DefaultContractResolver() :> _
-
         JsonSerializerSettings(
-            ContractResolver = resolver,
+            ContractResolver = (if camelCase then CamelCasePropertyNamesContractResolver() : IContractResolver else DefaultContractResolver()),
             Converters = converters,
             DateTimeZoneHandling = DateTimeZoneHandling.Utc, // Override default of RoundtripKind
-            DateFormatHandling = DateFormatHandling.IsoDateFormat, // Pin Json.Net claimed default
             DateParseHandling = DateParseHandling.None, // Override hare-brained default of DateTime per https://github.com/JamesNK/Newtonsoft.Json/issues/862
             Formatting = (if indent then Formatting.Indented else Formatting.None),
             MissingMemberHandling = (if errorOnMissing then MissingMemberHandling.Error else MissingMemberHandling.Ignore),
@@ -60,10 +52,21 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
             // Error on missing values (as opposed to letting them just be default-initialized); defaults to false
             [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
-
         Options.CreateDefault(
-            converters = (match converters with null | [||] -> defaultConverters | xs -> Array.append defaultConverters xs),
+            converters = [| OptionConverter()
+                            match converters with null -> () | xs -> yield! xs |],
             ?ignoreNulls = ignoreNulls,
             ?errorOnMissing = errorOnMissing,
             ?indent = indent,
             ?camelCase = camelCase)
+
+[<AbstractClass; Sealed>]
+type StringEnumConverter private () =
+
+    /// <summary>Creates a <c>StringEnumConverter</c>.
+    /// <c>camelCase</c> option defaults to <c>false</c>.
+    /// <c>allowIntegerValues</c> defaults to <c>false</c>. NOTE: Newtonsoft.Json default is: <c>true</c>.</summary>
+    static member Create(?camelCase, ?allowIntegerValues) =
+        let allowIntegers = defaultArg allowIntegerValues false
+        if defaultArg camelCase false then Converters.StringEnumConverter(CamelCaseNamingStrategy(), allowIntegerValues = allowIntegers)
+        else Converters.StringEnumConverter(AllowIntegerValues = allowIntegers)

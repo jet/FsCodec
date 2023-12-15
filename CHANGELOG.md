@@ -9,10 +9,15 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+ 
+- `NewtonsoftJson.StringEnumConverter.Create`: Small wrapper to smooth construction syntax [#111](https://github.com/jet/FsCodec/pull/111)
+- `NewtonsoftJson.Serdes.Deserialize<'T>(Newtonsoft.Json.Linq.JObject)`: One liner [#111](https://github.com/jet/FsCodec/pull/111)
+
 ### Changed
 
 - `NewtonsoftJson`: Upped minimum `Newtonsoft.Json` version to `13.0.3` per [GitHub advisory database](https://www.nuget.org/packages/newtonsoft.json/11.0.2) [#109](https://github.com/jet/FsCodec/pull/109)
 - `NewtonsoftJson.Options`: Change all settings (inc `CreateDefault`) to set `DateParseHandling = DateParseHandling.None` in order to work around [the hare-brained default](https://github.com/JamesNK/Newtonsoft.Json/issues/862) [#110](https://github.com/jet/FsCodec/pull/110)
+- `SystemTextJson.Options`: Move custom converters after specified options [#111](https://github.com/jet/FsCodec/pull/111)
 
 ### Removed
 ### Fixed
