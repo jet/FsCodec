@@ -70,8 +70,8 @@ type Serdes(options : JsonSerializerSettings) =
         serializer.Deserialize<'T>(jsonReader)
 
     /// Deserializes value of given type from a JObject
-    member _.Deserialize<'T>(jo : Newtonsoft.Json.Linq.JObject) : 'T =
-        jo.ToObject(typeof<'T>, serializer) :?> 'T
+    member _.Deserialize<'T>(parsed : Newtonsoft.Json.Linq.JObject) : 'T =
+        parsed.ToObject(typeof<'T>, serializer) :?> 'T
 
     /// Serializes and writes given value to a stream.
     member _.SerializeToStream<'T>(value : 'T, utf8Stream : Stream) =
