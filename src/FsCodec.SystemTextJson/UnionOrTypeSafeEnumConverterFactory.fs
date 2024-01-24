@@ -10,12 +10,10 @@ type UnionOrTypeSafeEnumConverterFactory(typeSafeEnum, union) =
     inherit JsonConverterFactory()
 
     static let hasConverterAttribute = memoize (fun (t: Type) -> t.IsDefined(typeof<JsonConverterAttribute>, true))
-    let isIntrinsic (t: Type) =
-        t.IsGenericType
-        && (let gtd = t.GetGenericTypeDefinition() in gtd = typedefof<option<_>> || gtd = typedefof<list<_>>)
 
     override _.CanConvert(t: Type) =
-        not (isIntrinsic t)
+        t.IsGenericType
+        && not (let gtd = t.GetGenericTypeDefinition() in gtd = typedefof<option<_>> || gtd = typedefof<list<_>>)
         && FsCodec.Union.isUnion t
         && not (hasConverterAttribute t)
         && ((typeSafeEnum && union)
