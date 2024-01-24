@@ -60,7 +60,10 @@ type Options private () =
             [<Optional; DefaultParameterValue(null)>] ?autoUnionToJsonObject: bool,
             // Apply <c>RejectNullStringConverter</c> in order to have serialization throw on <c>null</c> strings.
             // Use <c>string option</c> to represent strings that can potentially be <c>null</c>.
-            [<Optional; DefaultParameterValue(null)>] ?rejectNullStrings: bool) =
+            [<Optional; DefaultParameterValue(null)>] ?rejectNullStrings: bool,
+            // Apply <c>RejectNullConverter</c> in order to have serialization throw on <c>null</c> on <c>null</c> or missing <c>list</c> or <c>Set</c> values.
+            // Wrap the type in <c>option</c> to represent values that can potentially be <c>null</c> or missing
+            [<Optional; DefaultParameterValue(null)>] ?rejectNull: bool) =
         let autoTypeSafeEnumToJsonString = defaultArg autoTypeSafeEnumToJsonString false
         let autoUnionToJsonObject = defaultArg autoUnionToJsonObject false
         let rejectNullStrings = defaultArg rejectNullStrings false
@@ -68,6 +71,7 @@ type Options private () =
         Options.CreateDefault(
             converters = [|
                 if rejectNullStrings then RejectNullStringConverter()
+                if defaultArg rejectNull false then RejectNullConverterFactory()
                 if autoTypeSafeEnumToJsonString || autoUnionToJsonObject then
                     UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
                 if converters <> null then yield! converters

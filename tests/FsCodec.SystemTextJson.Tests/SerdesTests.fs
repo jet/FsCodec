@@ -2,6 +2,7 @@ module FsCodec.SystemTextJson.Tests.SerdesTests
 
 open System
 open System.Collections.Generic
+open System.Text.Json.Serialization.Metadata
 open FsCodec.SystemTextJson
 open Swensen.Unquote
 open Xunit
@@ -78,6 +79,32 @@ let [<Fact>] ``RejectNullStringConverter rejects null strings`` () =
 
     let value = { c = 1; d = null }
     raises<ArgumentNullException> <@ serdes.Serialize value @>
+
+type WithList = { x: int; y: list<int> }
+
+let [<Fact>] ``RejectNullConverter rejects null lists and Sets`` () =
+#if false // requires WithList to be CLIMutable, which would be a big imposition
+    let tir =
+        DefaultJsonTypeInfoResolver()
+            .WithAddedModifier(fun x ->
+                // if x.Kind <> JsonTypeInfoKind.Object then
+                for p in x.Properties do
+                    let pt = p.PropertyType
+                    if pt.IsGenericType && (let gtd = pt.GetGenericTypeDefinition() in gtd = typedefof<list<_>> || gtd = typedefof<Set<_>>) then
+                        p.IsRequired <- true)
+    let serdes = Options.Create(TypeInfoResolver = tir) |> Serdes
+#else
+    let serdes = Options.Create(rejectNull = true) |> Serdes
+#endif
+
+    // Fails with NRE when RejectNullConverter delegates to Default list<int> Converter
+    // seems akin to https://github.com/dotnet/runtime/issues/86483
+    let res = serdes.Deserialize<WithList> """{"x":0,"y":[1]}"""
+    test <@ [1] = res.y @>
+
+    raises<exn> <@ serdes.Deserialize<WithList> """{"x":0}""" @>
+    // PROBLEM: there doesn't seem to be a way to intercept explicitly passed nulls
+    // raises<JsonException> <@ serdes.Deserialize<WithList> """{"x":0,"y":null}""" @>
 
 let [<Fact>] ``RejectNullStringConverter serializes strings correctly`` () =
     let serdes = Serdes(Options.Create(rejectNullStrings = true))
