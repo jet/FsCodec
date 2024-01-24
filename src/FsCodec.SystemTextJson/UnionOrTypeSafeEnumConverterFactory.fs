@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 type UnionOrTypeSafeEnumConverterFactory(typeSafeEnum, union) =
     inherit JsonConverterFactory()
 
-    static let hasConverterAttribute = memoize (fun (t: System.Type) -> t.IsDefined(typeof<JsonConverterAttribute>, true))
+    static let hasConverterAttribute: System.Type -> bool = memoize _.IsDefined(typeof<JsonConverterAttribute>, true)
 
     override _.CanConvert t =
         not (t.IsGenericType && let g = t.GetGenericTypeDefinition() in g = typedefof<option<_>> || g = typedefof<list<_>>)
