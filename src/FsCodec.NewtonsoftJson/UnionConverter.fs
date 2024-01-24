@@ -26,7 +26,7 @@ module private UnionInfo =
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to let json.net step in to convert argument types
-    let mapTargetCaseArgs (inputJObject : JObject) serializer : PropertyInfo[] -> obj [] = function
+    let mapTargetCaseArgs (inputJObject: JObject) serializer: PropertyInfo[] -> obj [] = function
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
             [| inputJObject.ToObject(singleCaseArg.PropertyType, serializer) |]
         | multipleFieldsInCustomCaseType ->

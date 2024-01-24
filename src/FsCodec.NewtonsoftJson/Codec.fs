@@ -1,11 +1,11 @@
 namespace FsCodec.NewtonsoftJson.Core
 
 /// Newtonsoft.Json implementation of TypeShape.UnionContractEncoder's IEncoder that encodes direct to a UTF-8 ReadOnlyMemory<byte>
-type ReadOnlyMemoryEncoder(serdes : FsCodec.NewtonsoftJson.Serdes) =
+type ReadOnlyMemoryEncoder(serdes: FsCodec.NewtonsoftJson.Serdes) =
     interface TypeShape.UnionContract.IEncoder<System.ReadOnlyMemory<byte>> with
         member _.Empty = System.ReadOnlyMemory.Empty
         member _.Encode(value: 'T) = serdes.SerializeToUtf8(value) |> System.ReadOnlyMemory
-        member _.Decode(utf8json: System.ReadOnlyMemory<byte>) : 'T = serdes.Deserialize<'T>(utf8json)
+        member _.Decode(utf8json: System.ReadOnlyMemory<byte>): 'T = serdes.Deserialize<'T>(utf8json)
 
 namespace FsCodec.NewtonsoftJson
 

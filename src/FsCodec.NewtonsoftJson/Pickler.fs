@@ -14,8 +14,7 @@ type JsonPickler<'T>() =
     inherit JsonConverter()
 
     static let isMatchingType =
-        let rec isMatching (ts : Type list) =
-            match ts with
+        let rec isMatching = function
             | [] -> false
             | t :: _ when t = typeof<'T> -> true
             | t :: tl ->
@@ -23,43 +22,37 @@ type JsonPickler<'T>() =
                     [ match t.BaseType with null -> () | bt -> yield bt
                       yield! t.GetInterfaces()
                       yield! tl ]
-
                 isMatching tail
-
         memoize (fun t -> isMatching [t])
 
-    abstract Write : writer: JsonWriter * serializer: JsonSerializer * source: 'T  -> unit
-    abstract Read : reader: JsonReader * serializer: JsonSerializer -> 'T
+    abstract Write: writer: JsonWriter * serializer: JsonSerializer * source: 'T  -> unit
+    abstract Read: reader: JsonReader * serializer: JsonSerializer -> 'T
 
     override _.CanConvert t = isMatchingType t
-
     override _.CanRead = true
     override _.CanWrite = true
 
-    override x.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
+    override x.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
         x.Write(writer, serializer, value :?> 'T)
-
-    override x.ReadJson(reader : JsonReader, _ : Type, _ : obj, serializer : JsonSerializer) =
+    override x.ReadJson(reader: JsonReader, _objectType: Type, _existingValue: obj, serializer: JsonSerializer) =
         x.Read(reader, serializer) :> obj
 
 /// Json Converter that serializes based on an isomorphic type
 [<AbstractClass>]
-type JsonIsomorphism<'T, 'U>(?targetPickler : JsonPickler<'U>) =
+type JsonIsomorphism<'T, 'U>(?targetPickler: JsonPickler<'U>) =
     inherit JsonPickler<'T>()
 
-    abstract Pickle   : 'T -> 'U
-    abstract UnPickle : 'U -> 'T
+    abstract Pickle: 'T -> 'U
+    abstract UnPickle: 'U -> 'T
 
-    override x.Write(writer : JsonWriter, serializer : JsonSerializer, source : 'T) =
+    override x.Write(writer: JsonWriter, serializer: JsonSerializer, source: 'T) =
         let target = x.Pickle source
         match targetPickler with
         | None -> serializer.Serialize(writer, target, typeof<'U>)
         | Some p -> p.Write(writer, serializer, target)
-
-    override x.Read(reader : JsonReader, serializer : JsonSerializer) =
+    override x.Read(reader: JsonReader, serializer: JsonSerializer) =
         let target =
             match targetPickler with
             | None -> serializer.Deserialize<'U>(reader)
             | Some p -> p.Read(reader, serializer)
-
         x.UnPickle target

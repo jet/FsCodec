@@ -17,7 +17,7 @@ module StreamName =
 
     /// Strip off the strong typing (In general, it's recommended to pattern match instead)
     /// NOTE As a UMX type, Object.ToString will render equivalent to this
-    let inline toString (x: StreamName) : string = UMX.untag x
+    let inline toString (x: StreamName): string = UMX.untag x
 
     // Validation helpers, etc.
     module Category =
