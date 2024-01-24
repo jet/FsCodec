@@ -90,25 +90,25 @@ let [<Fact>] ``RejectNullConverter rejects null lists and Sets`` () =
                 // if x.Kind <> JsonTypeInfoKind.Object then
                 for p in x.Properties do
                     let pt = p.PropertyType
-                    if pt.IsGenericType && (let gtd = pt.GetGenericTypeDefinition() in gtd = typedefof<list<_>> || gtd = typedefof<Set<_>>) then
+                    if pt.IsGenericType && (let d = pt.GetGenericTypeDefinition() in d = typedefof<list<_>> || d = typedefof<Set<_>>) then
                         p.IsRequired <- true)
     let serdes = Options.Create(TypeInfoResolver = tir) |> Serdes
     raises<exn> <@ serdes.Deserialize<WithList> """{"x":0}""" @>
 #else
     let serdes = Options.Create(rejectNull = true) |> Serdes
 
-    // Fails with NRE when RejectNullConverter delegates to Default list<int> Converter
-    // seems akin to https://github.com/dotnet/runtime/issues/86483
+    // PROBLEM: Fails with NRE when RejectNullConverter delegates to Default list<int> Converter
     // let res = serdes.Deserialize<WithList> """{"x":0,"y":[1]}"""
     // test <@ [1] = res.y @>
 
-    // PROBLEM: Doesn't raise
+    // PROBLEM: Doesn't raise as Converter not called
     raises<exn> <@ serdes.Deserialize<WithList> """{"x":0}""" @>
+
     // PROBLEM: doesnt raise - there doesn't seem to be a way to intercept explicitly passed nulls
     // raises<JsonException> <@ serdes.Deserialize<WithList> """{"x":0,"y":null}""" @>
 #endif
 
-#if false // I guess TypeShape is doing a reasaonable thing not propagating
+#if false // I guess TypeShape is doing a reasonable thing not propagating
     // PROBLEM: TypeShape.Generic.exists does not call the predicate if the list or set is `null`
     let res = serdes.Deserialize<WithList> """{"x":0}"""
     let hasNullList = TypeShape.Generic.exists (fun (x: int list) -> obj.ReferenceEquals(x, null))
