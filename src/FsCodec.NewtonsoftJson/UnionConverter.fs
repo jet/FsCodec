@@ -15,8 +15,10 @@ module private UnionInfo =
         || t.IsArray
         || (t.IsGenericType && let g = t.GetGenericTypeDefinition() in typedefof<Option<_>> = g || g.IsValueType) // Nullable<T>
 
-    let typeHasConverterAttribute = memoize (fun (t: Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
-    let typeIsUnionWithConverterAttribute = memoize (fun (t: Type) -> FsCodec.Union.isUnion t && typeHasConverterAttribute t)
+    let hasConverterCache = System.Collections.Concurrent.ConcurrentDictionary<Type, bool>()
+    let typeHasConverterAttribute (t: Type) = hasConverterCache.GetOrAdd(t, fun t -> t.IsDefined(typeof<JsonConverterAttribute>, ``inherit`` = false))
+    let isUnionCache = System.Collections.Concurrent.ConcurrentDictionary<Type, bool>()
+    let typeIsUnionWithConverterAttribute t = isUnionCache.GetOrAdd(t, fun t -> FsCodec.Union.isUnion t && typeHasConverterAttribute t)
 
     let propTypeRequiresConstruction (propertyType: Type) =
         not (isInlinedIntoUnionItem propertyType)

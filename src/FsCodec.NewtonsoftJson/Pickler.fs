@@ -1,34 +1,15 @@
 ﻿namespace FsCodec.NewtonsoftJson
 
 open Newtonsoft.Json
-open System
-
-[<AutoOpen>]
-module private Prelude =
-    let memoize (f: 'T -> 'S): 'T -> 'S =
-        let cache = new System.Collections.Concurrent.ConcurrentDictionary<'T, 'S>()
-        fun t -> cache.GetOrAdd(t, f)
 
 [<AbstractClass>]
 type JsonPickler<'T>() =
     inherit JsonConverter()
 
-    static let isMatchingType =
-        let rec isMatching = function
-            | [] -> false
-            | t :: _ when t = typeof<'T> -> true
-            | t :: tl ->
-                let tail =
-                    [ match t.BaseType with null -> () | bt -> yield bt
-                      yield! t.GetInterfaces()
-                      yield! tl ]
-                isMatching tail
-        memoize (fun t -> isMatching [t])
-
     abstract Write: writer: JsonWriter * serializer: JsonSerializer * source: 'T  -> unit
     abstract Read: reader: JsonReader * serializer: JsonSerializer -> 'T
 
-    override _.CanConvert t = isMatchingType t
+    override _.CanConvert t = t = typeof<'T>
     override _.CanRead = true
     override _.CanWrite = true
 
