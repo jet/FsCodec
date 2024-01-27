@@ -476,9 +476,9 @@ _See [tests/FsCodec.SystemTextJson.Tests/Examples.fsx](tests/FsCodec.SystemTextJ
 ```fsharp
 /// Defines a contract interpreter that encodes and/or decodes events representing the known set of events borne by a stream category
 type IEventCodec<'Event, 'Format, 'Context> =
-    /// Encodes a <c>'Event</c> instance into a <c>'Format</c> representation
+    /// Encodes a 'Event instance into a 'Format representation
     abstract Encode: context: 'Context * value: 'Event -> IEventData<'Format>
-    /// Decodes a formatted representation into a <c>'Event<c> instance. Does not throw exception on undefined <c>EventType</c>s
+    /// Decodes a formatted representation into a 'Event instance. Does not throw exception on undefined EventTypes
     abstract Decode: encoded: ITimelineEvent<'Format> -> 'Event voption
 ```
 
@@ -514,7 +514,7 @@ type IEventData<'Format> =
     /// The Causation Id associated with the flow that generated this event. Can be `null`
     abstract member CausationId: string
     /// The Event's Creation Time (as defined by the writer, i.e. in a mirror, this is intended to reflect the original time)
-    /// <remarks>- For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.</remarks>
+    /// - For EventStore, this value is not honored when writing; the server applies an authoritative timestamp when accepting the write.
     abstract member Timestamp: System.DateTimeOffset
 ```
 
@@ -524,14 +524,14 @@ type IEventData<'Format> =
 Events from a versioned feed and/or being loaded from an Event Store bring additional context beyond the base information in [IEventData](#IEventData)
 
 ```fsharp
-/// Represents a Domain Event or Unfold, together with it's 0-based <c>Index</c> in the event sequence
+/// Represents a Domain Event or Unfold, together with it's 0-based Index in the event sequence
 type ITimelineEvent<'Format> =
     inherit IEventData<'Format>
     /// The 0-based index into the event sequence of this Event
     abstract member Index: int64
     /// Application-supplied context related to the origin of this event
     abstract member Context: obj
-    /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at <c>Index</c>
+    /// Indicates this is not a true Domain Event, but actually an Unfolded Event based on the State inferred from the Events up to and including that at Index
     abstract member IsUnfold: bool
 ```
 
@@ -627,7 +627,7 @@ module StreamName =
     let toString (streamName: StreamName): string = UMX.untag streamName
 
     // Validates and maps a trusted Stream Name consisting of a Category and an Id separated by a '-` (dash)
-    // Throws <code>InvalidArgumentException</code> if it does not adhere to that form
+    // Throws InvalidArgumentException if it does not adhere to that form
     let parse (rawStreamName: string): StreamName = ...
 
     // Recommended way to specify a stream identifier; a category identifier and a streamId representing the aggregate's identity
@@ -642,13 +642,13 @@ module StreamName =
     let category (x: StreamName): string = ...
     let (|Category|) = category
     
-    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.<br/>
-    /// Throws <c>InvalidArgumentException</c> if it does not adhere to the well known format (i.e. if it was not produced by `parse`).</summary>
-    /// <remarks>Inverse of <c>create</c></remarks>
+    /// Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.
+    /// Throws InvalidArgumentException if it does not adhere to the well known format (i.e. if it was not produced by `parse`).
+    /// Inverse of <c>create</c>
     let split (streamName: StreamName): struct (string * StreamId) = ...
-    /// <summary>Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.<br/>
-    /// Throws <c>InvalidArgumentException</c> if the stream name is not well-formed.</summary>
-    /// <remarks>Inverse of <c>create</c></remarks>
+    /// Splits a well-formed Stream Name of the form <c>{category}-{streamId}</c> into its two elements.
+    /// Throws InvalidArgumentException if the stream name is not well-formed.
+    /// Inverse of <c>create</c>
     let (|Split|): StreamName -> struct (string * StreamId) = split
 
     /// Yields the StreamId, if the Category matches the specified one

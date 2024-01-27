@@ -49,7 +49,7 @@ type Codec =
             struct (et, d, m, eventId, correlationId, causationId, ts)
         Codec.Create(encode, decode)
 
-    /// Generate an <code>IEventCodec</code> using the supplied pair of <c>encode</c> and <c>decode</code> functions.
+    /// <summary>Generate an <c>IEventCodec</c> using the supplied pair of <c>encode</c> and <c>decode</c> functions.</summary>
     static member Create<'Event, 'Format>
         (   // Maps a <c>'Event</c> to an Event Type Name and an encoded body (to be used as the <c>Data</c>).
             encode: Func<'Event, struct (string * 'Format)>,

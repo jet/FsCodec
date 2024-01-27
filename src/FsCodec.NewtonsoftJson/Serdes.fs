@@ -50,7 +50,7 @@ type Serdes(options: JsonSerializerSettings) =
         serializer.Serialize(writer, value)
         sw.ToString()
 
-    /// Serializes given value to a Byte Array, suitable for wrapping as a <c>ReadOnlyMemory</c>.
+    /// <summary>Serializes given value to a Byte Array, suitable for wrapping as a <c>ReadOnlyMemory</c>.</summary>
     member _.SerializeToUtf8(value: 'T): byte[] =
         use ms = Utf8BytesEncoder.rentStream ()
         (   use jsonWriter = Utf8BytesEncoder.makeJsonWriter ms

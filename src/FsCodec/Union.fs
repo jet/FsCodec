@@ -41,5 +41,5 @@ let isNullary (t: Type) = let u = Info.get t in u.cases |> Array.forall (fun cas
 [<EditorBrowsable(EditorBrowsableState.Never)>]
 let caseNameT (t: Type) (x: obj) = ((Info.get t).getCase x).name
 
-/// Yields the case name for a given value, regardless of whether it <c>isNullary</c> or not.
+/// <summary>Yields the case name for a given value, regardless of whether it <c>isNullary</c> or not.</summary>
 let caseName<'t>(x: 't) = ((Info.get typeof<'t>).getCase x).name

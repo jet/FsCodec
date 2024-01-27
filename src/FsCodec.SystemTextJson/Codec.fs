@@ -1,6 +1,6 @@
 namespace FsCodec.SystemTextJson.Core
 
-/// System.Text.Json implementation of TypeShape.UnionContractEncoder's IEncoder that encodes to a ReadOnlyMemory<byte>
+/// <summary><c>System.Text.Json</c> implementation of <c>TypeShape.UnionContractEncoder</c>'s <c>IEncoder</c> that encodes to a <c>ReadOnlyMemory&lt;byte&gt;</c></summary>
 type ReadOnlyMemoryEncoder(serdes: FsCodec.SystemTextJson.Serdes) =
     interface TypeShape.UnionContract.IEncoder<System.ReadOnlyMemory<byte>> with
         member _.Empty = System.ReadOnlyMemory.Empty

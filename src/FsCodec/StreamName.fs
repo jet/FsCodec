@@ -4,15 +4,15 @@ namespace FsCodec
 open FSharp.UMX
 
 /// <summary>Lightly-wrapped well-formed Stream Name adhering to one of two forms:<br/>
-/// 1. <c>{category}-{streamId}</c>
+/// 1. <c>{category}-{streamId}</c><br/>
 /// 2. <c>{category}-{id1}_{id2}_...{idN}</c><br/>
 /// See <a href="https://github.com/fsprojects/FSharp.UMX" /></summary>
 type StreamName = string<streamName>
 and [<Measure>] streamName
 
-/// Creates, Parses and Matches Stream Names in one of two forms:
-/// 1. {category}-{streamId}
-/// 2. {category}-{id1}_{id2}_...{idN}
+/// <summary>Creates, Parses and Matches Stream Names in one of two forms:<br/?
+/// 1. <c>{category}-{streamId}</c><br.>
+/// 2. <c>{category}-{id1}_{id2}_...{idN}</c></summary>
 module StreamName =
 
     /// Strip off the strong typing (In general, it's recommended to pattern match instead)
@@ -41,16 +41,16 @@ module StreamName =
 
     module Internal =
 
-        /// <summary>Attempts to split a Stream Name in the form <c>{category}-{streamId}</c> into its two elements.
-        /// The <c>{streamId}</c> segment is permitted to include embedded '-' (dash) characters
+        /// <summary>Attempts to split a Stream Name in the form <c>{category}-{streamId}</c> into its two elements.<br/>
+        /// The <c>{streamId}</c> segment is permitted to include embedded <c>'-'</c> (dash) characters.<br/>
         /// Returns <c>None</c> if it does not adhere to that form.</summary>
         let tryParse (raw: string): struct (string * StreamId) voption =
             match raw.Split(Category.separator, 2) with
             | [| cat; id |] -> ValueSome struct (cat, StreamId.Elements.trust id)
             | _ -> ValueNone
 
-        /// <summary>Attempts to split a Stream Name in the form <c>{category}-{streamId}</c> into its two elements.
-        /// The <c>{streamId}</c> segment is permitted to include embedded '-' (dash) characters
+        /// <summary>Attempts to split a Stream Name in the form <c>{category}-{streamId}</c> into its two elements..<br/>
+        /// The <c>{streamId}</c> segment is permitted to include embedded '-' (dash) characters.<br/>
         /// Yields <c>NotCategorized</c> if it does not adhere to that form.</summary>
         let (|Categorized|NotCategorized|) (raw: string): Choice<struct (string * StreamId), unit> =
             match tryParse raw with
@@ -68,14 +68,14 @@ module StreamName =
         if raw.IndexOf Category.Separator = -1 then Internal.throwInvalid raw
         raw |> Internal.trust
 
-    /// Creates a StreamName in the canonical form; a category identifier and an streamId representing the aggregate's identity
-    /// category is separated from id by `-`
+    /// <summary>Creates a StreamName in the canonical form; a category identifier and an streamId representing the aggregate's identity
+    /// category is separated from id by <c>`-`</c></summary>
     let create (category: string) (streamId: StreamId): StreamName =
         Category.validate category
         System.String.Concat(category, Category.SeparatorStr, StreamId.toString streamId) |> Internal.trust
 
-    /// <summary>Composes a StreamName from a category and >= 0 name elements.
-    /// category is separated from the streamId by '-'; elements are separated from each other by '_'
+    /// <summary>Composes a StreamName from a category and >= 0 name elements..<br/>
+    /// category is separated from the streamId by '-'; elements are separated from each other by '_'.<br/>
     /// Throws <c>InvalidArgumentException</c> if category embeds '-' symbols, or elements embed '_' symbols.</summary>
     let compose (categoryName: string) (streamIdElements: string[]): StreamName =
         create categoryName (StreamId.Elements.compose streamIdElements)

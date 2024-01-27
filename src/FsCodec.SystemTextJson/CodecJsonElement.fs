@@ -27,7 +27,7 @@ type CodecJsonElement private () =
         | Some serdes, None -> Core.JsonElementEncoder(serdes)
         | _, Some opts -> Core.JsonElementEncoder(Serdes opts)
 
-    /// <summary>Generate an <code>IEventCodec</code> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
+    /// <summary>Generate an <c>IEventCodec</c> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
     /// Uses <c>up</c>, <c>down</c> functions to handle upconversion/downconversion and eventId/correlationId/causationId mapping
     ///   and/or surfacing metadata to the programming model by including it in the emitted <c>'Event</c><br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name;
@@ -70,7 +70,7 @@ type CodecJsonElement private () =
         : FsCodec.IEventCodec<'Event, JsonElement, 'Context> =
         FsCodec.Core.Codec.Create(mkEncoder (serdes, options), up, down, mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
-    /// <summary>Generate an <code>IEventCodec</code> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
+    /// <summary>Generate an <c>IEventCodec</c> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion/timestamping without eventId/correlation/causationId mapping
     ///   and/or surfacing metadata to the programming model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -91,7 +91,7 @@ type CodecJsonElement private () =
         : FsCodec.IEventCodec<'Event, JsonElement, unit> =
         FsCodec.Core.Codec.Create(mkEncoder (serdes, options), up, down, ?rejectNullaryCases = rejectNullaryCases)
 
-    /// <summary>Generate an <code>IEventCodec</code> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
+    /// <summary>Generate an <c>IEventCodec</c> that handles <c>JsonElement</c> Event Bodies using the supplied <c>System.Text.Json</c> <c>options</c>.
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Union when 'Union :> TypeShape.UnionContract.IUnionContract>

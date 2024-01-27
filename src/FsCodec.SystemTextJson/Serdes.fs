@@ -21,13 +21,13 @@ type Serdes(options: JsonSerializerOptions) =
     member _.SerializeToElement<'T>(value: 'T): JsonElement =
         JsonSerializer.SerializeToElement<'T>(value, options)
 
-    /// <summary>Serializes given value to a Byte Array, suitable for wrapping as a <c>ReadOnlyMemory</c>.
-    /// <remarks>NOTE: <c>FsCodec.SystemTextJson.Options.Default</c> defaults to <c>unsafeRelaxedJsonEscaping = false</c></remarks></summary>
+    /// <summary>Serializes given value to a Byte Array, suitable for wrapping as a <c>ReadOnlyMemory</c>.</summary>
+    /// <remarks>NOTE: <c>FsCodec.SystemTextJson.Options.Default</c> defaults to <c>unsafeRelaxedJsonEscaping = false</c></remarks>
     member _.SerializeToUtf8<'T>(value: 'T): byte[] =
         JsonSerializer.SerializeToUtf8Bytes(value, options)
 
-    /// <summary>Serializes and writes given value to a stream.
-    /// <remarks>NOTE: <c>FsCodec.SystemTextJson.Options.Default</c> defaults to <c>unsafeRelaxedJsonEscaping = false</c></remarks></summary>
+    /// Serializes and writes given value to a stream.
+    /// <remarks>NOTE: <c>FsCodec.SystemTextJson.Options.Default</c> defaults to <c>unsafeRelaxedJsonEscaping = false</c>.</remarks>
     member _.SerializeToStream<'T>(value: 'T, utf8Stream: Stream): unit =
         JsonSerializer.Serialize<'T>(utf8Stream, value, options)
 

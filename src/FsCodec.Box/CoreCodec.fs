@@ -76,7 +76,7 @@ type Codec private () =
             struct (c, m', eventId, correlationId, causationId, match t with ValueSome t -> t | ValueNone -> DateTimeOffset.UtcNow)
         Codec.Create(encoder, up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
 
-    /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>encoder</c>.<br/>
+    /// <summary>Generate an <c>IEventCodec</c> using the supplied <c>encoder</c>.<br/>
     /// Uses <c>up</c> and <c>down</c> functions to facilitate upconversion/downconversion/timestamping without eventId/correlation/causationId mapping
     ///   and/or surfacing metadata to the programming model by including it in the emitted <c>'Event</c>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
@@ -98,7 +98,7 @@ type Codec private () =
         let mapCausation () (m: 'Meta voption) = struct (m, Guid.NewGuid(), null, null)
         Codec.Create(encoder, up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
-    /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>encoder</c>.<br/>
+    /// <summary>Generate an <c>IEventCodec</c> using the supplied <c>encoder</c>.<br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Body, 'Union when 'Union :> TypeShape.UnionContract.IUnionContract>

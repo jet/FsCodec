@@ -63,8 +63,8 @@ type Options private () =
 [<AbstractClass; Sealed>]
 type StringEnumConverter private () =
 
-    /// <summary>Creates a <c>StringEnumConverter</c>.
-    /// <c>camelCase</c> option defaults to <c>false</c>.
+    /// <summary>Creates a <c>StringEnumConverter</c>.<br/>
+    /// <c>camelCase</c> option defaults to <c>false</c>.<br/>
     /// <c>allowIntegerValues</c> defaults to <c>false</c>. NOTE: Newtonsoft.Json default is: <c>true</c>.</summary>
     static member Create(?camelCase, ?allowIntegerValues) =
         let allowIntegers = defaultArg allowIntegerValues false

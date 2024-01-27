@@ -1,4 +1,4 @@
-﻿/// Utilities for working with F# DUs that have no bodies (i.e. pass both the <c>Union.isUnion</c> and <c>Union.isNullary</c> tests)
+﻿/// <summary>Utilities for working with F# DUs that have no bodies (i.e. pass both the <c>Union.isUnion</c> and <c>Union.isNullary</c> tests)</summary>
 module FsCodec.TypeSafeEnum
 
 open System
