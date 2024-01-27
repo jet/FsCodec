@@ -3,6 +3,7 @@
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open System
+open System.Reflection
 
 [<NoComparison; NoEquality>]
 module private UnionInfo =
@@ -14,7 +15,7 @@ module private UnionInfo =
         || t.IsArray
         || (t.IsGenericType && let g = t.GetGenericTypeDefinition() in typedefof<Option<_>> = g || g.IsValueType) // Nullable<T>
 
-    let typeHasConverterAttribute = memoize (fun (t: Type) -> t.IsDefined(typeof<JsonConverterAttribute>, ``inherit`` = false))
+    let typeHasConverterAttribute = memoize (fun (t: Type) -> t.IsDefined(typeof<JsonConverterAttribute>))
     let typeIsUnionWithConverterAttribute = memoize (fun (t: Type) -> FsCodec.Union.isUnion t && typeHasConverterAttribute t)
 
     let propTypeRequiresConstruction (propertyType: Type) =
@@ -23,7 +24,7 @@ module private UnionInfo =
 
     /// Prepare arguments for the Case class ctor based on the kind of case and how F# maps that to a Type
     /// and/or whether we need to let json.net step in to convert argument types
-    let mapTargetCaseArgs (inputJObject: JObject) serializer: System.Reflection.PropertyInfo[] -> obj [] = function
+    let mapTargetCaseArgs (inputJObject: JObject) serializer: PropertyInfo[] -> obj [] = function
         | [| singleCaseArg |] when propTypeRequiresConstruction singleCaseArg.PropertyType ->
             [| inputJObject.ToObject(singleCaseArg.PropertyType, serializer) |]
         | multipleFieldsInCustomCaseType ->
