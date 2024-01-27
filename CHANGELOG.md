@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `BREAKING: JsonPickler/JsonIsomorphism/UnionConverter`: Reduced greediness of `Type` matching (only honors tags placed on the type being serialized, not parents) [#113](https://github.com/jet/FsCodec/pull/113)
+
 ### Removed
 ### Fixed
 
