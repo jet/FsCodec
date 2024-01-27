@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- Exposed low level Codec.Create overload for infrastructure use
+
 ### Changed
 
 - `BREAKING: JsonPickler/JsonIsomorphism/UnionConverter`: Reduced greediness of `Type` matching (only honors tags placed on the type being serialized, not parents) [#113](https://github.com/jet/FsCodec/pull/113)
@@ -434,7 +437,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
 [Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.15...HEAD
-[3.0.0-rc.14]: https://github.com/jet/FsCodec/compare/3.0.0-rc.13...3.0.0-rc.15
+[3.0.0-rc.15]: https://github.com/jet/FsCodec/compare/3.0.0-rc.14...3.0.0-rc.15
+[3.0.0-rc.14]: https://github.com/jet/FsCodec/compare/3.0.0-rc.13...3.0.0-rc.14
 [3.0.0-rc.14]: https://github.com/jet/FsCodec/compare/3.0.0-rc.13...3.0.0-rc.14
 [3.0.0-rc.13]: https://github.com/jet/FsCodec/compare/3.0.0-rc.12...3.0.0-rc.13
 [3.0.0-rc.12]: https://github.com/jet/FsCodec/compare/3.0.0-rc.11...3.0.0-rc.12

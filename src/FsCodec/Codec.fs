@@ -7,11 +7,10 @@ open System
 [<AbstractClass; Sealed>]
 type Codec =
 
-    /// <summary>Generate an <code>IEventCodec</code> suitable using the supplied pair of <c>encode</c> and <c>decode</c> functions.</summary>
-    // Leaving this helper private until we have a real use case which will e.g. enable us to decide whether to align the signature with the up/down functions
-    //   employed in the convention-based Codec
-    // (IME, while many systems have some code touching the metadata, it's not something one typically wants to encourage)
-    static member private Create<'Event, 'Format, 'Context>
+    /// <summary>Generate an <c>IEventCodec</c> suitable using the supplied pair of <c>encode</c> and <c>decode</c> functions.</summary>
+    /// <remarks>It's recommended to split the <c>encode</c> logic between event and metadata generation by using the overload with the <c>mapCausation</c>
+    ///     function in preference to this low level function, which is intended for low lever store syncing logic, as opposed to application code.</remarks>
+    static member Create<'Event, 'Format, 'Context>
         (   // <summary>Maps an 'Event to: an Event Type Name, a pair of <c>'Format</c>'s representing the <c>Data</c> and <c>Meta</c> together with the
             // <c>eventId</c>, <c>correlationId</c>, <c>causationId</c> and <c>timestamp</c>.</summary>
             encode: Func<'Context, 'Event, struct (string * 'Format * 'Format * Guid * string * string * DateTimeOffset)>,
