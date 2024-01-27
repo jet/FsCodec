@@ -5,7 +5,7 @@ type JsonElementEncoder(serdes: FsCodec.SystemTextJson.Serdes) =
     interface TypeShape.UnionContract.IEncoder<System.Text.Json.JsonElement> with
         member _.Empty = Unchecked.defaultof<System.Text.Json.JsonElement>
         member _.Encode(value: 'T) = serdes.SerializeToElement(value)
-        member _.Decode<'T>(json: System.Text.Json.JsonElement) : 'T = serdes.Deserialize<'T>(json)
+        member _.Decode<'T>(json: System.Text.Json.JsonElement): 'T = serdes.Deserialize<'T>(json)
 
 namespace FsCodec.SystemTextJson
 

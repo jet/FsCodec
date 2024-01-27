@@ -99,7 +99,7 @@ let assertIgnoreNullsIs value (profile : JsonSerializerSettings) =
 #endif
 
 [<Fact>]
-let ``produces expected output`` ()=
+let ``produces expected output`` () =
     let serialize value = serializeDefault<TestDU> value
     let a = CaseA {test = "hi"}
     test <@ """{"case":"CaseA","test":"hi"}""" = serialize a @>

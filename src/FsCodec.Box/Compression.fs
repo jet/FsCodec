@@ -69,7 +69,7 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
     static member Uncompressed = { minSize = Int32.MaxValue; minGain = 0 }
 
 [<Extension; AbstractClass; Sealed>]
-type Compression =
+type Compression private () =
 
     static member Utf8ToEncodedDirect(x: ReadOnlyMemory<byte>): EncodedBody =
         EncodedMaybeCompressed.encodeUncompressed x

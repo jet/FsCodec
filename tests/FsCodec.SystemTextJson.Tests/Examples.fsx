@@ -328,9 +328,9 @@ module Streams =
         decode Serilog.Log.Logger codec streamName event
     module Array = let inline chooseV f xs = [| for item in xs do match f item with ValueSome v -> yield v | ValueNone -> () |]
     /// Yields the subset of events that successfully decoded (could be Array.empty)
-    let decode<'E> (codec: Codec<'E>) struct (streamName, events: Event[]): 'E[] =
+    let decode2<'E> (codec: Codec<'E>) struct (streamName, events: Event[]): 'E[] =
         events |> Array.chooseV (decode<'E> Serilog.Log.Logger codec streamName)
-    let (|Decode|) = decode
+    let (|Decode|) = decode2
 
 (* When using Propulsion, Events are typically delivered as an array of contiguous events together with a StreamName
    The Decode Active Pattern decodes such a batch *)

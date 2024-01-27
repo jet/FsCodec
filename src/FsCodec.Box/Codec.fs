@@ -14,7 +14,7 @@ open System.Runtime.InteropServices
 [<AbstractClass; Sealed>]
 type Codec private () =
 
-    static let defEncoder : TypeShape.UnionContract.IEncoder<obj> = TypeShape.UnionContract.BoxEncoder() :> _
+    static let defEncoder: TypeShape.UnionContract.IEncoder<obj> = TypeShape.UnionContract.BoxEncoder() :> _
 
     /// <summary>Generate an <c>IEventCodec</c> that handles <c>obj</c> (boxed .NET <c>Object</c>) Event Bodies.<br/>
     /// Uses <c>up</c>, <c>down</c> functions to handle upconversion/downconversion and eventId/correlationId/causationId mapping

@@ -8,7 +8,7 @@ open System.Text.Json
 /// your own name for a discriminator and/or a catch-all case for a specific discriminated union.</summary>
 /// <example><c>[JsonConverter typeof &lt; UnionConverter &lt; T &gt; &gt;); JsonUnionConverterOptions("type") &gt;]</c></example>
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Struct, AllowMultiple = false, Inherited = false)>]
-type JsonUnionConverterOptionsAttribute(discriminator : string) =
+type JsonUnionConverterOptionsAttribute(discriminator: string) =
     inherit Attribute()
     member val internal DiscriminatorPropName = discriminator
     member val CatchAllCase: string = null with get, set

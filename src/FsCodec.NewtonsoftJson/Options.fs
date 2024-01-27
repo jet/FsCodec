@@ -9,20 +9,20 @@ open System.Runtime.InteropServices
 type Options private () =
 
     /// <summary>Analogous to <c>System.Text.Json</c>'s <c>JsonSerializerOptions.Default</c> - allows for sharing/caching of the default profile as defined by <c>Options.Create()</c></summary>
-    static member val Default : JsonSerializerSettings = Options.Create()
+    static member val Default: JsonSerializerSettings = Options.Create()
 
     /// Creates a default set of serializer settings used by Json serialization. When used with no args, same as JsonSerializerSettings.CreateDefault()
     /// With one difference - it inhibits the JSON.NET out of the box parsing of strings that look like dates (see https://github.com/JamesNK/Newtonsoft.Json/issues/862)
     static member CreateDefault
-        (   [<Optional; ParamArray>] converters : JsonConverter[],
+        (   [<Optional; ParamArray>] converters: JsonConverter[],
             // Use multi-line, indented formatting when serializing JSON; defaults to false.
-            [<Optional; DefaultParameterValue(null)>] ?indent : bool,
+            [<Optional; DefaultParameterValue(null)>] ?indent: bool,
             // Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`. Defaults to false.
-            [<Optional; DefaultParameterValue(null)>] ?camelCase : bool,
+            [<Optional; DefaultParameterValue(null)>] ?camelCase: bool,
             // Ignore null values in input data; defaults to false.
-            [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
+            [<Optional; DefaultParameterValue(null)>] ?ignoreNulls: bool,
             // Error on missing values (as opposed to letting them just be default-initialized); defaults to false.
-            [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
+            [<Optional; DefaultParameterValue(null)>] ?errorOnMissing: bool) =
         let indent = defaultArg indent false
         let camelCase = defaultArg camelCase false
         let ignoreNulls = defaultArg ignoreNulls false
@@ -42,16 +42,16 @@ type Options private () =
     /// - everything else is as per CreateDefault:- i.e. emit nulls instead of omitting fields etc
     static member Create
         (   // List of converters to apply. An implicit OptionConverter() will be prepended and/or be used as a default
-            [<Optional; ParamArray>] converters : JsonConverter[],
+            [<Optional; ParamArray>] converters: JsonConverter[],
             // Use multi-line, indented formatting when serializing JSON; defaults to false.
-            [<Optional; DefaultParameterValue(null)>] ?indent : bool,
+            [<Optional; DefaultParameterValue(null)>] ?indent: bool,
             // Render idiomatic camelCase for PascalCase items by using `CamelCasePropertyNamesContractResolver`.
             //  Defaults to false on basis that you'll use record and tuple field names that are camelCase (and hence not `CLSCompliant`).
-            [<Optional; DefaultParameterValue(null)>] ?camelCase : bool,
+            [<Optional; DefaultParameterValue(null)>] ?camelCase: bool,
             // Ignore null values in input data; defaults to `false`.
-            [<Optional; DefaultParameterValue(null)>] ?ignoreNulls : bool,
+            [<Optional; DefaultParameterValue(null)>] ?ignoreNulls: bool,
             // Error on missing values (as opposed to letting them just be default-initialized); defaults to false
-            [<Optional; DefaultParameterValue(null)>] ?errorOnMissing : bool) =
+            [<Optional; DefaultParameterValue(null)>] ?errorOnMissing: bool) =
         Options.CreateDefault(
             converters = [| OptionConverter()
                             match converters with null -> () | xs -> yield! xs |],

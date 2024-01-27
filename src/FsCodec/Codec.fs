@@ -58,8 +58,8 @@ type Codec =
         : IEventCodec<'Event, 'Format, unit> =
 
         let encode' _context event =
-            let struct (eventType, data : 'Format) = encode.Invoke event
+            let struct (eventType, data: 'Format) = encode.Invoke event
             struct (eventType, data, Unchecked.defaultof<'Format> (* metadata *),
                     Guid.NewGuid() (* eventId *), null (* correlationId *), null (* causationId *), DateTimeOffset.UtcNow (* timestamp *))
-        let decode' (encoded : ITimelineEvent<'Format>) = decode.Invoke(encoded.EventType, encoded.Data)
+        let decode' (encoded: ITimelineEvent<'Format>) = decode.Invoke(encoded.EventType, encoded.Data)
         Codec.Create(encode', decode')

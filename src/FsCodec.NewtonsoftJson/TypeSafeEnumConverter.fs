@@ -15,7 +15,7 @@ type TypeSafeEnumConverter() =
         let str = FsCodec.Union.caseNameT t value
         writer.WriteValue str
 
-    override _.ReadJson(reader : JsonReader, t: Type, _: obj, _: JsonSerializer) =
+    override _.ReadJson(reader: JsonReader, t: Type, _: obj, _: JsonSerializer) =
         if reader.TokenType <> JsonToken.String then
             sprintf "Unexpected token when reading TypeSafeEnum: %O" reader.TokenType |> JsonSerializationException |> raise
         let str = reader.Value :?> string

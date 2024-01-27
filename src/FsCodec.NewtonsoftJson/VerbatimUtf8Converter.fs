@@ -8,15 +8,14 @@ open System
 type VerbatimUtf8JsonConverter() =
     inherit JsonConverter()
 
-    override _.CanConvert(t : Type) =
-        typeof<byte[]>.Equals(t)
+    override _.CanConvert t = typeof<byte[]> = t
 
-    override _.WriteJson(writer : JsonWriter, value : obj, serializer : JsonSerializer) =
+    override _.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
         let array = value :?> byte[]
         if array = null || array.Length = 0 then serializer.Serialize(writer, null)
         else writer.WriteRawValue(System.Text.Encoding.UTF8.GetString(array))
 
-    override _.ReadJson(reader : JsonReader, _ : Type, _ : obj, _ : JsonSerializer) =
+    override _.ReadJson(reader: JsonReader, _: Type, _: obj, _: JsonSerializer) =
         let token = JToken.Load reader
         if token.Type = JTokenType.Null then null
         else token |> string |> System.Text.Encoding.UTF8.GetBytes |> box

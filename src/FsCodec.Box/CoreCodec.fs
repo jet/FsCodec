@@ -39,7 +39,7 @@ type Codec private () =
         { new FsCodec.IEventCodec<'Event, 'Body, 'Context> with
 
             member _.Encode(context, event) =
-                let struct (c, meta : 'Meta voption, eventId, correlationId, causationId, timestamp) = down.Invoke(context, event)
+                let struct (c, meta: 'Meta voption, eventId, correlationId, causationId, timestamp) = down.Invoke(context, event)
                 let enc = dataCodec.Encode c
                 let meta' = match meta with ValueSome x -> encoder.Encode<'Meta> x | ValueNone -> Unchecked.defaultof<'Body>
                 EventData(enc.CaseName, enc.Payload, meta', eventId, correlationId, causationId, timestamp)
@@ -95,18 +95,18 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, 'Body, unit> =
 
-        let mapCausation () (m : 'Meta voption) = struct (m, Guid.NewGuid(), null, null)
+        let mapCausation () (m: 'Meta voption) = struct (m, Guid.NewGuid(), null, null)
         Codec.Create(encoder, up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <code>IEventCodec</code> using the supplied <c>encoder</c>.<br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
     /// <c>'Union</c> must be tagged with <c>interface TypeShape.UnionContract.IUnionContract</c> to signify this scheme applies.</summary>
     static member Create<'Body, 'Union when 'Union :> TypeShape.UnionContract.IUnionContract>
-        (   encoder : TypeShape.UnionContract.IEncoder<'Body>,
+        (   encoder: TypeShape.UnionContract.IEncoder<'Body>,
             // <summary>Enables one to fail encoder generation if union contains nullary cases. Defaults to <c>false</c>, i.e. permitting them.</summary>
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Union, 'Body, unit> =
 
-        let up (_e : FsCodec.ITimelineEvent<'Body>) (u : 'Union) : 'Union = u
-        let down (event : 'Union) = struct (event, ValueNone (*Meta*), ValueNone (*Timestamp*))
+        let up (_e: FsCodec.ITimelineEvent<'Body>) (u: 'Union): 'Union = u
+        let down (event: 'Union) = struct (event, ValueNone (*Meta*), ValueNone (*Timestamp*))
         Codec.Create(encoder, up = up, down = down, ?rejectNullaryCases = rejectNullaryCases)
