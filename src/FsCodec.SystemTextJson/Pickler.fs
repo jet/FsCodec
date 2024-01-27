@@ -28,7 +28,8 @@ type JsonPickler<'T>() =
 
     override _.CanConvert t = isMatchingType t
 
-    override x.Read(reader, _typeToConvert, opts) = x.Read(&reader, opts)
+    override x.Read(reader, _typeToConvert, options) =
+        x.Read(&reader, options)
 
 /// Json Converter that serializes based on an isomorphic type
 [<AbstractClass>]
@@ -43,7 +44,7 @@ type JsonIsomorphism<'T, 'U>(?targetPickler: JsonPickler<'U>) =
         match targetPickler with
         | None -> JsonSerializer.Serialize(writer, target, options)
         | Some p -> p.Write(writer, target, options)
-    override x.Read(reader, options) =
+    override x.Read(reader, options): 'T =
         let target =
             match targetPickler with
             | None -> JsonSerializer.Deserialize<'U>(&reader, options)

@@ -34,7 +34,7 @@ type JsonPickler<'T>() =
 
     override x.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
         x.Write(writer, serializer, value :?> 'T)
-    override x.ReadJson(reader: JsonReader, _objectType: Type, _existingValue: obj, serializer: JsonSerializer) =
+    override x.ReadJson(reader: JsonReader, _objectType, _existingValue: obj, serializer: JsonSerializer) =
         x.Read(reader, serializer) :> obj
 
 /// Json Converter that serializes based on an isomorphic type
