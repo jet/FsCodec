@@ -26,7 +26,7 @@ type UnionConverter<'T>() =
     let converterOptions = UnionConverterOptions.get typeof<'T>
     let info = FsCodec.Union.Info.get typeof<'T>
 
-    override _.CanConvert(t: Type) = t = typeof<'T> && FsCodec.Union.isUnion t
+    override _.CanConvert t = t = typeof<'T> && FsCodec.Union.isUnion t
 
     override _.Write(writer: Utf8JsonWriter, value, options: JsonSerializerOptions) =
         let value = box value
@@ -59,7 +59,7 @@ type UnionConverter<'T>() =
             match findCaseNamed inputCaseNameValue, converterOptions.CatchAllCase  with
             | None, null ->
                 sprintf "No case defined for '%s', and no catchAllCase nominated for '%s' on type '%s'"
-                    inputCaseNameValue typeof<UnionConverter<_>>.Name t.FullName |> invalidOp
+                    inputCaseNameValue typeof<UnionConverter<'T>>.Name t.FullName |> invalidOp
             | Some c, _ -> c
             | None, catchAllCaseName ->
                 match findCaseNamed catchAllCaseName with

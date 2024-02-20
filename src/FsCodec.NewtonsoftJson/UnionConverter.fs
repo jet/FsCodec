@@ -13,7 +13,7 @@ module private UnionInfo =
         t = typeof<string>
         || t.IsValueType
         || t.IsArray
-        || (t.IsGenericType && let g = t.GetGenericTypeDefinition() in typedefof<Option<_>> = g || g.IsValueType) // Nullable<T>
+        || (t.IsGenericType && let g = t.GetGenericTypeDefinition() in typedefof<option<_>> = g || g.IsValueType) // Nullable<T>, ValueOption<T>
 
     let hasConverterCache = System.Collections.Concurrent.ConcurrentDictionary<Type, bool>()
     let typeHasConverterAttribute (t: Type) = hasConverterCache.GetOrAdd(t, fun t -> t.IsDefined(typeof<JsonConverterAttribute>, ``inherit`` = false))

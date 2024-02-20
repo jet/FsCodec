@@ -70,8 +70,7 @@ type Options private () =
                 if rejectNullStrings then RejectNullStringConverter()
                 if autoTypeSafeEnumToJsonString || autoUnionToJsonObject then
                     UnionOrTypeSafeEnumConverterFactory(typeSafeEnum = autoTypeSafeEnumToJsonString, union = autoUnionToJsonObject)
-                if converters <> null then yield! converters
-            |],
+                if converters <> null then yield! converters |],
             ?ignoreNulls = ignoreNulls,
             ?indent = indent,
             ?camelCase = camelCase,
