@@ -30,3 +30,6 @@ let parseF<'T> f =
 let parse<'T> = parseF<'T> (=)
 
 let toString<'t> : 't -> string = Union.caseName<'t>
+
+/// <summary>Yields all the cases available for <c>'t</c> which must be a <c>TypeSafeEnum</c></summary>
+let caseValues<'t>: 't[] = Union.Info.caseValues<'t>

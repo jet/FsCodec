@@ -9,6 +9,11 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+### Added
+
+- `TypeeSafeEnum.caseValues<'t>`: Yields all values of a Union
+
 ### Changed
 ### Removed
 ### Fixed
