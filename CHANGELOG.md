@@ -12,7 +12,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-- `TypeeSafeEnum.caseValues<'t>`: Yields all values of a Union
+- `TypeSafeEnum.caseValues<'t>`: Yields all values of a union (that is a `TypeSafeEnum`) [#115](https://github.com/jet/FsCodec/pull/115)
 
 ### Changed
 ### Removed
