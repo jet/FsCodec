@@ -26,7 +26,7 @@ module Info =
         let getCase value = cases[getTag value]
         { cases = cases; getCase = getCase })
     let tryFindCaseWithName u (predicate: string -> bool): CaseInfo option = u.cases |> Array.tryFind (fun c -> predicate c.name)
-    let caseValues<'t>: 't[] = (get typeof<'t>).cases |> Array.map (fun c -> c.construct Array.empty :?> 't)
+    let caseValues<'t> : 't[] = (get typeof<'t>).cases |> Array.map (fun c -> c.construct Array.empty :?> 't)
     let caseValuesT: Type -> obj[] = memoize (fun t -> (get t).cases |> Array.map (fun c -> c.construct Array.empty))
     let tryFindCaseValueWithName (t: Type): (string -> bool) -> obj option =
         let u = get t
