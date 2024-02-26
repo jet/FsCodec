@@ -16,7 +16,8 @@ module private CharBuffersPool =
 // http://www.philosophicalgeek.com/2015/02/06/announcing-microsoft-io-recycablememorystream/
 module private Utf8BytesEncoder =
     let private streamManager = Microsoft.IO.RecyclableMemoryStreamManager()
-    let rentStream () = streamManager.GetStream("bytesEncoder")
+    // NOTE GetStream return type changes from MemoryStream to RecyclableMemoryStream in V2-V3
+    let rentStream (): MemoryStream = streamManager.GetStream("bytesEncoder")
     let wrapAsStream (utf8json: ReadOnlyMemory<byte>) =
         // This is the most efficient way of approaching this without using Spans etc.
         // RecyclableMemoryStreamManager does not have any wins to provide us
