@@ -10,13 +10,14 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-### Added
-
 - `TypeSafeEnum.caseValues<'t>`: Yields all values of a union (that is a `TypeSafeEnum`) [#115](https://github.com/jet/FsCodec/pull/115)
 
 ### Changed
 ### Removed
 ### Fixed
+
+- `NewtonsoftJson`: Upped `RecyclableMemoryStream` to [`>= 3.0.0` to handle breaking change in `GetStream` return type](
+  https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream/releases/tag/3.0.0) [#118](https://github.com/jet/FsCodec/pull/118)
 
 <a name="3.0.0-rc.16"></a>
 ## [3.0.0-rc.16] - 2024-1-27
