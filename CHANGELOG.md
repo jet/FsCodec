@@ -9,15 +9,19 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-
-- `StringId, Comparable`: Base types for Strongly Typed Ids with string renditions [#116](https://github.com/jet/FsCodec/pull/116)
-- `NewtonsoftJson.StringIdConverter`: Converter for `StringId` [#116](https://github.com/jet/FsCodec/pull/116)
-- `SystemTextJson.StringIdConverter`: Converter for `StringId` [#116](https://github.com/jet/FsCodec/pull/116)
-- `SystemTextJson.StringIdOrDictionaryKeyConverter`: Converter for `StringId` that enables `Dictionary` values using a `StringId`-derived type as a key to be used as a JSON Object Key [#116](https://github.com/jet/FsCodec/pull/116)
-
 ### Changed
 ### Removed
 ### Fixed
+
+<a name="3.0.0-rc.18"></a>
+## [3.0.0-rc.18] - 2024-3-4
+
+### Added
+
+- `StringId, Comparable`: Base types for Strongly Typed Ids with string renditions [#119](https://github.com/jet/FsCodec/pull/119)
+- `NewtonsoftJson.StringIdConverter`: Converter for `StringId` [#119](https://github.com/jet/FsCodec/pull/119)
+- `SystemTextJson.StringIdConverter`: Converter for `StringId` [#119](https://github.com/jet/FsCodec/pull/119)
+- `SystemTextJson.StringIdOrDictionaryKeyConverter`: Converter for `StringId` that enables `Dictionary` values using a `StringId`-derived type as a key to be used as a JSON Object Key [#116](https://github.com/jet/FsCodec/pull/119)
 
 <a name="3.0.0-rc.17"></a>
 ## [3.0.0-rc.17] - 2024-2-26
@@ -459,7 +463,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.17...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.18...HEAD
+[3.0.0-rc.18]: https://github.com/jet/FsCodec/compare/3.0.0-rc.17...3.0.0-rc.18
 [3.0.0-rc.17]: https://github.com/jet/FsCodec/compare/3.0.0-rc.16...3.0.0-rc.17
 [3.0.0-rc.16]: https://github.com/jet/FsCodec/compare/3.0.0-rc.15...3.0.0-rc.16
 [3.0.0-rc.15]: https://github.com/jet/FsCodec/compare/3.0.0-rc.14...3.0.0-rc.15
