@@ -9,6 +9,12 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `StringId, Comparable`: Base types for Strongly Typed Ids with string renditions [#116](https://github.com/jet/FsCodec/pull/116)
+- `NewtonsoftJson.StringIdConverter`: Converter for `StringId` [#116](https://github.com/jet/FsCodec/pull/116)
+- `SystemTextJson.StringIdConverter`: Converter for `StringId` [#116](https://github.com/jet/FsCodec/pull/116)
+- `SystemTextJson.StringIdOrDictionaryKeyConverter`: Converter for `StringId` that enables `Dictionary` values using a `StringId`-derived type as a key to be used as a JSON Object Key [#116](https://github.com/jet/FsCodec/pull/116)
+
 ### Changed
 ### Removed
 ### Fixed

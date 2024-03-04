@@ -42,6 +42,7 @@
     <Compile Include="..\FsCodec.NewtonsoftJson.Tests\SomeNullHandlingTests.fs">
       <Link>SomeNullHandlingTests.fs</Link>
     </Compile>
+    <Compile Include="StringIdTests.fs" />
   </ItemGroup>
 
 </Project>
