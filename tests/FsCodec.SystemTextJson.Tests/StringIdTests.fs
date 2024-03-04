@@ -5,13 +5,17 @@ open FsCodec.SystemTextJson
 open Xunit
 open Swensen.Unquote
 
+(* Recommended helper aliases to put in your namespace global to avoid having to open long namespaces  *)
+
+type StjNameAttribute = System.Text.Json.Serialization.JsonPropertyNameAttribute
+type StjIgnoreAttribute = System.Text.Json.Serialization.JsonIgnoreAttribute
+type StjConverterAttribute = System.Text.Json.Serialization.JsonConverterAttribute
+
 module Guid =
 
     let inline gen () = System.Guid.NewGuid()
     let inline toStringN (x: System.Guid) = x.ToString "N"
     let inline parse (x: string) = System.Guid.Parse x
-
-type StjConverterAttribute = System.Text.Json.Serialization.JsonConverterAttribute
 
 module Bare =
 
