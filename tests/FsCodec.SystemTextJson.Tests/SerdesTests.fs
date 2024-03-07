@@ -2,6 +2,7 @@ module FsCodec.SystemTextJson.Tests.SerdesTests
 
 open System
 open System.Collections.Generic
+open System.Text.Json.Serialization.Metadata
 open FsCodec.SystemTextJson
 open Swensen.Unquote
 open Xunit
@@ -78,6 +79,42 @@ let [<Fact>] ``RejectNullStringConverter rejects null strings`` () =
 
     let value = { c = 1; d = null }
     raises<ArgumentNullException> <@ serdes.Serialize value @>
+
+type WithList = { x: int; y: list<int>; z: Set<int> }
+
+let [<Fact>] ``RejectNullConverter rejects null lists and Sets`` () =
+#if false // requires WithList to be CLIMutable, which would be a big imposition
+    let tir =
+        DefaultJsonTypeInfoResolver()
+            .WithAddedModifier(fun x ->
+                // if x.Kind <> JsonTypeInfoKind.Object then
+                for p in x.Properties do
+                    let pt = p.PropertyType
+                    if pt.IsGenericType && (let d = pt.GetGenericTypeDefinition() in d = typedefof<list<_>> || d = typedefof<Set<_>>) then
+                        p.IsRequired <- true)
+    let serdes = Options.Create(TypeInfoResolver = tir) |> Serdes
+    raises<exn> <@ serdes.Deserialize<WithList> """{"x":0}""" @>
+#else
+    let serdes = Options.Create(rejectNull = true) |> Serdes
+
+    // PROBLEM: Fails with NRE when RejectNullConverter delegates to Default list<int> Converter
+    // let res = serdes.Deserialize<WithList> """{"x":0,"y":[1]}"""
+    // test <@ [1] = res.y @>
+
+    // PROBLEM: Doesn't raise as Converter not called
+    raises<exn> <@ serdes.Deserialize<WithList> """{"x":0}""" @>
+
+    // PROBLEM: doesnt raise - there doesn't seem to be a way to intercept explicitly passed nulls
+    // raises<JsonException> <@ serdes.Deserialize<WithList> """{"x":0,"y":null}""" @>
+#endif
+
+#if false // I guess TypeShape is doing a reasonable thing not propagating
+    // PROBLEM: TypeShape.Generic.exists does not call the predicate if the list or set is `null`
+    let res = serdes.Deserialize<WithList> """{"x":0}"""
+    let hasNullList = TypeShape.Generic.exists (fun (x: int list) -> obj.ReferenceEquals(x, null))
+    let hasNullSet = TypeShape.Generic.exists (fun (x: Set<int>) -> obj.ReferenceEquals(x, null))
+    test <@ hasNullList res && hasNullSet res @>
+#endif
 
 let [<Fact>] ``RejectNullStringConverter serializes strings correctly`` () =
     let serdes = Serdes(Options.Create(rejectNullStrings = true))
