@@ -13,6 +13,13 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="3.0.0"></a>
+## [3.0.0] - 2024-3-16
+
+### Changed
+
+- Updated internal dependencies (MinVer, Test libraries)
+
 <a name="3.0.0-rc.18"></a>
 ## [3.0.0-rc.18] - 2024-3-4
 
@@ -463,7 +470,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0-rc.18...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.0...HEAD
+[3.0.0]: https://github.com/jet/FsCodec/compare/3.0.0-rc.18...3.0.0
 [3.0.0-rc.18]: https://github.com/jet/FsCodec/compare/3.0.0-rc.17...3.0.0-rc.18
 [3.0.0-rc.17]: https://github.com/jet/FsCodec/compare/3.0.0-rc.16...3.0.0-rc.17
 [3.0.0-rc.16]: https://github.com/jet/FsCodec/compare/3.0.0-rc.15...3.0.0-rc.16
