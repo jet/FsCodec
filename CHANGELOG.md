@@ -14,7 +14,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Fixed
 
 <a name="3.0.0"></a>
-## [3.0.0] - 2024-3-16
+## [3.0.0] - 2024-3-18
 
 ### Changed
 
@@ -122,8 +122,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 
 - `StreamName.CategoryAndIds`: See new `StreamId`, `StreamId.Elements` [#100](https://github.com/jet/FsCodec/pull/100)
-
-### Fixed
 
 <a name="3.0.0-rc.10"></a>
 ## [3.0.0-rc.10] - 2023-6-05
