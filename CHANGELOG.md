@@ -13,8 +13,15 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+<a name="3.0.2"></a>
+## [3.0.2] - 2024-7-11
+
+### Fix
+
+- `SystemTextJson`: Relax dependency to `FsCodec.Box` v `3.0.0`
+
 <a name="3.0.1"></a>
-## [3.0.1] - 2024-7-11
+## [3.0.1] - 2024-7-11 (Unlisted)
 
 ### Changed
 
@@ -475,7 +482,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.2...HEAD
+[3.0.2]: https://github.com/jet/FsCodec/compare/3.0.1...3.0.2
 [3.0.1]: https://github.com/jet/FsCodec/compare/3.0.0...3.0.1
 [3.0.0]: https://github.com/jet/FsCodec/compare/3.0.0-rc.18...3.0.0
 [3.0.0-rc.18]: https://github.com/jet/FsCodec/compare/3.0.0-rc.17...3.0.0-rc.18

@@ -23,7 +23,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../FsCodec/FsCodec.fsproj" />
+        <ProjectReference Condition=" '$(Configuration)' == 'Debug' " Include="../FsCodec/FsCodec.fsproj" />
+        <PackageReference Condition=" '$(Configuration)' == 'Release' " Include="FsCodec" Version="[3.0.0, 4.0.0)" />
     </ItemGroup>
 
 </Project>
