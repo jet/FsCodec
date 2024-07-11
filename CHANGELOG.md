@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `TimelineEvent.ToString`: Render Unfold/Event state, EventType, Index [#123](https://github.com/jet/FsCodec/pull/123) 
+
 ### Changed
 ### Removed
 ### Fixed
