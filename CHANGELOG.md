@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `SystemTextJson`: Upped minimum `System.Text.Json` version to `8.0.4` per [CVE-2024-30105](https://github.com/dotnet/announcements/issues/315) [#122](https://github.com/jet/FsCodec/pull/122)
+
 ### Removed
 ### Fixed
 
