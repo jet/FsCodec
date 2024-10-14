@@ -13,6 +13,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - `TimelineEvent.ToString`: Render Unfold/Event state, EventType, Index [#123](https://github.com/jet/FsCodec/pull/123) 
 
 ### Changed
+
+- `SystemTextJson`: Dropped minimum `System.Text.Json` version to `6.0.10` per [CVE-2024-43485](https://github.com/advisories/GHSA-8g4q-xg66-9fp4) [#125](https://github.com/jet/FsCodec/pull/125)
+
 ### Removed
 ### Fixed
 
