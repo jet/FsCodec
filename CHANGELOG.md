@@ -9,15 +9,20 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+### Changed
+### Removed
+### Fixed
 
-- `TimelineEvent.ToString`: Render Unfold/Event state, EventType, Index [#123](https://github.com/jet/FsCodec/pull/123) 
+<a name="3.0.3"></a>
+## [3.0.3] - 2024-10-14
+
+### Added
+
+- `TimelineEvent.ToString`: Render Unfold/Event state, EventType, Index [#123](https://github.com/jet/FsCodec/pull/123)
 
 ### Changed
 
 - `SystemTextJson`: Dropped minimum `System.Text.Json` version to `6.0.10` per [CVE-2024-43485](https://github.com/advisories/GHSA-8g4q-xg66-9fp4) [#125](https://github.com/jet/FsCodec/pull/125)
-
-### Removed
-### Fixed
 
 <a name="3.0.2"></a>
 ## [3.0.2] - 2024-7-11
@@ -488,7 +493,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.2...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.3...HEAD
+[3.0.3]: https://github.com/jet/FsCodec/compare/3.0.2...3.0.3
 [3.0.2]: https://github.com/jet/FsCodec/compare/3.0.1...3.0.2
 [3.0.1]: https://github.com/jet/FsCodec/compare/3.0.0...3.0.1
 [3.0.0]: https://github.com/jet/FsCodec/compare/3.0.0-rc.18...3.0.0
