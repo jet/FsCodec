@@ -89,6 +89,8 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
         let size =     defaultArg size 0
         TimelineEvent(index, inner.EventType, inner.Data, inner.Meta, inner.EventId, inner.CorrelationId, inner.CausationId, inner.Timestamp, isUnfold, Option.toObj context, size) :> _
 
+    override _.ToString() = sprintf "%s %s @%i" (if isUnfold then "Unfold" else "Event") eventType index
+    
     interface ITimelineEvent<'Format> with
         member _.Index = index
         member _.IsUnfold = isUnfold
