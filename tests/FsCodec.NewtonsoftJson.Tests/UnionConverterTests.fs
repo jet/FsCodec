@@ -135,6 +135,27 @@ let ``produces expected output`` () =
     let u = CaseU [| SkuId.Parse "f09f17cb4c9744b4a979afb53be0847f"; SkuId.Parse "c747d53a644d42548b3bbc0988561ce1" |]
     test <@ """{"case":"CaseU","Item":["f09f17cb4c9744b4a979afb53be0847f","c747d53a644d42548b3bbc0988561ce1"]}""" = serialize u @>
 
+let values : obj[][] = [| for c in 'A'..'Z' -> [| c |] |]
+[<Theory; MemberData(nameof values)>]
+let ``upconverts from strings by generating uninitialized`` c =
+    let json c = $"\"Case{c}\""
+    let deserialize = deserializeDefault<TestDU>
+    let json = json c
+    match c with
+    | 'A' -> CaseA { test = null } =! deserialize json
+    | 'B' -> CaseB =! deserialize json
+    | 'C' -> CaseC null =! deserialize json
+    | 'D' -> CaseD null =! deserialize json
+    | 'G' -> CaseG { Item = null } =! deserialize json
+    | 'H' -> CaseH { test = null } =! deserialize json
+    | 'J' -> CaseJ (Nullable()) =! deserialize json
+    | 'L' -> CaseL (Nullable(), Nullable()) =! deserialize json
+    | 'M' -> CaseM None =! deserialize json
+    | 'O' -> CaseO (None, None) =! deserialize json
+    | 'U' -> CaseU null =! deserialize json
+    | 'V' -> CaseV null =! deserialize json
+    | _ -> raises<JsonException> <@ deserialize json @>
+
 [<Fact>]
 let ``deserializes properly`` () =
     let deserialize json = deserializeDefault<TestDU> json
