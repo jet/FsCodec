@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `SystemTextJson.Compression`: Conditional compression as per `Box.Compression` [#126](https://github.com/jet/FsCodec/pull/126)
+
 ### Changed
 ### Removed
 ### Fixed

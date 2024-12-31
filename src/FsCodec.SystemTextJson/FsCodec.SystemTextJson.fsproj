@@ -18,6 +18,7 @@
     <Compile Include="Codec.fs" />
     <Compile Include="CodecJsonElement.fs" />
     <Compile Include="Interop.fs" />
+    <Compile Include="Compression.fs" />
     <Compile Include="StringIdConverter.fs" />
   </ItemGroup>
 
