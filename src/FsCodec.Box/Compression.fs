@@ -28,19 +28,19 @@ module private EncodedMaybeCompressed =
         let s = new System.IO.MemoryStream(data.ToArray(), writable = false)
         let decompressor = new System.IO.Compression.DeflateStream(s, System.IO.Compression.CompressionMode.Decompress, leaveOpen = true)
         let output = new System.IO.MemoryStream()
-        decompressor.CopyTo(output)
+        decompressor.CopyTo output
         output.ToArray()
     let private brotliDecompress (data: ReadOnlyMemory<byte>): byte[] =
         let s = new System.IO.MemoryStream(data.ToArray(), writable = false)
         use decompressor = new System.IO.Compression.BrotliStream(s, System.IO.Compression.CompressionMode.Decompress)
         use output = new System.IO.MemoryStream()
-        decompressor.CopyTo(output)
+        decompressor.CopyTo output
         output.ToArray()
     let decode struct (encoding, data): ReadOnlyMemory<byte> =
         match encoding with
-        | Encoding.Deflate    -> inflate data |> ReadOnlyMemory
-        | Encoding.Brotli     -> brotliDecompress data |> ReadOnlyMemory
-        | Encoding.Direct | _ -> data
+        | Encoding.Deflate ->       inflate data |> ReadOnlyMemory
+        | Encoding.Brotli ->        brotliDecompress data |> ReadOnlyMemory
+        | Encoding.Direct | _ ->    data
 
     (* Conditional compression logic: triggered as storage layer pulls Data/Meta fields
        Bodies under specified minimum size, or not meeting a required compression gain are stored directly, equivalent to if compression had not been wired in *)
@@ -62,7 +62,7 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
     /// Attempt to compress anything possible
     // TL;DR in general it's worth compressing everything to minimize RU consumption both on insert and update
     // For DynamoStore, every time we need to calve from the tip, the RU impact of using TransactWriteItems is significant,
-    // so preventing or delaying that is of critical significance
+    // so preventing or delaying that is of critical importance
     // Empirically not much JSON below 48 bytes actually compresses - while we don't assume that, it is what is guiding the derivation of the default
     static member Default = { minSize = 48; minGain = 4 }
     /// Encode the data without attempting to compress, regardless of size
@@ -95,7 +95,7 @@ type Compression private () =
         : IEventCodec<'Event, EncodedBody, 'Context> =
         FsCodec.Core.EventCodec.Map(native, Func<_, _> Compression.Utf8ToEncodedDirect, Func<_, _> Compression.EncodedToUtf8)
 
-    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&rt;</c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
+    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
     [<Extension>]
     static member ToUtf8Codec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =

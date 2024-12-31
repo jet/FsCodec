@@ -67,8 +67,8 @@ module Uncompressed =
         let struct (_encoding, result) = encoded.Data
         true =! directResult.Span.SequenceEqual(result.Span)
 
-
 module Decoding =
+
     let raw = struct(0, Text.Encoding.UTF8.GetBytes("Hello World") |> ReadOnlyMemory)
     let deflated = struct(1, Convert.FromBase64String("8kjNyclXCM8vykkBAAAA//8=") |> ReadOnlyMemory)
     let brotli = struct(2, Convert.FromBase64String("CwWASGVsbG8gV29ybGQ=") |> ReadOnlyMemory)

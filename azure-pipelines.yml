@@ -24,6 +24,9 @@ jobs:
   pool:
     vmImage: 'ubuntu-latest'
   steps:
+  - task: UseDotNet@2
+    inputs:
+      useGlobalJson: true
   - script: dotnet test build.proj
     displayName: dotnet test
   - task: PublishTestResults@2
@@ -37,6 +40,9 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
+  - task: UseDotNet@2
+    inputs:
+      useGlobalJson: true
   - script: dotnet test build.proj
     displayName: dotnet test
   - task: PublishTestResults@2
