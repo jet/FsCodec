@@ -1,4 +1,4 @@
-module FsCodec.SystemTextJson.Tests.CompressionTests
+module FsCodec.SystemTextJson.Tests.EncodedBodyTests
 
 open Swensen.Unquote
 open System
@@ -34,17 +34,15 @@ module InternalDecoding =
     let inputValue = {| value = "Hello World" |}
     // A JsonElement that's a JSON Object should be handled as an uncompressed value
     let direct = struct (0, JsonSerializer.SerializeToElement inputValue)
-    // A JsonElement that's a JSON String should be treated as base64'd Deflate data where the Decoding is unspecified
-    let implicitDeflate = struct (Unchecked.defaultof<int>, JsonSerializer.SerializeToElement "qlYqS8wpTVWyUvJIzcnJVwjPL8pJUaoFAAAA//8=")
     let explicitDeflate = struct (1, JsonSerializer.SerializeToElement "qlYqS8wpTVWyUvJIzcnJVwjPL8pJUaoFAAAA//8=")
     let explicitBrotli = struct (2, JsonSerializer.SerializeToElement "CwuAeyJ2YWx1ZSI6IkhlbGxvIFdvcmxkIn0D")
 
     let decode useRom =
-        if useRom then FsCodec.SystemTextJson.Compression.ToByteArray >> JsonSerializer.Deserialize
-        else FsCodec.SystemTextJson.Compression.ToJsonElement >> JsonSerializer.Deserialize
+        if useRom then FsCodec.SystemTextJson.EncodedBodyExtensions.ToByteArray >> JsonSerializer.Deserialize
+        else FsCodec.SystemTextJson.EncodedBodyExtensions.ToJsonElement >> JsonSerializer.Deserialize
+
     let [<Theory; InlineData false; InlineData true>] ``Can decode all known representations`` useRom =
         test <@ decode useRom direct = inputValue @>
-        test <@ decode useRom implicitDeflate = inputValue @>
         test <@ decode useRom explicitDeflate = inputValue @>
         test <@ decode useRom explicitBrotli = inputValue @>
 
@@ -54,11 +52,16 @@ module InternalDecoding =
         let decoded = decode useRom body
         test <@ decoded = inputValue @>
 
+    let [<Theory; InlineData false; InlineData true>] ``Defaults to leaving the body alone if string`` useRom =
+        let body = struct (99, JsonSerializer.SerializeToElement "test")
+        let decoded = decode useRom body
+        test <@ "test" = decoded @>
+
 type JsonElement with member x.Utf8ByteCount = if x.ValueKind = JsonValueKind.Null then 0 else x.GetRawText() |> System.Text.Encoding.UTF8.GetByteCount
 
 module TryCompress =
 
-    let sut = FsCodec.SystemTextJson.Compression.EncodeTryCompress StringUtf8.sut
+    let sut = FsCodec.SystemTextJson.EncodedBodyExtensions.EncodeTryCompress StringUtf8.sut
 
     let compressibleValue = {| value = String('x', 5000) |}
 
@@ -80,7 +83,7 @@ module TryCompress =
 
 module Uncompressed =
 
-    let sut = FsCodec.SystemTextJson.Compression.EncodeUncompressed StringUtf8.sut
+    let sut = FsCodec.SystemTextJson.EncodedBodyExtensions.EncodeUncompressed StringUtf8.sut
 
     // Borrow the value we just demonstrated to be compressible
     let compressibleValue = TryCompress.compressibleValue
