@@ -38,8 +38,8 @@ module InternalDecoding =
     let explicitBrotli = struct (2, JsonSerializer.SerializeToElement "CwuAeyJ2YWx1ZSI6IkhlbGxvIFdvcmxkIn0D")
 
     let decode useRom =
-        if useRom then FsCodec.SystemTextJson.EncodedBodyExtensions.ToByteArray >> JsonSerializer.Deserialize
-        else FsCodec.SystemTextJson.EncodedBodyExtensions.ToJsonElement >> JsonSerializer.Deserialize
+        if useRom then FsCodec.SystemTextJson.EncodedBody.ToByteArray >> JsonSerializer.Deserialize
+        else FsCodec.SystemTextJson.EncodedBody.ToJsonElement >> JsonSerializer.Deserialize
 
     let [<Theory; InlineData false; InlineData true>] ``Can decode all known representations`` useRom =
         test <@ decode useRom direct = inputValue @>
@@ -61,7 +61,7 @@ type JsonElement with member x.Utf8ByteCount = if x.ValueKind = JsonValueKind.Nu
 
 module TryCompress =
 
-    let sut = FsCodec.SystemTextJson.EncodedBodyExtensions.EncodeTryCompress StringUtf8.sut
+    let sut = FsCodec.SystemTextJson.EncodedBody.EncodeTryCompress StringUtf8.sut
 
     let compressibleValue = {| value = String('x', 5000) |}
 
@@ -83,7 +83,7 @@ module TryCompress =
 
 module Uncompressed =
 
-    let sut = FsCodec.SystemTextJson.EncodedBodyExtensions.EncodeUncompressed StringUtf8.sut
+    let sut = FsCodec.SystemTextJson.EncodedBody.EncodeUncompressed StringUtf8.sut
 
     // Borrow the value we just demonstrated to be compressible
     let compressibleValue = TryCompress.compressibleValue
