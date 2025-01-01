@@ -19,7 +19,7 @@
     <Compile Include="CodecJsonElement.fs" />
     <Compile Include="Interop.fs" />
     <Compile Include="StringIdConverter.fs" />
-    <Compile Include="Compression.fs" />
+    <Compile Include="EncodedBody.fs" />
   </ItemGroup>
 
   <ItemGroup>
