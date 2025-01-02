@@ -61,16 +61,20 @@ type EventData<'Format>(eventType, data, meta, eventId, correlationId, causation
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f: Func<'Format, 'Mapped>)
+    static member MapEx<'Mapped>(f: Func<IEventData<'Format>, 'Format, 'Mapped>)
         (x: IEventData<'Format>): IEventData<'Mapped> =
             { new IEventData<'Mapped> with
                 member _.EventType = x.EventType
-                member _.Data = f.Invoke x.Data
-                member _.Meta = f.Invoke x.Meta
+                member _.Data = f.Invoke(x, x.Data)
+                member _.Meta = f.Invoke(x, x.Meta)
                 member _.EventId = x.EventId
                 member _.CorrelationId = x.CorrelationId
                 member _.CausationId = x.CausationId
                 member _.Timestamp = x.Timestamp }
+
+    static member Map<'Mapped>(f: Func<'Format, 'Mapped>)
+        (x: IEventData<'Format>): IEventData<'Mapped> =
+        EventData.MapEx(Func<_, _, _>(fun _x -> f.Invoke)) x
 
 /// <summary>An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline.</summary>
 [<NoComparison; NoEquality>]
@@ -90,7 +94,7 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
         TimelineEvent(index, inner.EventType, inner.Data, inner.Meta, inner.EventId, inner.CorrelationId, inner.CausationId, inner.Timestamp, isUnfold, Option.toObj context, size) :> _
 
     override _.ToString() = sprintf "%s %s @%i" (if isUnfold then "Unfold" else "Event") eventType index
-    
+
     interface ITimelineEvent<'Format> with
         member _.Index = index
         member _.IsUnfold = isUnfold
@@ -122,10 +126,10 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
 [<AbstractClass; Sealed>]
 type EventCodec<'Event, 'Format, 'Context> private () =
 
-    static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format,'TargetFormat>, down: Func<'TargetFormat, 'Format>)
+    static member MapEx<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<IEventData<'Format>, 'Format,'TargetFormat>, down: Func<'TargetFormat, 'Format>)
         : IEventCodec<'Event, 'TargetFormat, 'Context> =
 
-        let upConvert = EventData.Map up
+        let upConvert = EventData.MapEx up
         let downConvert = TimelineEvent.Map down
 
         { new IEventCodec<'Event, 'TargetFormat, 'Context> with
@@ -137,3 +141,8 @@ type EventCodec<'Event, 'Format, 'Context> private () =
             member _.Decode target =
                 let encoded = downConvert target
                 native.Decode encoded }
+
+    static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format,'TargetFormat>, down: Func<'TargetFormat, 'Format>)
+        : IEventCodec<'Event, 'TargetFormat, 'Context> =
+
+        EventCodec.MapEx(native, Func<_, _, _>(fun _x -> up.Invoke), down)

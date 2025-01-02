@@ -9,6 +9,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
+
+- `Core.EventData.MapEx`: Enable contextual encoding of bodies [#127](https://github.com/jet/FsCodec/pull/127)
+
 ### Changed
 ### Removed
 ### Fixed
