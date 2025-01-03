@@ -87,7 +87,7 @@ type Compression private () =
     static member EncodeTryCompress<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, EncodedBody, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
-        FsCodec.Core.EventCodec.Map(native, (fun x -> Compression.Utf8ToEncodedTryCompress(opts, x)), Func<_, _> Compression.EncodedToUtf8)
+        FsCodec.Core.EventCodec.Map(native, (fun d -> Compression.Utf8ToEncodedTryCompress(opts, d)), Func<_, _> Compression.EncodedToUtf8)
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
     [<Extension>]
