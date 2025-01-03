@@ -4,6 +4,8 @@
   
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <!-- Supress complaints we dropped netstandard2.0 in v 3.1 -->
+    <NoWarn>PKV006</NoWarn>
     <PackageValidationBaselineVersion>3.0.0</PackageValidationBaselineVersion>
   </PropertyGroup>
 
