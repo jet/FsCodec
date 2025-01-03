@@ -84,13 +84,13 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
 [<Extension; AbstractClass; Sealed>]
 type Encoding private () =
 
-    static member Uncompressed(x: JsonElement): EncodedBody =
+    static member FromJsonElement(x: JsonElement): EncodedBody =
         Impl.encodeUncompressed x
-    static member Uncompressed(x: ReadOnlyMemory<byte>): EncodedBody =
+    static member FromUtf8(x: ReadOnlyMemory<byte>): EncodedBody =
         Impl.encodeUncompressedUtf8 x
     static member TryCompress(options, x: JsonElement): EncodedBody =
         Impl.tryCompress options.minSize options.minGain x
-    static member TryCompress(options, x: ReadOnlyMemory<byte>): EncodedBody =
+    static member TryCompressUtf8(options, x: ReadOnlyMemory<byte>): EncodedBody =
         Impl.tryCompressUtf8 options.minSize options.minGain x
     static member ToJsonElement(x: EncodedBody): JsonElement =
         Impl.decode x
@@ -101,21 +101,28 @@ type Encoding private () =
     static member ExpandTo(ms: System.IO.Stream, x: EncodedBody) =
         Impl.decode_ (fun el -> JsonSerializer.Serialize(ms, el)) (fun dec -> dec ms) x
 
+    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>JsonElement</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
+    [<Extension>]
+    static member EncodeUncompressed<'Event, 'Context>(native: IEventCodec<'Event, JsonElement, 'Context>)
+        : IEventCodec<'Event, EncodedBody, 'Context> =
+        FsCodec.Core.EventCodec.mapBodies Encoding.FromJsonElement Encoding.ToJsonElement native
+
     /// <summary>The body will be saved as-is under the following circumstances:<br/>
     /// - the <c>shouldCompress</c> predicate is not satisfied for the event in question.<br/>
     /// - sufficient compression, as defined by <c>options</c> is not achieved, the body is saved as-is.<br/>
     /// The <c>int</c> produced when <c>Encode</c>ing conveys the encoding used, and must be round tripped alongside the body as a required input of a future <c>Decode</c>.</summary>
+    /// <remarks>NOTE this is intended for interoperability only; a Codec (such as <c>CodecJsonElement</c>) that encodes to <c>JsonElement</c> is strongly recommended unless you don't have a choice.</remarks>
     [<Extension>]
-    static member EncodeTryCompress<'Event, 'Context>(
+    static member EncodeTryCompressUtf8<'Event, 'Context>(
             native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>,
             [<Optional; DefaultParameterValue null>] ?shouldCompress: Func<IEventData<ReadOnlyMemory<byte>>, bool>,
             [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, EncodedBody, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
         let encode = shouldCompress |> function
-            | None -> fun _x (d: ReadOnlyMemory<byte>) -> Encoding.TryCompress(opts, d)
-            | Some predicate -> fun x d -> if predicate.Invoke x then Encoding.TryCompress(opts, d) else Encoding.Uncompressed d
-        FsCodec.Core.EventCodec.MapEx(native, encode, Func<_, _> Encoding.ToUtf8)
+            | None -> fun _x (d: ReadOnlyMemory<byte>) -> Encoding.TryCompressUtf8(opts, d)
+            | Some predicate -> fun x d -> if predicate.Invoke x then Encoding.TryCompressUtf8(opts, d) else Encoding.FromUtf8 d
+        FsCodec.Core.EventCodec.mapBodies_ encode Encoding.ToUtf8 native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>JsonElement</c> Event Bodies to attempt to compress the data.<br/>
     /// The body will be saved as-is under the following circumstances:<br/>
@@ -131,23 +138,17 @@ type Encoding private () =
         let opts = defaultArg options CompressionOptions.Default
         let encode = shouldCompress |> function
             | None -> fun _x (d: JsonElement) -> Encoding.TryCompress(opts, d)
-            | Some predicate -> fun x d -> if predicate.Invoke x then Encoding.TryCompress(opts, d) else Encoding.Uncompressed d
-        FsCodec.Core.EventCodec.MapEx(native, encode, Func<_, _> Encoding.ToJsonElement)
-
-    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>JsonElement</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
-    [<Extension>]
-    static member EncodeUncompressed<'Event, 'Context>(native: IEventCodec<'Event, JsonElement, 'Context>)
-        : IEventCodec<'Event, EncodedBody, 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> Encoding.Uncompressed, Func<_, _> Encoding.ToJsonElement)
+            | Some predicate -> fun x d -> if predicate.Invoke x then Encoding.TryCompress(opts, d) else Encoding.FromJsonElement d
+        FsCodec.Core.EventCodec.mapBodies_ encode  Encoding.ToJsonElement native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * JsonElement</c> Event Bodies to render and/or consume Uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
     [<Extension>]
     static member ToUtf8Codec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> Encoding.ToUtf8, Func<_, _> Encoding.Uncompressed)
+        FsCodec.Core.EventCodec.mapBodies Encoding.ToUtf8 Encoding.FromUtf8 native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * JsonElement</c> Event Bodies to render and/or consume Uncompressed <c>byte[]</c>.</summary>
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> Encoding.ToByteArray, Func<_, _> Encoding.Uncompressed)
+        FsCodec.Core.EventCodec.mapBodies Encoding.ToByteArray Encoding.FromUtf8 native
