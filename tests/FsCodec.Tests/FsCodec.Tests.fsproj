@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <Compile Include="StreamNameTests.fs" />
-    <Compile Include="CompressionTests.fs" />
+    <Compile Include="EncodingTests.fs" />
     <Compile Include="TypeSafeEnumTests.fs" />
   </ItemGroup>
 
@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../src/FsCodec/FsCodec.fsproj" />
     <ProjectReference Include="../../src/FsCodec.NewtonsoftJson/FsCodec.NewtonsoftJson.fsproj" />
   </ItemGroup>
 

@@ -11,6 +11,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Added
 
 - `Core.EventData.MapEx`: Enable contextual encoding of bodies [#127](https://github.com/jet/FsCodec/pull/127)
+- `SystemTextJson.Compression`: Conditional compression as per `Box.Compression` [#126](https://github.com/jet/FsCodec/pull/126)
 
 ### Changed
 ### Removed
