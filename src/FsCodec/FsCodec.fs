@@ -169,9 +169,7 @@ type EventCodec<'Event, 'Format, 'Context> private () =
                 let encoded = downConvert.Invoke target
                 native.Decode encoded }
 
-    // NOTE To be be replaced by MapBodies/EventCodec.mapBodies for symmetry with TimelineEvent and EventData
-    // TO BE be Obsoleted and whenever FsCodec.Box is next released
-    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    [<Obsolete "Superseded by MapBodies / EventCodec.mapBodies for symmetry with TimelineEvent and EventData"; EditorBrowsable(EditorBrowsableState.Never)>]
     static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format, 'TargetFormat>, down: Func<'TargetFormat, 'Format>)
         : IEventCodec<'Event, 'TargetFormat, 'Context> =
         EventCodec.MapBodies(native, Func<_, _, _>(fun _x -> up.Invoke), down)

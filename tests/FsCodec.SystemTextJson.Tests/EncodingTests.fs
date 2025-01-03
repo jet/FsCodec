@@ -38,8 +38,8 @@ module InternalDecoding =
     let explicitBrotli = struct (2, JsonSerializer.SerializeToElement "CwuAeyJ2YWx1ZSI6IkhlbGxvIFdvcmxkIn0D")
 
     let decode useRom =
-        if useRom then FsCodec.SystemTextJson.Encoding.ToByteArray >> JsonSerializer.Deserialize
-        else FsCodec.SystemTextJson.Encoding.ToJsonElement >> JsonSerializer.Deserialize
+        if useRom then FsCodec.SystemTextJson.Encoding.DecodeToUtf8 >> _.ToArray() >> JsonSerializer.Deserialize
+        else FsCodec.SystemTextJson.Encoding.DecodeToJsonElement >> JsonSerializer.Deserialize
 
     let [<Theory; InlineData false; InlineData true>] ``Can decode all known representations`` useRom =
         test <@ decode useRom direct = inputValue @>
