@@ -66,39 +66,44 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
     // Empirically not much JSON below 48 bytes actually compresses - while we don't assume that, it is what is guiding the derivation of the default
     static member Default = { minSize = 48; minGain = 4 }
 
-[<Extension; AbstractClass; Sealed>]
+[<AbstractClass; Sealed>]
 type Encoding private () =
 
-    static member FromBlob(x: ReadOnlyMemory<byte>): EncodedBody =
+    static member OfBlob(x: ReadOnlyMemory<byte>): EncodedBody =
         Impl.encodeUncompressed x
-    static member FromBlobTryCompress(options, x: ReadOnlyMemory<byte>): EncodedBody =
+    static member OfBlobCompress(options, x: ReadOnlyMemory<byte>): EncodedBody =
         Impl.tryCompress options.minSize options.minGain x
-    static member DecodeToBlob(x: EncodedBody): ReadOnlyMemory<byte> =
+    static member ToBlob(x: EncodedBody): ReadOnlyMemory<byte> =
         Impl.decode x
+    static member ByteCount((_encoding, data): EncodedBody) =
+        data.Length
+
+[<Extension; AbstractClass; Sealed>]
+type Encoder private () =
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to attempt to compress the data.<br/>
     /// If sufficient compression, as defined by <c>options</c> is not achieved, the body is saved as-is.<br/>
     /// The <c>int</c> conveys a value that must be round tripped alongside the body in order for the decoding process to correctly interpret it.</summary>
     [<Extension>]
-    static member EncodeTryCompress<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
+    static member Compressed<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
         : IEventCodec<'Event, EncodedBody, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
-        FsCodec.Core.EventCodec.mapBodies (fun d -> Encoding.FromBlobTryCompress(opts, d)) Encoding.DecodeToBlob native
+        FsCodec.Core.EventCodec.mapBodies (fun d -> Encoding.OfBlobCompress(opts, d)) Encoding.ToBlob native
 
-    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
+    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode as per <c>Compressed</c>, but without attempting compression.</summary>
     [<Extension>]
-    static member EncodeUncompressed<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
+    static member Uncompressed<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, EncodedBody, 'Context> =
-        FsCodec.Core.EventCodec.mapBodies Encoding.FromBlob Encoding.DecodeToBlob native
+        FsCodec.Core.EventCodec.mapBodies Encoding.OfBlob Encoding.ToBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
     [<Extension>]
-    static member ToBlobCodec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
+    static member AsBlob<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        FsCodec.Core.EventCodec.mapBodies Encoding.DecodeToBlob Encoding.FromBlob native
+        FsCodec.Core.EventCodec.mapBodies Encoding.ToBlob Encoding.OfBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>byte[]</c>.</summary>
     [<Extension>]
-    static member ToBlobArrayCodec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
+    static member AsByteArray<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
-        FsCodec.Core.EventCodec.mapBodies (Encoding.DecodeToBlob >> _.ToArray()) Encoding.FromBlob native
+        FsCodec.Core.EventCodec.mapBodies (Encoding.ToBlob >> _.ToArray()) Encoding.OfBlob native

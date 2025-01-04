@@ -16,13 +16,13 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
 type Compression private () =
 
     static member Utf8ToEncodedDirect(x: ReadOnlyMemory<byte>): EncodedBody =
-        FsCodec.Encoding.FromBlob x
+        FsCodec.Encoding.OfBlob x
     static member Utf8ToEncodedTryCompress(options, x: ReadOnlyMemory<byte>): EncodedBody =
-        FsCodec.Encoding.FromBlobTryCompress({ minSize = options.minSize; minGain = options.minGain }, x)
+        FsCodec.Encoding.OfBlobCompress({ minSize = options.minSize; minGain = options.minGain }, x)
     static member EncodedToUtf8(x: EncodedBody): ReadOnlyMemory<byte> =
-        FsCodec.Encoding.DecodeToBlob x
+        FsCodec.Encoding.ToBlob x
     static member EncodedToByteArray(x: EncodedBody): byte[] =
-        FsCodec.Encoding.DecodeToBlob(x).ToArray()
+        FsCodec.Encoding.ToBlob(x).ToArray()
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to attempt to compress the data.<br/>
     /// If sufficient compression, as defined by <c>options</c> is not achieved, the body is saved as-is.<br/>
@@ -32,22 +32,22 @@ type Compression private () =
         : IEventCodec<'Event, EncodedBody, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
         let opts: FsCodec.CompressionOptions = { minSize = opts.minSize; minGain = opts.minGain }
-        FsCodec.Core.EventCodec.mapBodies (fun d -> Encoding.FromBlobTryCompress(opts, d)) Encoding.DecodeToBlob native
+        FsCodec.Core.EventCodec.mapBodies (fun d -> Encoding.OfBlobCompress(opts, d)) Encoding.ToBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
     [<Extension>]
     static member EncodeUncompressed<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : IEventCodec<'Event, EncodedBody, 'Context> =
-        Encoding.EncodeUncompressed native
+        Encoder.Uncompressed native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
     [<Extension>]
     static member ToUtf8Codec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        Encoding.ToBlobCodec native
+        Encoder.AsBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>byte[]</c>.</summary>
     [<Extension>]
     static member ToByteArrayCodec<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
-        Encoding.ToBlobArrayCodec native
+        Encoder.AsByteArray native

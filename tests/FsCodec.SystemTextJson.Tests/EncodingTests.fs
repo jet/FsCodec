@@ -38,8 +38,8 @@ module InternalDecoding =
     let explicitBrotli = struct (2, JsonSerializer.SerializeToElement "CwuAeyJ2YWx1ZSI6IkhlbGxvIFdvcmxkIn0D")
 
     let decode useRom =
-        if useRom then FsCodec.SystemTextJson.Encoding.DecodeToUtf8 >> _.ToArray() >> JsonSerializer.Deserialize
-        else FsCodec.SystemTextJson.Encoding.DecodeToJsonElement >> JsonSerializer.Deserialize
+        if useRom then FsCodec.SystemTextJson.Encoding.ToUtf8 >> _.ToArray() >> JsonSerializer.Deserialize
+        else FsCodec.SystemTextJson.Encoding.ToJsonElement >> JsonSerializer.Deserialize
 
     let [<Theory; InlineData false; InlineData true>] ``Can decode all known representations`` useRom =
         test <@ decode useRom direct = inputValue @>
@@ -61,7 +61,7 @@ type JsonElement with member x.Utf8ByteCount = if x.ValueKind = JsonValueKind.Nu
 
 module TryCompress =
 
-    let sut = FsCodec.SystemTextJson.Encoding.EncodeTryCompress StringUtf8.sut
+    let sut = FsCodec.SystemTextJson.Encoder.Compressed StringUtf8.sut
 
     let compressibleValue = {| value = String('x', 5000) |}
 
@@ -83,12 +83,13 @@ module TryCompress =
 
 module Uncompressed =
 
-    let sut = FsCodec.SystemTextJson.Encoding.EncodeUncompressed StringUtf8.sut
+    let sut = FsCodec.SystemTextJson.Encoder.Uncompressed StringUtf8.sut
 
     // Borrow the value we just demonstrated to be compressible
     let compressibleValue = TryCompress.compressibleValue
 
     let [<Fact>] roundtrips () =
+        let rom = ReadOnlyMemory(null : byte[])
         let res' = roundtrip sut compressibleValue
         res' =! ValueSome compressibleValue
 
