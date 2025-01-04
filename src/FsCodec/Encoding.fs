@@ -6,7 +6,7 @@ open System.Runtime.InteropServices
 
 /// Represents the body of an Event (or its Metadata), holding the encoded form of the buffer together with an enum value signifying the encoding scheme.
 /// Enables the decoding side to transparently inflate the data on loading without burdening the application layer with tracking the encoding scheme used
-type EncodedBody = (struct(int * ReadOnlyMemory<byte>))
+type Encoded = (struct(int * ReadOnlyMemory<byte>))
 
 module Encoding =
     let [<Literal>] Direct = 0 // Assumed for all values not listed here
@@ -28,7 +28,7 @@ module private Impl =
         let input = new System.IO.MemoryStream(data.ToArray(), writable = false)
         let decompressor = new System.IO.Compression.DeflateStream(input, System.IO.Compression.CompressionMode.Decompress, leaveOpen = true)
         decompressor.CopyTo output
-    let private brotliDecompressTo output (data:  ReadOnlyMemory<byte>) =
+    let private brotliDecompressTo output (data: ReadOnlyMemory<byte>) =
         let input = new System.IO.MemoryStream(data.ToArray(), writable = false)
         use decompressor = new System.IO.Compression.BrotliStream(input, System.IO.Compression.CompressionMode.Decompress)
         decompressor.CopyTo output
@@ -51,8 +51,8 @@ module private Impl =
         compressor.Write(eventBody.Span)
         compressor.Close() // NOTE Close, not Flush; we want the output fully terminated to reduce surprises when decompressing
         output
-    let encodeUncompressed (raw: ReadOnlyMemory<byte>): EncodedBody = Encoding.Direct, raw
-    let tryCompress minSize minGain (raw: ReadOnlyMemory<byte>): EncodedBody =
+    let encodeUncompressed (raw: ReadOnlyMemory<byte>): Encoded = Encoding.Direct, raw
+    let tryCompress minSize minGain (raw: ReadOnlyMemory<byte>): Encoded =
         if raw.Length < minSize then encodeUncompressed raw
         else match brotliCompress raw with
              | tmp when raw.Length > int tmp.Length + minGain -> Encoding.Brotli, tmp.ToArray() |> ReadOnlyMemory
@@ -69,13 +69,13 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
 [<AbstractClass; Sealed>]
 type Encoding private () =
 
-    static member OfBlob(x: ReadOnlyMemory<byte>): EncodedBody =
+    static member OfBlob(x: ReadOnlyMemory<byte>): Encoded =
         Impl.encodeUncompressed x
-    static member OfBlobCompress(options, x: ReadOnlyMemory<byte>): EncodedBody =
+    static member OfBlobCompress(options, x: ReadOnlyMemory<byte>): Encoded =
         Impl.tryCompress options.minSize options.minGain x
-    static member ToBlob(x: EncodedBody): ReadOnlyMemory<byte> =
+    static member ToBlob(x: Encoded): ReadOnlyMemory<byte> =
         Impl.decode x
-    static member ByteCount((_encoding, data): EncodedBody) =
+    static member ByteCount((_encoding, data): Encoded) =
         data.Length
 
 [<Extension; AbstractClass; Sealed>]
@@ -86,24 +86,24 @@ type Encoder private () =
     /// The <c>int</c> conveys a value that must be round tripped alongside the body in order for the decoding process to correctly interpret it.</summary>
     [<Extension>]
     static member Compressed<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>, [<Optional; DefaultParameterValue null>] ?options)
-        : IEventCodec<'Event, EncodedBody, 'Context> =
+        : IEventCodec<'Event, Encoded, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
         FsCodec.Core.EventCodec.mapBodies (fun d -> Encoding.OfBlobCompress(opts, d)) Encoding.ToBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode as per <c>Compressed</c>, but without attempting compression.</summary>
     [<Extension>]
     static member Uncompressed<'Event, 'Context>(native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
-        : IEventCodec<'Event, EncodedBody, 'Context> =
+        : IEventCodec<'Event, Encoded, 'Context> =
         FsCodec.Core.EventCodec.mapBodies Encoding.OfBlob Encoding.ToBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
     [<Extension>]
-    static member AsBlob<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
+    static member AsBlob<'Event, 'Context>(native: IEventCodec<'Event, Encoded, 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
         FsCodec.Core.EventCodec.mapBodies Encoding.ToBlob Encoding.OfBlob native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to render and/or consume from Uncompressed <c>byte[]</c>.</summary>
     [<Extension>]
-    static member AsByteArray<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
+    static member AsByteArray<'Event, 'Context>(native: IEventCodec<'Event, Encoded, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
         FsCodec.Core.EventCodec.mapBodies (Encoding.ToBlob >> _.ToArray()) Encoding.OfBlob native

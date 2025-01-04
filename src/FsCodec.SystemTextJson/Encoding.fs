@@ -9,7 +9,7 @@ open System.Text.Json
 
 /// Represents the body of an Event (or its Metadata), holding the encoded form of the buffer together with an enum value identifying the encoding scheme.
 /// Enables the decoding side to transparently inflate the data on loading without burdening the application layer with tracking the encoding scheme used.
-type EncodedBody = (struct(int * JsonElement))
+type Encoded = (struct(int * JsonElement))
 
 module private Impl =
 
@@ -34,20 +34,25 @@ module private Impl =
         use output = new System.IO.MemoryStream()
         compressedBytes |> alg output
         output.ToArray() |> post
-    let decode_ direct expand struct (encoding, data: JsonElement) =
+    let decode_ direct expand (struct (encoding, data: JsonElement) as x) =
         match encoding, data.ValueKind with
         | Encoding.Deflate, JsonValueKind.String -> data.GetBytesFromBase64() |> expand inflateTo
-        | Encoding.Brotli, JsonValueKind.String -> data.GetBytesFromBase64() |> expand brotliDecompressTo
-        | _ -> data |> direct
-    let decode = decode_ id (unpack InteropHelpers.Utf8ToJsonElement)
+        | Encoding.Brotli,  JsonValueKind.String -> data.GetBytesFromBase64() |> expand brotliDecompressTo
+        | _ -> direct data
+    let decode = decode_ unbox (unpack InteropHelpers.Utf8ToJsonElement)
     let private blobToBase64StringJsonElement = Convert.ToBase64String >> JsonSerializer.SerializeToElement
-    let direct (raw: JsonElement): EncodedBody = Encoding.Direct, raw
-    let recode struct (encoding, data: ReadOnlyMemory<byte>): EncodedBody =
+    let direct (raw: JsonElement): Encoded = Encoding.Direct, raw
+    let ofUtf8Encoded struct (encoding, data: ReadOnlyMemory<byte>): Encoded =
         match encoding with
         | Encoding.Deflate -> Encoding.Deflate, data.ToArray() |> blobToBase64StringJsonElement
-        | Encoding.Brotli -> Encoding.Brotli, data.ToArray() |> blobToBase64StringJsonElement
-        | _ -> Encoding.Direct, data.ToArray() |> blobToBase64StringJsonElement
+        | Encoding.Brotli ->  Encoding.Brotli,  data.ToArray() |> blobToBase64StringJsonElement
+        | _ -> Encoding.Direct, data |> InteropHelpers.Utf8ToJsonElement
     let decodeUtf8 = decode_ InteropHelpers.JsonElementToUtf8 (unpack ReadOnlyMemory<byte>)
+    let toUtf8Encoded struct (encoding, data: JsonElement): FsCodec.Encoded =
+        match encoding, data.ValueKind with
+        | Encoding.Deflate, JsonValueKind.String -> Encoding.Deflate, data.GetBytesFromBase64() |> ReadOnlyMemory
+        | Encoding.Brotli,  JsonValueKind.String -> Encoding.Brotli,  data.GetBytesFromBase64() |> ReadOnlyMemory
+        | _ -> Encoding.Direct, data |> InteropHelpers.JsonElementToUtf8
 
     (* Conditional compression logic: triggered as storage layer pulls Data/Meta fields
        Bodies under specified minimum size, or not meeting a required compression gain are stored directly, equivalent to if compression had not been wired in *)
@@ -58,15 +63,15 @@ module private Impl =
         compressor.Write eventBody.Span
         compressor.Close() // NOTE Close, not Flush; we want the output fully terminated to reduce surprises when decompressing
         output
-    let compress minSize minGain (raw: JsonElement): EncodedBody =
+    let compress minSize minGain (raw: JsonElement): Encoded =
         let utf8: ReadOnlyMemory<byte> = InteropHelpers.JsonElementToUtf8 raw
         if utf8.Length < minSize then direct raw else
 
         let brotli = brotliCompress utf8
         if utf8.Length <= int brotli.Length + minGain then direct raw else
         Encoding.Brotli, brotli.ToArray() |> blobToBase64StringJsonElement
-    let directUtf8 (raw: ReadOnlyMemory<byte>): EncodedBody = Encoding.Direct, InteropHelpers.Utf8ToJsonElement raw
-    let compressUtf8 minSize minGain (utf8: ReadOnlyMemory<byte>): EncodedBody =
+    let directUtf8 (raw: ReadOnlyMemory<byte>): Encoded = Encoding.Direct, InteropHelpers.Utf8ToJsonElement raw
+    let compressUtf8 minSize minGain (utf8: ReadOnlyMemory<byte>): Encoded =
         if utf8.Length < minSize then directUtf8 utf8 else
 
         let brotli = brotliCompress utf8
@@ -76,25 +81,27 @@ module private Impl =
 [<AbstractClass; Sealed>]
 type Encoding private () =
 
-    static member OfJsonElement(x: JsonElement): EncodedBody =
+    static member OfJsonElement(x: JsonElement): Encoded =
         Impl.direct x
-    static member OfJsonElementCompress(options, x: JsonElement): EncodedBody =
+    static member OfJsonElementCompress(options, x: JsonElement): Encoded =
         Impl.compress options.minSize options.minGain x
-    static member OfUtf8(x: ReadOnlyMemory<byte>): EncodedBody =
+    static member OfUtf8(x: ReadOnlyMemory<byte>): Encoded =
         Impl.directUtf8 x
-    static member OfUtf8Compress(options, x: ReadOnlyMemory<byte>): EncodedBody =
+    static member OfUtf8Compress(options, x: ReadOnlyMemory<byte>): Encoded =
         Impl.compressUtf8 options.minSize options.minGain x
-    static member OfEncodedUtf8(x: FsCodec.EncodedBody): EncodedBody =
-        Impl.recode x
-    static member ByteCount((_encoding, data): EncodedBody) =
+    static member OfUtf8Encoded(x: FsCodec.Encoded): Encoded =
+        Impl.ofUtf8Encoded x
+    static member ByteCount((_encoding, data): Encoded) =
         data.GetRawText() |> System.Text.Encoding.UTF8.GetByteCount
-    static member ByteCountExpanded(x: EncodedBody) =
+    static member ByteCountExpanded(x: Encoded) =
         Impl.decode x |> _.GetRawText() |> System.Text.Encoding.UTF8.GetByteCount
-    static member ToJsonElement(x: EncodedBody): JsonElement =
+    static member ToJsonElement(x: Encoded): JsonElement =
         Impl.decode x
-    static member ToUtf8(x: EncodedBody): ReadOnlyMemory<byte> =
+    static member ToUtf8(x: Encoded): ReadOnlyMemory<byte> =
         Impl.decodeUtf8 x
-    static member ToStream(ms: System.IO.Stream, x: EncodedBody) =
+    static member ToEncodedUtf8(x: Encoded): FsCodec.Encoded =
+        Impl.toUtf8Encoded x
+    static member ToStream(ms: System.IO.Stream, x: Encoded) =
         Impl.decode_ (fun el -> JsonSerializer.Serialize(ms, el)) (fun dec -> dec ms) x
 
 [<Extension; AbstractClass; Sealed>]
@@ -103,7 +110,7 @@ type Encoder private () =
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>JsonElement</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
     [<Extension>]
     static member Uncompressed<'Event, 'Context>(native: IEventCodec<'Event, JsonElement, 'Context>)
-        : IEventCodec<'Event, EncodedBody, 'Context> =
+        : IEventCodec<'Event, Encoded, 'Context> =
         FsCodec.Core.EventCodec.mapBodies Encoding.OfJsonElement Encoding.ToJsonElement native
 
     /// <summary>The body will be saved as-is under the following circumstances:<br/>
@@ -116,7 +123,7 @@ type Encoder private () =
             native: IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>,
             [<Optional; DefaultParameterValue null>] ?shouldCompress: Func<IEventData<ReadOnlyMemory<byte>>, bool>,
             [<Optional; DefaultParameterValue null>] ?options)
-        : IEventCodec<'Event, EncodedBody, 'Context> =
+        : IEventCodec<'Event, Encoded, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
         let encode = shouldCompress |> function
             | None -> fun _x (d: ReadOnlyMemory<byte>) -> Encoding.OfUtf8Compress(opts, d)
@@ -133,21 +140,21 @@ type Encoder private () =
             native: IEventCodec<'Event, JsonElement, 'Context>,
             [<Optional; DefaultParameterValue null>] ?shouldCompress: Func<IEventData<JsonElement>, bool>,
             [<Optional; DefaultParameterValue null>] ?options)
-        : IEventCodec<'Event, EncodedBody, 'Context> =
+        : IEventCodec<'Event, Encoded, 'Context> =
         let opts = defaultArg options CompressionOptions.Default
         let encode = shouldCompress |> function
             | None -> fun _x (d: JsonElement) -> Encoding.OfJsonElementCompress(opts, d)
             | Some predicate -> fun x d -> if predicate.Invoke x then Encoding.OfJsonElementCompress(opts, d) else Encoding.OfJsonElement d
-        FsCodec.Core.EventCodec.mapBodies_ encode  Encoding.ToJsonElement native
+        FsCodec.Core.EventCodec.mapBodies_ encode Encoding.ToJsonElement native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * JsonElement</c> Event Bodies to render and/or consume uncompressed <c>ReadOnlyMemory&lt;byte&gt;</c>.</summary>
     [<Extension>]
-    static member AsUtf8<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
+    static member AsUtf8<'Event, 'Context>(native: IEventCodec<'Event, Encoded, 'Context>)
         : IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
         FsCodec.Core.EventCodec.mapBodies Encoding.ToUtf8 Encoding.OfUtf8 native
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * JsonElement</c> Event Bodies to render and/or consume uncompressed <c>byte[]</c>.</summary>
     [<Extension>]
-    static member AsUtf8ByteArray<'Event, 'Context>(native: IEventCodec<'Event, EncodedBody, 'Context>)
+    static member AsUtf8ByteArray<'Event, 'Context>(native: IEventCodec<'Event, Encoded, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
         FsCodec.Core.EventCodec.mapBodies (Encoding.ToUtf8 >> _.ToArray()) Encoding.OfUtf8 native
