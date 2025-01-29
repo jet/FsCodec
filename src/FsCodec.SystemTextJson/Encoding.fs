@@ -10,7 +10,7 @@ open System.Text.Json
 /// Represents the body of an Event (or its Metadata), holding the encoded form of the buffer together with an enum value identifying the encoding scheme.
 /// Enables the decoding side to transparently inflate the data on loading without burdening the application layer with tracking the encoding scheme used.
 type Encoded = (struct(int * JsonElement))
-type BlobEncoded = (struct(int * ReadOnlyMemory<byte>))
+type BlobEncoded = FsCodec.EncodedBody
 
 module Encoding =
     let [<Literal>] Direct = 0 // Assumed for all values not listed here
