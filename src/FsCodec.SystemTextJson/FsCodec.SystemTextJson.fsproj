@@ -19,6 +19,7 @@
     <Compile Include="CodecJsonElement.fs" />
     <Compile Include="Interop.fs" />
     <Compile Include="StringIdConverter.fs" />
+    <Compile Include="Encoding.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,10 +31,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../FsCodec.Box/FsCodec.Box.fsproj" />
-<!--    NEXT PUBLISHED VERSION will take a 3.1 dependency to avoid using the Obsoleted API-->
-<!--    <ProjectReference Condition=" '$(Configuration)' == 'Debug' " Include="../FsCodec.Box/FsCodec.Box.fsproj" />-->
-<!--    <PackageReference Condition=" '$(Configuration)' == 'Release' " Include="FsCodec.Box" Version="[3.0.0, 4.0.0)" />-->
+    <ProjectReference Condition=" '$(Configuration)' == 'Debug' " Include="../FsCodec.Box/FsCodec.Box.fsproj" />
+    <PackageReference Condition=" '$(Configuration)' == 'Release' " Include="FsCodec" Version="[3.1.0-rc.1, 4.0.0)" />
+    <PackageReference Condition=" '$(Configuration)' == 'Release' " Include="FsCodec.Box" Version="[3.0.0, 4.0.0)" />
   </ItemGroup>
 
 </Project>

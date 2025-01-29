@@ -21,11 +21,11 @@ type InteropHelpers private () =
     [<Extension>]
     static member ToUtf8Codec<'Event, 'Context>(native: FsCodec.IEventCodec<'Event, JsonElement, 'Context>)
         : FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> InteropHelpers.JsonElementToUtf8, Func<_, _> InteropHelpers.Utf8ToJsonElement)
+        FsCodec.Core.EventCodec.mapBodies InteropHelpers.JsonElementToUtf8 InteropHelpers.Utf8ToJsonElement native
 
     /// <summary>Adapts an IEventCodec that's rendering to <c>ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to handle <c>JsonElement</c> bodies instead.<br/>
     /// NOTE where possible, it's better to use <c>CodecJsonElement</c> in preference to <c>Codec</c> to encode directly in order to avoid this mapping process.</summary>
     [<Extension>]
     static member ToJsonElementCodec<'Event, 'Context>(native: FsCodec.IEventCodec<'Event, ReadOnlyMemory<byte>, 'Context>)
         : FsCodec.IEventCodec<'Event, JsonElement, 'Context> =
-        FsCodec.Core.EventCodec.Map(native, Func<_, _> InteropHelpers.Utf8ToJsonElement, Func<_, _> InteropHelpers.JsonElementToUtf8)
+        FsCodec.Core.EventCodec.mapBodies InteropHelpers.Utf8ToJsonElement InteropHelpers.JsonElementToUtf8 native

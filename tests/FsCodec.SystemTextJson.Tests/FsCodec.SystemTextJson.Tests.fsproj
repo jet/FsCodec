@@ -43,6 +43,7 @@
       <Link>SomeNullHandlingTests.fs</Link>
     </Compile>
     <Compile Include="StringIdTests.fs" />
+    <Compile Include="EncodingTests.fs" />
   </ItemGroup>
 
 </Project>

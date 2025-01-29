@@ -511,3 +511,26 @@ Client ClientB, event 2 meta { principal = "me" } event Removed { name = null }
 Unhandled Event: Category Misc, Id x, Index 0, Event: "Dummy"
 
 *)
+
+(* Well known states for Compression regression tests *)
+
+open System
+let private brotliCompress (eventBody: ReadOnlyMemory<byte>): System.IO.MemoryStream =
+    let output = new System.IO.MemoryStream()
+    use compressor = new System.IO.Compression.BrotliStream(output, System.IO.Compression.CompressionLevel.Optimal, leaveOpen = true)
+    compressor.Write eventBody.Span
+    compressor.Close() // NOTE Close, not Flush; we want the output fully terminated to reduce surprises when decompressing
+    output
+   
+/// Equinox.Cosmos / Equinox.CosmosStore Deflate logic was exactly as below, do not tweak:
+let private deflate (uncompressedBytes: byte[]) =
+    let output = new System.IO.MemoryStream()
+    let compressor = new System.IO.Compression.DeflateStream(output, System.IO.Compression.CompressionLevel.Optimal, leaveOpen = true)
+    compressor.Write(uncompressedBytes)
+    compressor.Flush() // Could `Close`, but not required
+    output.ToArray()
+let raw = {| value = "Hello World" |}
+
+[| raw |> System.Text.Json.JsonSerializer.SerializeToUtf8Bytes |> ReadOnlyMemory |> brotliCompress |> _.ToArray()
+   raw |> System.Text.Json.JsonSerializer.SerializeToUtf8Bytes |> deflate |]
+|> Array.map Convert.ToBase64String
