@@ -10,6 +10,12 @@ open System.Text.Json
 /// Represents the body of an Event (or its Metadata), holding the encoded form of the buffer together with an enum value identifying the encoding scheme.
 /// Enables the decoding side to transparently inflate the data on loading without burdening the application layer with tracking the encoding scheme used.
 type Encoded = (struct(int * JsonElement))
+type BlobEncoded = (struct(int * ReadOnlyMemory<byte>))
+
+module Encoding =
+    let [<Literal>] Direct = 0 // Assumed for all values not listed here
+    let [<Literal>] Deflate = 1 // Deprecated encoding produced by versions pre 3.0.0-rc.13; no longer produced
+    let [<Literal>] Brotli = 2 // Default encoding as of 3.0.0-rc.13
 
 module private Impl =
 
@@ -48,7 +54,7 @@ module private Impl =
         | Encoding.Brotli ->  Encoding.Brotli,  data.ToArray() |> blobToBase64StringJsonElement
         | _ -> Encoding.Direct, data |> InteropHelpers.Utf8ToJsonElement
     let decodeUtf8 = decode_ InteropHelpers.JsonElementToUtf8 (unpack ReadOnlyMemory<byte>)
-    let toUtf8Encoded struct (encoding, data: JsonElement): FsCodec.Encoded =
+    let toUtf8Encoded struct (encoding, data: JsonElement): BlobEncoded =
         match encoding, data.ValueKind with
         | Encoding.Deflate, JsonValueKind.String -> Encoding.Deflate, data.GetBytesFromBase64() |> ReadOnlyMemory
         | Encoding.Brotli,  JsonValueKind.String -> Encoding.Brotli,  data.GetBytesFromBase64() |> ReadOnlyMemory
@@ -89,9 +95,9 @@ type Encoding private () =
         Impl.directUtf8 x
     static member OfUtf8Compress(options, x: ReadOnlyMemory<byte>): Encoded =
         Impl.compressUtf8 options.minSize options.minGain x
-    static member OfUtf8Encoded(x: FsCodec.Encoded): Encoded =
+    static member OfUtf8Encoded(x: BlobEncoded): Encoded =
         Impl.ofUtf8Encoded x
-    static member Utf8EncodedToJsonElement(x: FsCodec.Encoded): JsonElement =
+    static member Utf8EncodedToJsonElement(x: BlobEncoded): JsonElement =
         Encoding.OfUtf8Encoded x |> Encoding.ToJsonElement
     static member ByteCount((_encoding, data): Encoded) =
         data.GetRawText() |> System.Text.Encoding.UTF8.GetByteCount
@@ -101,7 +107,7 @@ type Encoding private () =
         Impl.decode x
     static member ToUtf8(x: Encoded): ReadOnlyMemory<byte> =
         Impl.decodeUtf8 x
-    static member ToEncodedUtf8(x: Encoded): FsCodec.Encoded =
+    static member ToEncodedUtf8(x: Encoded): BlobEncoded =
         Impl.toUtf8Encoded x
     static member ToStream(ms: System.IO.Stream, x: Encoded) =
         Impl.decode_ (fun el -> JsonSerializer.Serialize(ms, el)) (fun dec -> dec ms) x
@@ -163,6 +169,6 @@ type Encoder private () =
 
     /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode to JsonElement, with the Decode side of the roundtrip not attempting to Compress.</summary>
     [<Extension>]
-    static member Utf8AsJsonElement<'Event, 'Context>(native: IEventCodec<'Event, FsCodec.Encoded, 'Context>)
+    static member Utf8AsJsonElement<'Event, 'Context>(native: IEventCodec<'Event, BlobEncoded, 'Context>)
         : IEventCodec<'Event, JsonElement, 'Context> =
         FsCodec.Core.EventCodec.mapBodies (Encoding.OfUtf8Encoded >> Encoding.ToJsonElement) (Encoding.OfJsonElement >> Encoding.ToEncodedUtf8) native
