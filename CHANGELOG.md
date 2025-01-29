@@ -10,7 +10,6 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 
-- `SystemTextJson.Encoding`: Conditional compression as per `FsCodec.Encoding` [#126](https://github.com/jet/FsCodec/pull/126)
 
 ### Changed
 ### Removed
@@ -22,6 +21,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Added
 
 - `MapBodies`: Enable contextual encoding of bodies [#127](https://github.com/jet/FsCodec/pull/127)
+- `FsCodec.Encoding`: Conditional compression as per `FsCodec.Compression` (now deprecated) [#126](https://github.com/jet/FsCodec/pull/126)
+- `SystemTextJson.Encoding`: Conditional compression as per `FsCodec.Encoding` [#126](https://github.com/jet/FsCodec/pull/126)
 
 <a name="3.0.3"></a>
 ## [3.0.3] - 2024-10-14
