@@ -24,6 +24,7 @@
 
     <ItemGroup>
         <ProjectReference Condition=" '$(Configuration)' == 'Debug' " Include="../FsCodec/FsCodec.fsproj" />
+<!--    TODO if taking a dependency on 3.1, the impl should switch to EventCodec.mapBodies, and EventCodec.Map should be Obsoleted -->
         <PackageReference Condition=" '$(Configuration)' == 'Release' " Include="FsCodec" Version="[3.0.0, 4.0.0)" />
     </ItemGroup>
 

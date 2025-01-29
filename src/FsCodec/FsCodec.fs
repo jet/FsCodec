@@ -41,6 +41,7 @@ namespace FsCodec.Core
 
 open FsCodec
 open System
+open System.ComponentModel
 
 /// <summary>An Event about to be written, see <c>IEventData</c> for further information.</summary>
 [<NoComparison; NoEquality>]
@@ -61,16 +62,31 @@ type EventData<'Format>(eventType, data, meta, eventId, correlationId, causation
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f: Func<'Format, 'Mapped>)
-        (x: IEventData<'Format>): IEventData<'Mapped> =
+    static member MapBodies<'Mapped>(f: Func<IEventData<'Format>, 'Format, 'Mapped>): Func<IEventData<'Format>, IEventData<'Mapped>> =
+        Func<_, _>(fun x ->
             { new IEventData<'Mapped> with
                 member _.EventType = x.EventType
-                member _.Data = f.Invoke x.Data
-                member _.Meta = f.Invoke x.Meta
+                member _.Data = f.Invoke(x, x.Data)
+                member _.Meta = f.Invoke(x, x.Meta)
                 member _.EventId = x.EventId
                 member _.CorrelationId = x.CorrelationId
                 member _.CausationId = x.CausationId
-                member _.Timestamp = x.Timestamp }
+                member _.Timestamp = x.Timestamp })
+
+    // Original ugly signature
+    [<Obsolete "Superseded by MapBodies / EventData.mapBodies; more importantly, the original signature mixed F# and C# types so was messy in all contexts"; EditorBrowsable(EditorBrowsableState.Never)>]
+    static member Map<'Mapped>(f: Func<'Format, 'Mapped>) (x: IEventData<'Format>): IEventData<'Mapped> =
+        EventData.MapBodies(Func<_, _, _>(fun _x -> f.Invoke)).Invoke(x)
+
+/// F#-specific wrappers; for C#, use EventData.MapBodies directly
+// These helper modules may move up to the FsCodec namespace in V4, along with breaking changes moving IsUnfold and Context from ITimelineEvent to IEventData
+// If you have helpers that should be in the box alongside these, raise an Issue please
+module EventData =
+
+    let mapBodies_<'Format, 'Mapped> (f: IEventData<'Format> -> 'Format -> 'Mapped) =
+        EventData.MapBodies(Func<IEventData<'Format>, 'Format, 'Mapped> f).Invoke
+    let mapBodies<'Format, 'Mapped> (f: 'Format -> 'Mapped) =
+        EventData.MapBodies(Func<IEventData<'Format>, 'Format, 'Mapped>(fun _ -> f)).Invoke
 
 /// <summary>An Event or Unfold that's been read from a Store and hence has a defined <c>Index</c> on the Event Timeline.</summary>
 [<NoComparison; NoEquality>]
@@ -90,7 +106,7 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
         TimelineEvent(index, inner.EventType, inner.Data, inner.Meta, inner.EventId, inner.CorrelationId, inner.CausationId, inner.Timestamp, isUnfold, Option.toObj context, size) :> _
 
     override _.ToString() = sprintf "%s %s @%i" (if isUnfold then "Unfold" else "Event") eventType index
-    
+
     interface ITimelineEvent<'Format> with
         member _.Index = index
         member _.IsUnfold = isUnfold
@@ -104,36 +120,66 @@ type TimelineEvent<'Format>(index, eventType, data, meta, eventId, correlationId
         member _.CausationId = causationId
         member _.Timestamp = timestamp
 
-    static member Map<'Mapped>(f: Func<'Format, 'Mapped>)
-        (x: ITimelineEvent<'Format>): ITimelineEvent<'Mapped> =
+    static member MapBodies<'Mapped>(f: Func<ITimelineEvent<'Format>, 'Format, 'Mapped>): Func<ITimelineEvent<'Format>, ITimelineEvent<'Mapped>> =
+        Func<_, _>(fun x ->
             { new ITimelineEvent<'Mapped> with
                 member _.Index = x.Index
                 member _.IsUnfold = x.IsUnfold
                 member _.Context = x.Context
                 member _.Size = x.Size
                 member _.EventType = x.EventType
-                member _.Data = f.Invoke x.Data
-                member _.Meta = f.Invoke x.Meta
+                member _.Data = f.Invoke(x, x.Data)
+                member _.Meta = f.Invoke(x, x.Meta)
                 member _.EventId = x.EventId
                 member _.CorrelationId = x.CorrelationId
                 member _.CausationId = x.CausationId
-                member _.Timestamp = x.Timestamp }
+                member _.Timestamp = x.Timestamp })
+    // Original ugly signature
+    [<Obsolete "Superseded by MapBodies / TimeLineEvent.mapBodies; more importantly, the original signature mixed F# and C# types so was messy in all contexts"; EditorBrowsable(EditorBrowsableState.Never)>]
+    static member Map<'Mapped>(f: Func<'Format, 'Mapped>) (x: ITimelineEvent<'Format>): ITimelineEvent<'Mapped> =
+        TimelineEvent.MapBodies(Func<_, _, _>(fun _x -> f.Invoke)).Invoke(x)
+
+/// F#-specific wrappers; for C#, use TimelineEvent.MapBodies directly
+module TimelineEvent =
+
+    let mapBodies_<'Format, 'Mapped> (f: ITimelineEvent<'Format> -> 'Format -> 'Mapped) =
+        TimelineEvent.MapBodies(Func<ITimelineEvent<'Format>, 'Format, 'Mapped> f).Invoke
+    let mapBodies<'Format, 'Mapped> (f: 'Format -> 'Mapped) =
+        TimelineEvent.MapBodies(Func<ITimelineEvent<'Format>, 'Format, 'Mapped>(fun _ -> f)).Invoke
 
 [<AbstractClass; Sealed>]
 type EventCodec<'Event, 'Format, 'Context> private () =
 
-    static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format,'TargetFormat>, down: Func<'TargetFormat, 'Format>)
+    static member MapBodies<'TargetFormat>(
+            native: IEventCodec<'Event, 'Format, 'Context>,
+            up: Func<IEventData<'Format>, 'Format, 'TargetFormat>,
+            down: Func<'TargetFormat, 'Format>)
         : IEventCodec<'Event, 'TargetFormat, 'Context> =
 
-        let upConvert = EventData.Map up
-        let downConvert = TimelineEvent.Map down
+        let upConvert = EventData.MapBodies up
+        let downConvert = TimelineEvent.MapBodies(fun _ x -> down.Invoke x)
 
         { new IEventCodec<'Event, 'TargetFormat, 'Context> with
 
             member _.Encode(context, event) =
                 let encoded = native.Encode(context, event)
-                upConvert encoded
+                upConvert.Invoke encoded
 
             member _.Decode target =
-                let encoded = downConvert target
+                let encoded = downConvert.Invoke target
                 native.Decode encoded }
+
+    // NOTE To be be replaced by MapBodies/EventCodec.mapBodies for symmetry with TimelineEvent and EventData
+    // TO BE be Obsoleted and whenever FsCodec.Box is next released
+    [<EditorBrowsable(EditorBrowsableState.Never)>]
+    static member Map<'TargetFormat>(native: IEventCodec<'Event, 'Format, 'Context>, up: Func<'Format, 'TargetFormat>, down: Func<'TargetFormat, 'Format>)
+        : IEventCodec<'Event, 'TargetFormat, 'Context> =
+        EventCodec.MapBodies(native, Func<_, _, _>(fun _x -> up.Invoke), down)
+
+/// F#-specific wrappers; for C#, use EventCodec.MapBodies directly
+module EventCodec =
+
+    let mapBodies_ (up: IEventData<'Format> -> 'Format -> 'TargetFormat) (down: 'TargetFormat -> 'Format) x =
+        EventCodec<'Event, 'Format, 'Context>.MapBodies<'TargetFormat>(x, up, down)
+    let mapBodies (up: 'Format -> 'TargetFormat) (down: 'TargetFormat -> 'Format) x =
+        EventCodec<'Event, 'Format, 'Context>.MapBodies<'TargetFormat>(x, Func<_, _, _>(fun _ -> up), down)
