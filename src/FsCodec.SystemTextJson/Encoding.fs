@@ -91,6 +91,8 @@ type Encoding private () =
         Impl.compressUtf8 options.minSize options.minGain x
     static member OfUtf8Encoded(x: FsCodec.Encoded): Encoded =
         Impl.ofUtf8Encoded x
+    static member Utf8EncodedToJsonElement(x: FsCodec.Encoded): JsonElement =
+        Encoding.OfUtf8Encoded x |> Encoding.ToJsonElement
     static member ByteCount((_encoding, data): Encoded) =
         data.GetRawText() |> System.Text.Encoding.UTF8.GetByteCount
     static member ByteCountExpanded(x: Encoded) =
@@ -107,7 +109,7 @@ type Encoding private () =
 [<Extension; AbstractClass; Sealed>]
 type Encoder private () =
 
-    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>JsonElement</c> Event Bodies to encode as per <c>EncodeTryCompress</c>, but without attempting compression.</summary>
+    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>JsonElement</c> Event Bodies to encode as per <c>Compress</c>, but without attempting compression.</summary>
     [<Extension>]
     static member Uncompressed<'Event, 'Context>(native: IEventCodec<'Event, JsonElement, 'Context>)
         : IEventCodec<'Event, Encoded, 'Context> =
@@ -158,3 +160,9 @@ type Encoder private () =
     static member AsUtf8ByteArray<'Event, 'Context>(native: IEventCodec<'Event, Encoded, 'Context>)
         : IEventCodec<'Event, byte[], 'Context> =
         FsCodec.Core.EventCodec.mapBodies (Encoding.ToUtf8 >> _.ToArray()) Encoding.OfUtf8 native
+
+    /// <summary>Adapts an <c>IEventCodec</c> rendering to <c>int * ReadOnlyMemory&lt;byte&gt;</c> Event Bodies to encode to JsonElement, with the Decode side of the roundtrip not attempting to Compress.</summary>
+    [<Extension>]
+    static member Utf8AsJsonElement<'Event, 'Context>(native: IEventCodec<'Event, FsCodec.Encoded, 'Context>)
+        : IEventCodec<'Event, JsonElement, 'Context> =
+        FsCodec.Core.EventCodec.mapBodies (Encoding.OfUtf8Encoded >> Encoding.ToJsonElement) (Encoding.OfJsonElement >> Encoding.ToEncodedUtf8) native
