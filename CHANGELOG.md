@@ -9,12 +9,16 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-
-- `MapBodies`: Enable contextual encoding of bodies [#127](https://github.com/jet/FsCodec/pull/127)
-
 ### Changed
 ### Removed
 ### Fixed
+
+<a name="3.1.0"></a>
+## [3.1.0] - rc.2: 2025-01-29
+
+### Added
+
+- `MapBodies`: Enable contextual encoding of bodies [#127](https://github.com/jet/FsCodec/pull/127)
 
 <a name="3.0.3"></a>
 ## [3.0.3] - 2024-10-14
@@ -496,7 +500,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.0.3...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.1.0...HEAD
+[3.1.0]: https://github.com/jet/FsCodec/compare/3.0.3...3.1.0
 [3.0.3]: https://github.com/jet/FsCodec/compare/3.0.2...3.0.3
 [3.0.2]: https://github.com/jet/FsCodec/compare/3.0.1...3.0.2
 [3.0.1]: https://github.com/jet/FsCodec/compare/3.0.0...3.0.1
