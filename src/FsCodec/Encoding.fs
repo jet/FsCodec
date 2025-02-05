@@ -75,6 +75,8 @@ type Encoding private () =
         Impl.tryCompress options.minSize options.minGain x
     static member ToBlob(x: Encoded): ReadOnlyMemory<byte> =
         Impl.decode x
+    static member GetStringUtf8(x: Encoded): string =
+        System.Text.Encoding.UTF8.GetString(Encoding.ToBlob(x).Span)
     static member ByteCount((_encoding, data): Encoded) =
         data.Length
 

@@ -74,7 +74,7 @@ module Decoding =
     let brotli = struct(2, Convert.FromBase64String("CwWASGVsbG8gV29ybGQ=") |> ReadOnlyMemory)
 
     let [<Fact>] ``Can decode all known bodies`` () =
-        let decode = FsCodec.Encoding.ToBlob >> _.ToArray() >> Text.Encoding.UTF8.GetString
+        let decode = FsCodec.Encoding.GetStringUtf8
         test <@ decode raw = "Hello World"  @>
         test <@ decode deflated = "Hello World"  @>
         test <@ decode brotli = "Hello World"  @>
@@ -82,5 +82,5 @@ module Decoding =
     let [<Fact>] ``Defaults to leaving the memory alone if unknown`` () =
         let struct(_, mem) = raw
         let body = struct (99, mem)
-        let decoded = body |> FsCodec.Encoding.ToBlob |> _.ToArray() |> Text.Encoding.UTF8.GetString
+        let decoded = body |> FsCodec.Encoding.GetStringUtf8
         test <@ decoded = "Hello World" @>

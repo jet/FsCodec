@@ -2,7 +2,7 @@
 // dotnet build tests/FsCodec.NewtonsoftJson.Tests before attempting to send this to FSI with Alt-Enter
 
 #if !USE_LOCAL_BUILD
-#I "bin/Debug/net6.0"
+#I "bin/Debug/net9.0"
 #r "FsCodec.dll"
 #r "Newtonsoft.Json.dll"
 #r "FsCodec.NewtonsoftJson.dll"

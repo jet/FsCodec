@@ -8,7 +8,7 @@ type [<Struct>] CompressionOptions = { minSize: int; minGain: int } with
     static member Default = { minSize = 48; minGain = 4 }
     static member Uncompressed = { minSize = Int32.MaxValue; minGain = 0 }
 
-[<Extension; AbstractClass; Sealed; Obsolete "Please use FsCodec.Encoding instead">]
+[<Extension; AbstractClass; Sealed; Obsolete "Please use FsCodec.Encoder instead">]
 type Compression private () =
 
     static member Utf8ToEncodedDirect(x: ReadOnlyMemory<byte>): Encoded =
@@ -17,6 +17,7 @@ type Compression private () =
         FsCodec.Encoding.OfBlobCompress({ minSize = options.minSize; minGain = options.minGain }, x)
     static member EncodedToUtf8(x: Encoded): ReadOnlyMemory<byte> =
         FsCodec.Encoding.ToBlob x
+    /// NOTE if this is for use with System.Text.Encoding.UTF8.GetString, then EncodedToUtf8 >> _.Span is more efficient
     static member EncodedToByteArray(x: Encoded): byte[] =
         FsCodec.Encoding.ToBlob(x).ToArray()
 

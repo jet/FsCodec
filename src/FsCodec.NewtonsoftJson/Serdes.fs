@@ -79,6 +79,10 @@ type Serdes(options: JsonSerializerSettings) =
         use jsonReader = Utf8BytesEncoder.makeJsonReader ms
         serializer.Deserialize<'T>(jsonReader)
 
+    /// Deserializes value of given type from a (potentially compressed) Encoded value
+    member x.Deserialize<'T>(utf8Encoded: FsCodec.Encoded): 'T =
+        x.Deserialize<'T>(FsCodec.Encoding.ToBlob utf8Encoded)
+
     /// Deserializes value of given type from a JObject
     member _.Deserialize<'T>(parsed: Newtonsoft.Json.Linq.JObject): 'T =
         parsed.ToObject(typeof<'T>, serializer) :?> 'T

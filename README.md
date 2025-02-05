@@ -859,7 +859,7 @@ module Streams =
     // as we know our event bodies are all UTF8 encoded JSON, we can render the string as a log event property
     // alternately, you can render the EventBody directly and ensure you have appropriate type destructuring configured
     let private render (x: EventBody): string =
-        System.Text.Encoding.UTF8.GetString(x.Span)
+        FsCodec.Encoding.GetStringUtf8 x
     /// Uses the supplied codec to decode the supplied event record `x`
     /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
     let decode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
@@ -1094,7 +1094,7 @@ module StoreWithMeta =
         // the metadata is encoded as the normal bodies are
         let down ((_index, meta : Metadata, event : 'E) : Event<'E>) =
             struct (event, ValueSome meta, ValueNone)
-        Codec.Create<Event<'E>, 'E, Metadata>(up, down, serdes = Store.serdes) 
+        Codec.Create<Event<'E>, 'E, Metadata>(up, down, serdes = Store.serdes)
 ```
 
 The above embeds and/or extracts contextual information from the Event's `Meta` field.
@@ -1254,13 +1254,13 @@ module StreamsWithMeta =
 
     // no special requirements for deserializing metadata, so use Default Serdes
     let private serdes = Serdes.Default
-    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
+    let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract>: Codec<'E> =
         // here we surface some metadata from the raw event as part of the application level type  
         let up (raw : Streams.Event) (contract : 'E) : Event<'E> =
             struct (raw.Index, serdes.Deserialize<Metadata> raw.Meta, contract)
         // We are not using this codec to encode events, so we let the encoding side fail very fast
         let down _ = failwith "N/A"
-        Codec.Create<Event<'E>, 'E, Metadata>(up, down, options = Store.options) 
+        Codec.Create<Event<'E>, 'E, Metadata>(up, down, options = Store.options) |> FsCodec.Encoder.Uncompressed
 ```
 
 Then, per the relevant Event contract, we define a Decode pattern to decode relevant events from the stream, if this event is relevant for us:

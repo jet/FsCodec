@@ -3,7 +3,7 @@
 
 #if !USE_LOCAL_BUILD
 (* Rider's FSI is not happy without the explicit references :shrug: *)
-#I "bin/Debug/net6.0"
+#I "bin/Debug/net9.0"
 #r "FsCodec.dll"
 #r "System.Text.Json.dll"
 #r "FsCodec.SystemTextJson.dll"
@@ -208,7 +208,7 @@ module Events =
         interface TypeShape.UnionContract.IUnionContract
     let codec = Store.codec<Event>
 
-let utf8 (s: string) = System.Text.Encoding.UTF8.GetBytes(s) |> ReadOnlyMemory
+let utf8 (s: string) = System.Text.Encoding.UTF8.GetBytes(s) |> FsCodec.Encoding.OfBlob
 let streamForClient c = Stream.name (ClientId.parse c)
 let events = [
     Stream.name (ClientId.parse "ClientA"),                 FsCodec.Core.TimelineEvent.Create(0L, "Added",     utf8 """{ "item": "a" }""")
@@ -235,13 +235,13 @@ Log.initWithDebugLevel ()
 
 (* Explicit matching, showing how some ugly things get into the code if you do the streamName matching and event parsing separately *)
 
-// When we obtain events from an event store via streaming notifications, we typically receive them as ReadOnlyMemory<byte> bodies
+// When we obtain events from an event store via streaming notifications, we typically receive them as FsCodec.Encoded or ReadOnlyMemory<byte> bodies
 type Event = FsCodec.ITimelineEvent<EventBody>
-and EventBody = ReadOnlyMemory<byte>
+and EventBody = FsCodec.Encoded
 and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
 
 let streamCodec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
-    Codec.Create<'E>(serdes = Store.serdes)
+    Codec.Create<'E>(serdes = Store.serdes) |> FsCodec.Encoder.Uncompressed
         
 let dec = streamCodec<Events.Event>
 let [<return:Struct>] (|DecodeEvent|_|) (codec: Codec<'E>) event = codec.Decode event
@@ -299,19 +299,19 @@ module Streams =
     // Events coming from streams are carried as a TimelineEvent; the body type is configurable
     type Event = FsCodec.ITimelineEvent<EventBody>
     // Propulsion's Sinks by default use ReadOnlyMemory<byte> as the storage format
-    and EventBody = ReadOnlyMemory<byte>
+    and EventBody = FsCodec.Encoded
     // the above Events can be decoded by a Codec implementing this interface
     and Codec<'E> = FsCodec.IEventCodec<'E, EventBody, unit>
 
     /// Generates a Codec for the specified Event Union type
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // Borrowing the Store serdes; frequently the events you parse can use less complex options...
-        Codec.Create<'E>(serdes = Store.serdes)
+        Codec.Create<'E>(serdes = Store.serdes) |> FsCodec.Encoder.Uncompressed
 
     // as we know our event bodies are all UTF8 encoded JSON, we can render the string as a log event property
     // alternately, you can render the EventBody directly and ensure you have appropriate type destructuring configured
     let private render (x: EventBody): string =
-        System.Text.Encoding.UTF8.GetString(x.Span)
+        FsCodec.Encoding.GetStringUtf8 x
     /// Uses the supplied codec to decode the supplied event record `x`
     /// (iff at LogEventLevel.Debug, detail fails to `log` citing the `streamName` and body)
     let decode<'E> (log: Serilog.ILogger) (codec: Codec<'E>) (streamName: FsCodec.StreamName) (x: Event) =
@@ -463,11 +463,11 @@ module StreamsWithMeta =
         
     let codec<'E when 'E :> TypeShape.UnionContract.IUnionContract> : Codec<'E> =
         // here we surface some metadata from the raw event as part of the application level type  
-        let up (raw: Streams.Event) (contract: 'E): Event<'E> =
+        let up (raw: FsCodec.ITimelineEvent<ReadOnlyMemory<byte>>) (contract: 'E): Event<'E> =
             struct (raw.Index, serdes.Deserialize<Metadata> raw.Meta, contract)
         // We are not using this codec to encode events, so we let the encoding side fail very fast
         let down _ = failwith "N/A"
-        Codec.Create<Event<'E>, 'E, Metadata>(up, down, serdes = Store.serdes) 
+        Codec.Create<Event<'E>, 'E, Metadata>(up, down, serdes = Store.serdes) |> FsCodec.Encoder.Uncompressed
 
 let eventsWithMeta = seq {
     for sn, e in events ->
