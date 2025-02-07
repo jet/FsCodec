@@ -34,7 +34,7 @@ module private Impl =
         use output = new System.IO.MemoryStream()
         compressedBytes |> alg output
         output.ToArray() |> post
-    let decode_ direct expand (struct (encoding, data: JsonElement) as x) =
+    let decode_ direct expand struct (encoding, data: JsonElement) =
         match encoding, data.ValueKind with
         | Encoding.Deflate, JsonValueKind.String -> data.GetBytesFromBase64() |> expand inflateTo
         | Encoding.Brotli,  JsonValueKind.String -> data.GetBytesFromBase64() |> expand brotliDecompressTo

@@ -47,6 +47,10 @@ type Serdes(options: JsonSerializerOptions) =
     member x.Deserialize<'T>(utf8json: System.ReadOnlyMemory<byte>): 'T =
         x.Deserialize<'T>(utf8json.Span)
 
+    /// Deserializes value of given type from a (potentially compressed) Encoded JsonElement-based value
+    member x.Deserialize<'T>(encoded: Encoded): 'T =
+        x.Deserialize<'T>(Encoding.ToJsonElement encoded)
+
     /// Deserializes value of given type from a (potentially compressed) Encoded value
     member x.Deserialize<'T>(utf8Encoded: FsCodec.Encoded): 'T =
         x.Deserialize<'T>(FsCodec.Encoding.ToBlob utf8Encoded)
