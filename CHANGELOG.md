@@ -9,14 +9,12 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ## [Unreleased]
 
 ### Added
-
-
 ### Changed
 ### Removed
 ### Fixed
 
 <a name="3.1.0"></a>
-## [3.1.0] - rc.4: 2025-02-05
+## [3.1.0] - 2025-06-12
 
 ### Added
 
