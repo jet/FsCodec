@@ -6,7 +6,7 @@
     <PackageProjectUrl>https://github.com/jet/FsCodec</PackageProjectUrl>
     <PackageTags>fsharp unionconverter eventcodec JsonPickler JsonIsomorphism UnionConverter json converters typeshape</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <Copyright>Copyright © 2016-25</Copyright>
+    <Copyright>Copyright © 2016-26</Copyright>
 
     <!-- Global Project config flags -->
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
