@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `SystemTextJson`: Upped minimum `System.Text.Json` version to `10.0.` [#129](https://github.com/jet/FsCodec/pull/129)
+
 ### Removed
 ### Fixed
 
