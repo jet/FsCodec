@@ -115,6 +115,6 @@ type Options private () =
         
         // Apply overrides
         if indent then options.WriteIndented <- true
-        if ignoreNulls then options.IgnoreNullValues <- true
+        if ignoreNulls then options.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull
         
         options
