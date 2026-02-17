@@ -37,14 +37,17 @@ type UnionConverter<'T>() =
         let fieldValues = case.deconstruct value
         for fieldInfo, fieldValue in Seq.zip case.fields fieldValues do
             if fieldValue <> null || options.DefaultIgnoreCondition <> Serialization.JsonIgnoreCondition.Always then
-                let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
                 if case.fields.Length = 1 && FSharpType.IsRecord(fieldInfo.PropertyType, true) then
                     // flatten the record properties into the same JSON object as the discriminator
+                    // Use WriteRawValue for better performance (STJ 10+)
+                    let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
                     for prop in element.EnumerateObject() do
-                        prop.WriteTo writer
+                        writer.WritePropertyName(prop.Name)
+                        writer.WriteRawValue(prop.Value.GetRawText())
                 else
                     writer.WritePropertyName(fieldInfo.Name)
-                    element.WriteTo writer
+                    let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
+                    writer.WriteRawValue(element.GetRawText())
         writer.WriteEndObject()
 
     override _.Read(reader, t: Type, options) =
