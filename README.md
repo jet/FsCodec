@@ -122,6 +122,7 @@ The respective concrete Codec packages include relevant `Converter`/`JsonConvert
   - `(autoTypeSafeEnumToJsonString = true)`: triggers usage of `TypeSafeEnumConverter` for any F# Discriminated Unions that only contain nullary cases. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples  
   - `(autoUnionToJsonObject = true)`: triggers usage of a `UnionConverter` to round-trip F# Discriminated Unions (with at least a single case that has a body) as JSON Object structures. See [`AutoUnionTests.fs`](https://github.com/jet/FsCodec/blob/master/tests/FsCodec.SystemTextJson.Tests/AutoUnionTests.fs) for examples
   - `(rejectNullStrings = true)`: triggers usage of [`RejectNullStringConverter`](https://github.com/jet/FsCodec/blob/master/src/FsCodec.SystemTextJson/RejectNullStringConverter.fs) to reject `null` as a value for strings (`string option` can be used to handle them explicitly).
+- `CreateWeb`: _(System.Text.Json 10+)_ creates web-optimized serializer options based on `JsonSerializerOptions.Web`. Provides camelCase property naming, case-insensitive property matching for deserialization, and allows reading numbers from strings - optimized for typical web API scenarios. Supports the same converter options as `Create` (`autoTypeSafeEnumToJsonString`, `autoUnionToJsonObject`, `rejectNullStrings`).
 - `Default`: Default settings; same as calling `Create()` produces (same intent as [`JsonSerializerOptions.Default`](https://github.com/dotnet/runtime/pull/61434)) 
 
 ## `Serdes`
