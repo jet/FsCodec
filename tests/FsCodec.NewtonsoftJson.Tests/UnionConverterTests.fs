@@ -71,8 +71,6 @@ type TestDU =
     | CaseY of a: Mode * b: Mode
     | CaseZ of a: Mode * b: Mode option
 
-#nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
-
 // no camel case, because I want to test "Item" as a record property
 // Centred on ignoreNulls for backcompat; round-tripping test covers the case where they get rendered too
 

@@ -53,8 +53,6 @@ let mkBatch (encoded : FsCodec.IEventData<ReadOnlyMemory<byte>>) : Batch =
     {   p = "streamName"; id = string 0; i = -1L; n = -1L; _etag = null
         e = [| { t = DateTimeOffset.MinValue; c = encoded.EventType; d = (let d = encoded.Data in d.ToArray()); m = null } |] }
 
-#nowarn "1182" // From hereon in, we may have some 'unused' privates (the tests)
-
 module VerbatimUtf8Tests = // not a module or CI will fail for net461
 
     let eventCodec = Codec.Create<Union>()
