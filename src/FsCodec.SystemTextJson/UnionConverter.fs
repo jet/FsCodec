@@ -40,13 +40,11 @@ type UnionConverter<'T>() =
                 let element = JsonSerializer.SerializeToElement(fieldValue, fieldInfo.PropertyType, options)
                 if case.fields.Length = 1 && FSharpType.IsRecord(fieldInfo.PropertyType, true) then
                     // flatten the record properties into the same JSON object as the discriminator
-                    // Use WriteRawValue for better performance (STJ 10+)
                     for prop in element.EnumerateObject() do
-                        writer.WritePropertyName(prop.Name)
-                        writer.WriteRawValue(prop.Value.GetRawText())
+                        prop.WriteTo writer
                 else
                     writer.WritePropertyName(fieldInfo.Name)
-                    writer.WriteRawValue(element.GetRawText())
+                    element.WriteTo writer
         writer.WriteEndObject()
 
     override _.Read(reader, t: Type, options) =
