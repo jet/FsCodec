@@ -1,4 +1,4 @@
- [![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/FsCodec)](https://www.nuget.org/packages/FsCodec) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE)
+[![Build Status](https://dev.azure.com/jet-opensource/opensource/_apis/build/status/jet.fscodec?branchName=master)](https://dev.azure.com/jet-opensource/opensource/_build/latest?definitionId=18?branchName=master) [![release](https://img.shields.io/github/release/jet/fscodec.svg)](https://github.com/jet/fscodec/releases) [![NuGet](https://img.shields.io/nuget/vpre/FsCodec)](https://www.nuget.org/packages/FsCodec) [![license](https://img.shields.io/github/license/jet/fscodec.svg)](LICENSE)
 
 Defines a minimal interface for serialization and deserialization of events for event-sourcing systems on .NET.
 Provides implementation packages for writing simple yet versionable Event Contract definitions in F# using ubiquitous serializers.
@@ -1352,4 +1352,10 @@ Please raise GitHub issues for any questions so others can benefit from the disc
 ```powershell
 # verify the integrity of the repo wrt being able to build/pack/test
 ./dotnet build build.proj
+```
+
+# Testing
+
+```powershell
+dotnet test --solution .\FsCodec.sln
 ```

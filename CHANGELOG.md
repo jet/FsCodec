@@ -10,6 +10,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- Updated tests to use `xunit.v3`, MTP, SDK 10 
+
 ### Removed
 ### Fixed
 

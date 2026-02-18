@@ -4,7 +4,7 @@ jobs:
   pool:
     vmImage: 'windows-latest'
   steps:
-  - script: dotnet test build.proj
+  - script: dotnet test --solution .\FsCodec.sln --report-xunit-trx
     displayName: dotnet test
   - task: PublishTestResults@2
     inputs:
@@ -24,10 +24,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-latest'
   steps:
-  - task: UseDotNet@2
-    inputs:
-      useGlobalJson: true
-  - script: dotnet test build.proj
+  - script: dotnet test --solution .\FsCodec.sln --report-xunit-trx
     displayName: dotnet test
   - task: PublishTestResults@2
     inputs:
@@ -40,10 +37,7 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
-  - task: UseDotNet@2
-    inputs:
-      useGlobalJson: true
-  - script: dotnet test build.proj
+  - script: dotnet test --solution .\FsCodec.sln --report-xunit-trx
     displayName: dotnet test
   - task: PublishTestResults@2
     inputs:
