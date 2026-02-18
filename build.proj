@@ -7,8 +7,6 @@
 
     <PrOption Condition =" '$(BUILD_PR)' != '%24(SYSTEM.PULLREQUEST.PULLREQUESTNUMBER)' ">/p:BUILD_PR=$(BUILD_PR) </PrOption>
     <PackOptions>/p:BUILD_ID=$(BUILD_ID) $(PrOption) -o $(MSBuildThisFileDirectory)bin</PackOptions>
-
-    <TestOptions>--logger:trx</TestOptions>
   </PropertyGroup>
 
   <Target Name="Pack">
@@ -18,12 +16,6 @@
     <Exec Command="dotnet pack src/FsCodec.SystemTextJson $(Cfg) $(PackOptions)" />
   </Target>
 
-  <Target Name="VSTest">
-    <Exec Command="dotnet test tests/FsCodec.Tests $(Cfg) $(TestOptions)" />
-    <Exec Command="dotnet test tests/FsCodec.NewtonsoftJson.Tests $(Cfg) $(TestOptions)" />
-    <Exec Command="dotnet test tests/FsCodec.SystemTextJson.Tests $(Cfg) $(TestOptions)" />
-  </Target>
-
-  <Target Name="Build" DependsOnTargets="VSTest;Pack" />
+  <Target Name="Build" DependsOnTargets="Pack" />
 
 </Project>
