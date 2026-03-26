@@ -95,8 +95,12 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, 'Body, unit> =
 
-        let mapCausation () (m: 'Meta voption) = struct (m, Guid.NewGuid(), null, null)
-        Codec.Create(encoder, up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
+        // NOTE we avoid `let mapCausation () (m: 'Meta voption) = struct (m, Guid.NewGuid(), null, null)` as that
+        // generates a singleton-optimization pattern (DirectInvoke + MVAR in TypeSpec) that .NET 10's JIT rejects
+        let down' () event =
+            let struct (c, m, t) = down.Invoke event
+            struct (c, m, Guid.NewGuid(), (null: string), (null: string), match t with ValueSome t -> t | ValueNone -> DateTimeOffset.UtcNow)
+        Codec.Create(encoder, up = up, down = down', ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> using the supplied <c>encoder</c>.<br/>
     /// The Event Type Names are inferred based on either explicit <c>DataMember(Name=</c> Attributes, or (if unspecified) the Discriminated Union Case Name
