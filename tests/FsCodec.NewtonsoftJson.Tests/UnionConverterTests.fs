@@ -676,3 +676,36 @@ module IsomorphismUnionEncoder =
     let [<FsCheck.Xunit.Property>] ``can roundtrip`` (value : Top) =
         let ser = serdes.Serialize value
         test <@ value = serdes.Deserialize ser @>
+
+#if SYSTEM_TEXT_JSON
+// https://github.com/jet/FsCodec/issues/128
+// When a multi-case DU is boxed (cast to obj), STJ resolves the runtime type (e.g. Test+Test1),
+// which is a nested type within the union. UnionConverter.CanConvert must accept such types.
+// NOTE: STJ uses inherit: false when looking up [JsonConverter] attributes, so the attribute on the
+// union base type is not found for case-specific nested types. The converter must be registered
+// via options.Converters (or autoUnionToJsonObject) for boxed serialization to work.
+module ``Boxed DU Serialization`` =
+
+    type BoxedMultiCase =
+        | Case1 of int
+        | Case2 of string
+
+    let optsWithConverter = JsonSerializerOptions()
+    optsWithConverter.Converters.Add(UnionConverter<BoxedMultiCase>())
+
+    let [<Fact>] ``Serialize boxed multi-case DU via options does not throw`` () =
+        let json = JsonSerializer.Serialize(Case1 42 :> obj, optsWithConverter)
+        test <@ """{"case":"Case1","Item":42}""" = json @>
+
+    let [<Fact>] ``Serialize boxed multi-case DU second case via options`` () =
+        let json = JsonSerializer.Serialize(Case2 "hi" :> obj, optsWithConverter)
+        test <@ """{"case":"Case2","Item":"hi"}""" = json @>
+
+    [<JsonConverter(typeof<UnionConverter<BoxedSingleCase>>)>]
+    type BoxedSingleCase =
+        | Only of int
+
+    let [<Fact>] ``Serialize boxed single-case DU still works`` () =
+        let json = JsonSerializer.Serialize(Only 42 :> obj)
+        test <@ """{"case":"Only","Item":42}""" = json @>
+#endif
