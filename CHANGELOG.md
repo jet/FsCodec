@@ -10,14 +10,21 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
-
-- Updated tests to use `xunit.v3.mtp-v2`, SDK 10 
-
 ### Removed
 ### Fixed
 
-- `FsCodec.Box`: Fixed `BadImageFormatException` on .NET 10 caused by F# compiler singleton optimization emitting `MVAR` in `TypeSpec` for captureless generic local functions [#137](https://github.com/jet/FsCodec/pull/137)
-- `SystemTextJson.UnionConverter`: Removed `NotSupportedException` when serializing boxed multi-case DUs (only via `options.Converters`) [#138](https://github.com/jet/FsCodec/pull/138)
+<a name="3.1.1"></a>
+## [3.1.1] - 2026-03-27
+
+### Changed
+
+- Updated tests to use `xunit.v3.mtp-v2`, SDK 10
+- Switched to integrated package validation [#142](https://github.com/jet/FsCodec/pull/142)
+
+### Fixed
+
+- `FsCodec.Box`: Fixed `BadImageFormatException` on .NET 10 caused by F# compiler codegen for captureless generic local functions [#137](https://github.com/jet/FsCodec/pull/137)
+- `SystemTextJson.UnionConverter`: Fixed `NotSupportedException` when serializing boxed multi-case DUs (only via `options.Converters`) [#138](https://github.com/jet/FsCodec/pull/138)
 
 <a name="3.1.0"></a>
 ## [3.1.0] - 2025-06-12
@@ -508,7 +515,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.1.0...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.1.1...HEAD
+[3.1.1]: https://github.com/jet/FsCodec/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/jet/FsCodec/compare/3.0.3...3.1.0
 [3.0.3]: https://github.com/jet/FsCodec/compare/3.0.2...3.0.3
 [3.0.2]: https://github.com/jet/FsCodec/compare/3.0.1...3.0.2
