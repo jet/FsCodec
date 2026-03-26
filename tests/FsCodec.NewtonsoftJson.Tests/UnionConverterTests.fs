@@ -690,16 +690,15 @@ module ``Boxed DU Serialization`` =
         | Case1 of int
         | Case2 of string
 
+    let optsWithConverter = JsonSerializerOptions()
+    optsWithConverter.Converters.Add(UnionConverter<BoxedMultiCase>())
+
     let [<Fact>] ``Serialize boxed multi-case DU via options does not throw`` () =
-        let options = JsonSerializerOptions()
-        options.Converters.Add(UnionConverter<BoxedMultiCase>())
-        let json = JsonSerializer.Serialize(Case1 42 :> obj, options)
+        let json = JsonSerializer.Serialize(Case1 42 :> obj, optsWithConverter)
         test <@ """{"case":"Case1","Item":42}""" = json @>
 
     let [<Fact>] ``Serialize boxed multi-case DU second case via options`` () =
-        let options = JsonSerializerOptions()
-        options.Converters.Add(UnionConverter<BoxedMultiCase>())
-        let json = JsonSerializer.Serialize(Case2 "hi" :> obj, options)
+        let json = JsonSerializer.Serialize(Case2 "hi" :> obj, optsWithConverter)
         test <@ """{"case":"Case2","Item":"hi"}""" = json @>
 
     [<JsonConverter(typeof<UnionConverter<BoxedSingleCase>>)>]
