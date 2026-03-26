@@ -17,7 +17,7 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Fixed
 
 - `FsCodec.Box`: Fixed `BadImageFormatException` on .NET 10 caused by F# compiler singleton optimization emitting `MVAR` in `TypeSpec` for captureless generic local functions [#137](https://github.com/jet/FsCodec/pull/137)
-- `SystemTextJson.UnionConverter`: Fixed `NotSupportedException` when serializing a boxed multi-case DU via `options.Converters` [#138](https://github.com/jet/FsCodec/pull/138)
+- `SystemTextJson.UnionConverter`: Removed `NotSupportedException` when serializing boxed multi-case DUs (only via `options.Converters`) [#138](https://github.com/jet/FsCodec/pull/138)
 
 <a name="3.1.0"></a>
 ## [3.1.0] - 2025-06-12
