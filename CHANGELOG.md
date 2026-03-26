@@ -16,6 +16,8 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Removed
 ### Fixed
 
+- `FsCodec.Box`: Fixed `BadImageFormatException` on .NET 10 caused by F# compiler singleton optimization emitting `MVAR` in `TypeSpec` for captureless generic local functions [#130](https://github.com/jet/FsCodec/pull/130)
+
 <a name="3.1.0"></a>
 ## [3.1.0] - 2025-06-12
 
