@@ -95,7 +95,7 @@ type Codec private () =
             [<Optional; DefaultParameterValue(null)>] ?rejectNullaryCases)
         : FsCodec.IEventCodec<'Event, 'Body, unit> =
 
-        let mapCausation () (m: 'Meta voption) = struct (m, Guid.NewGuid(), null, null)
+        let mapCausation = Func<unit, 'Meta voption, _>(fun () m -> struct (m, Guid.NewGuid(), null, null))
         Codec.Create(encoder, up = up, down = down, mapCausation = mapCausation, ?rejectNullaryCases = rejectNullaryCases)
 
     /// <summary>Generate an <c>IEventCodec</c> using the supplied <c>encoder</c>.<br/>
