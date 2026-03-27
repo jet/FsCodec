@@ -15,7 +15,7 @@ open FsCheck.FSharp
 open Swensen.Unquote.Assertions
 open System
 open System.IO
-open global.Xunit
+open Xunit
 open Fixtures
 
 type TestRecordPayload =
@@ -309,7 +309,7 @@ type FsCheckGenerators =
     static member SkuId = ArbMap.defaults |> ArbMap.generate |> Gen.map SkuId |> Arb.fromGen
 
 type DomainPropertyAttribute() =
-    inherit FsCheck.Xunit.PropertyAttribute(QuietOnSuccess = true, Arbitrary=[| typeof<FsCheckGenerators> |])
+    inherit FsCheck.Xunit.PropertyAttribute(Arbitrary=[| typeof<FsCheckGenerators> |])
 
 let roundtripProperty ignoreNulls profile value =
     let serialized = serializeWith profile value
