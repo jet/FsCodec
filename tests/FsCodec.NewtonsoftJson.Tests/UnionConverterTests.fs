@@ -684,14 +684,23 @@ module IsomorphismUnionEncoder =
 // NOTE: STJ uses inherit: false when looking up [JsonConverter] attributes, so the attribute on the
 // union base type is not found for case-specific nested types. The converter must be registered
 // via options.Converters (or autoUnionToJsonObject) for boxed serialization to work.
+// This is not recommended practice from a System.Text.Json library perspective; if you need it,
+// use a custom JsonConverterFactory as shown here to provide the widened CanConvert logic.
 module ``Boxed DU Serialization`` =
+
+    /// Custom factory that widens CanConvert to also accept the nested case types that STJ resolves
+    /// for boxed multi-case DUs (where the runtime type is e.g. Union+Case1 with DeclaringType = Union).
+    type BoxedUnionConverterFactory<'T>() =
+        inherit Serialization.JsonConverterFactory()
+        override _.CanConvert t = (t = typeof<'T> || t.DeclaringType = typeof<'T>) && FsCodec.Union.isUnion t
+        override _.CreateConverter(_t, _options) = UnionConverter<'T>()
 
     type BoxedMultiCase =
         | Case1 of int
         | Case2 of string
 
     let optsWithConverter = JsonSerializerOptions()
-    optsWithConverter.Converters.Add(UnionConverter<BoxedMultiCase>())
+    optsWithConverter.Converters.Add(BoxedUnionConverterFactory<BoxedMultiCase>())
 
     let [<Fact>] ``Serialize boxed multi-case DU via options does not throw`` () =
         let json = JsonSerializer.Serialize(Case1 42 :> obj, optsWithConverter)
