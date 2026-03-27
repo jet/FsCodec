@@ -1,11 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <DisableImplicitFSharpCoreReference>false</DisableImplicitFSharpCoreReference>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="StreamNameTests.fs" />
     <Compile Include="EncodingTests.fs" />
@@ -13,13 +7,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Unquote" Version="7.0.0" />
-    <PackageReference Include="xunit.v3" Version="3.2.2" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="../../src/FsCodec/FsCodec.fsproj" />
-    <ProjectReference Include="../../src/FsCodec.NewtonsoftJson/FsCodec.NewtonsoftJson.fsproj" />
   </ItemGroup>
 
 </Project>

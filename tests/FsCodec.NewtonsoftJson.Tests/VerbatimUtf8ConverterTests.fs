@@ -5,7 +5,7 @@ open FsCodec.NewtonsoftJson
 open Newtonsoft.Json
 open System
 open Swensen.Unquote
-open global.Xunit
+open Xunit
 
 type Embedded = { embed : string }
 type Union =
@@ -108,12 +108,13 @@ module VerbatimUtf8NullHandling =
             [<JsonProperty(Required=Required.Default, NullValueHandling=NullValueHandling.Ignore)>]
             m: byte[] }
 
-    let values : obj[][] =
-        [|  [| null |]
-            [| [||] |]
-            [| System.Text.Encoding.UTF8.GetBytes "{}" |] |]
+    type Values() as this =
+        inherit TheoryData<byte[]>()
+        do  this.Add(null: byte[])
+            this.Add([||])
+            this.Add(System.Text.Encoding.UTF8.GetBytes "{}")
 
-    [<Theory; MemberData "values">]
+    [<Theory; ClassData(typeof<Values>)>]
     let ``round-trips nulls and empties consistently`` value =
         let e : EventHolderWithAndWithoutRequired = { d = value; m = value }
         let ser = JsonConvert.SerializeObject(e)
