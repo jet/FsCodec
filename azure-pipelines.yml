@@ -1,48 +1,29 @@
 name: $(Rev:r)
 jobs:
-- job: Windows
+- job: build
+  strategy:
+    matrix:
+      Windows:
+        vmImage: 'windows-latest'
+      Linux:
+        vmImage: 'ubuntu-latest'
+      MacOS:
+        vmImage: 'macOS-latest'
   pool:
-    vmImage: 'windows-latest'
+    vmImage: $(vmImage)
   steps:
-  - script: dotnet test --solution ./FsCodec.sln --report-xunit-trx
-    displayName: dotnet test
+  - script: dotnet build build.proj
+    displayName: dotnet build build.proj
+    env:
+      BUILD_PR: $(SYSTEM.PULLREQUEST.PULLREQUESTNUMBER)
+      BUILD_ID: $(BUILD.BUILDNUMBER)
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'VSTest'
       testResultsFiles: 'tests/**/*.trx'
     condition: succeededOrFailed()
-  - script: dotnet pack build.proj
-    displayName: dotnet pack build.proj
-    env:
-      BUILD_PR: $(SYSTEM.PULLREQUEST.PULLREQUESTNUMBER)
-      BUILD_ID: $(BUILD.BUILDNUMBER)
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: 'bin'
       artifactName: 'nupkgs'
-- job: Linux
-  pool:
-    vmImage: 'ubuntu-latest'
-  steps:
-  - script: dotnet test --solution ./FsCodec.sln --report-xunit-trx
-    displayName: dotnet test
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: 'VSTest'
-      testResultsFiles: 'tests/**/*.trx'
-    condition: succeededOrFailed()
-  - script: dotnet pack build.proj
-    displayName: dotnet pack
-- job: MacOS
-  pool:
-    vmImage: 'macOS-latest'
-  steps:
-  - script: dotnet test --solution ./FsCodec.sln --report-xunit-trx
-    displayName: dotnet test
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: 'VSTest'
-      testResultsFiles: 'tests/**/*.trx'
-    condition: succeededOrFailed()
-  - script: dotnet pack build.proj
-    displayName: dotnet pack
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))

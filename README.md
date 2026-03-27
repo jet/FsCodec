@@ -1350,12 +1350,6 @@ Please raise GitHub issues for any questions so others can benefit from the disc
 # Building
 
 ```powershell
-# verify the integrity of the repo wrt being able to build/pack/test
-./dotnet build build.proj
-```
-
-# Testing
-
-```powershell
-dotnet test --solution ./FsCodec.sln
+# verify the integrity of the repo wrt being able to test/pack
+dotnet build build.proj
 ```
