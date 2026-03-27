@@ -1,4 +1,4 @@
-<Project>
+<Project DefaultTargets="Build">
 
   <Import Project="Directory.Build.props" />
 
@@ -9,6 +9,10 @@
     <PackOptions>/p:BUILD_ID=$(BUILD_ID) $(PrOption) -o $(MSBuildThisFileDirectory)bin</PackOptions>
   </PropertyGroup>
 
+  <Target Name="Test">
+    <Exec Command="dotnet test --solution ./FsCodec.sln $(Cfg) --report-xunit-trx" />
+  </Target>
+
   <Target Name="Pack">
     <Exec Command="dotnet pack src/FsCodec $(Cfg) $(PackOptions)" />
     <Exec Command="dotnet pack src/FsCodec.Box $(Cfg) $(PackOptions)" />
@@ -16,6 +20,6 @@
     <Exec Command="dotnet pack src/FsCodec.SystemTextJson $(Cfg) $(PackOptions)" />
   </Target>
 
-  <Target Name="Build" DependsOnTargets="Pack" />
+  <Target Name="Build" DependsOnTargets="Test;Pack" />
 
 </Project>

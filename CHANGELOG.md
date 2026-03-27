@@ -10,6 +10,10 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+
+- `build.proj`: Added `Test` target; `Build` now runs Test + Pack [#143](https://github.com/jet/FsCodec/pull/143)
+- `azure-pipelines.yml`: Consolidated three identical jobs into a matrix strategy, driven by `build.proj` [#143](https://github.com/jet/FsCodec/pull/143)
+
 ### Removed
 ### Fixed
 

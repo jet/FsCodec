@@ -1350,8 +1350,8 @@ Please raise GitHub issues for any questions so others can benefit from the disc
 # Building
 
 ```powershell
-# verify the integrity of the repo wrt being able to build/pack/test
-./dotnet build build.proj
+# verify the integrity of the repo wrt being able to Test/Pack
+dotnet build build.proj
 ```
 
 # Testing
