@@ -12,7 +12,7 @@
   <Target Name="Build" DependsOnTargets="Test;Pack" />
 
   <Target Name="Test">
-    <Exec Command="dotnet test --solution ./FsCodec.sln --report-xunit-trx" />
+    <Exec Command="dotnet test --solution ./FsCodec.sln $(Cfg) --report-xunit-trx" />
   </Target>
 
   <Target Name="Pack">
