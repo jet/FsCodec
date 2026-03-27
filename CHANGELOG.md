@@ -11,6 +11,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 ### Added
 ### Changed
 ### Removed
+
+- `SystemTextJson.UnionConverter`: Reverted `CanConvert` widening for boxed DU case types [#144](https://github.com/jet/FsCodec/pull/144)
+
 ### Fixed
 
 <a name="3.1.1"></a>
