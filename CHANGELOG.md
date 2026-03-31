@@ -15,6 +15,9 @@ The `Unreleased` section name is replaced by the expected version of next releas
 - `azure-pipelines.yml`: Consolidated three identical jobs into a matrix strategy, driven by `build.proj` [#143](https://github.com/jet/FsCodec/pull/143)
 
 ### Removed
+
+- `SystemTextJson.UnionConverter`: Reverted `CanConvert` widening for boxed DU case types [#144](https://github.com/jet/FsCodec/pull/144)
+
 ### Fixed
 
 <a name="3.1.1"></a>

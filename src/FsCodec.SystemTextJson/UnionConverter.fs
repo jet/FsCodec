@@ -26,7 +26,7 @@ type UnionConverter<'T>() =
     let converterOptions = UnionConverterOptions.get typeof<'T>
     let info = FsCodec.Union.Info.get typeof<'T>
 
-    override _.CanConvert t = (t = typeof<'T> || t.DeclaringType = typeof<'T>) && FsCodec.Union.isUnion t
+    override _.CanConvert t = t = typeof<'T> && FsCodec.Union.isUnion t
 
     override _.Write(writer: Utf8JsonWriter, value, options: JsonSerializerOptions) =
         let value = box value
