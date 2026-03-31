@@ -10,17 +10,23 @@ The `Unreleased` section name is replaced by the expected version of next releas
 
 ### Added
 ### Changed
+### Removed
+### Fixed
+
+<a name="3.1.2"></a>
+## [3.1.2] - 2026-04-01
+
+### Changed
+### Removed
 
 - `build.proj`: Added `Test` target; `Build` now runs Test + Pack [#143](https://github.com/jet/FsCodec/pull/143)
 - `azure-pipelines.yml`: Consolidated three identical jobs into a matrix strategy, driven by `build.proj` [#143](https://github.com/jet/FsCodec/pull/143)
 
 ### Removed
 
-- `SystemTextJson.UnionConverter`: Reverted `CanConvert` widening for boxed DU case types [#144](https://github.com/jet/FsCodec/pull/144)
+- `SystemTextJson.UnionConverter`: Reverted [#138](https://github.com/jet/FsCodec/pull/138) `CanConvert` widening for boxed DU case types released in `3.1.1` [#144](https://github.com/jet/FsCodec/pull/144)
 
-### Fixed
-
-<a name="3.1.1"></a>
+- <a name="3.1.1"></a>
 ## [3.1.1] - 2026-03-27
 
 ### Changed
@@ -522,7 +528,8 @@ Initial release based on merge of [Jet.JsonNet.Converters v0](https://github.com
 
 Final release of Jet.JsonNet.Converters archived on [v0 branch](https://github.com/jet/FsCodec/tree/v0)
 
-[Unreleased]: https://github.com/jet/FsCodec/compare/3.1.1...HEAD
+[Unreleased]: https://github.com/jet/FsCodec/compare/3.1.2...HEAD
+[3.1.2]: https://github.com/jet/FsCodec/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/jet/FsCodec/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/jet/FsCodec/compare/3.0.3...3.1.0
 [3.0.3]: https://github.com/jet/FsCodec/compare/3.0.2...3.0.3
