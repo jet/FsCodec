@@ -4,12 +4,12 @@ open System
 open System.Runtime.CompilerServices
 open System.Text.Json
 
-[<Extension; AbstractClass; Sealed>]
+[<AbstractClass; Sealed>]
 type InteropHelpers private () =
 
     static member Utf8ToJsonElement(x: ReadOnlyMemory<byte>): JsonElement =
         if x.IsEmpty then JsonElement()
-        else JsonSerializer.Deserialize<JsonElement>(x.Span)
+        else JsonElement.Parse x.Span
 
     static member JsonElementToUtf8(x: JsonElement): ReadOnlyMemory<byte> =
         if x.ValueKind = JsonValueKind.Undefined then ReadOnlyMemory.Empty
